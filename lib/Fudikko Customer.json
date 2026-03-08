@@ -1,0 +1,254 @@
+{
+	"info": {
+		"_postman_id": "a37815dd-3c2a-4cb5-adaf-b5712a34066d",
+		"name": "Fudikko Customer",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "6302950"
+	},
+	"item": [
+		{
+			"name": "Registration",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "email",
+							"value": "suhail3515@live.com",
+							"type": "text"
+						},
+						{
+							"key": "username",
+							"value": "suhail3515",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "suhail@1123",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "https://fudikko.bitwissenddev.in/api/register",
+					"protocol": "https",
+					"host": [
+						"fudikko",
+						"bitwissenddev",
+						"in"
+					],
+					"path": [
+						"api",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Customer Registration",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "phone",
+							"value": "9633058949",
+							"type": "text"
+						},
+						{
+							"key": "lat",
+							"value": "10.740278",
+							"type": "text"
+						},
+						{
+							"key": "lng",
+							"value": "75.974838",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "https://fudikko.bitwissenddev.in/api/customer/complete-registration",
+					"protocol": "https",
+					"host": [
+						"fudikko",
+						"bitwissenddev",
+						"in"
+					],
+					"path": [
+						"api",
+						"customer",
+						"complete-registration"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Resturants List",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://fudikko.bitwissenddev.in/api/customer/restaurants",
+					"protocol": "https",
+					"host": [
+						"fudikko",
+						"bitwissenddev",
+						"in"
+					],
+					"path": [
+						"api",
+						"customer",
+						"restaurants"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Restaurant Details",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "id",
+							"value": "bdhsjbdsbdshdbsh",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "https://fudikko.bitwissenddev.in/api/customer/restaurant/show",
+					"protocol": "https",
+					"host": [
+						"fudikko",
+						"bitwissenddev",
+						"in"
+					],
+					"path": [
+						"api",
+						"customer",
+						"restaurant",
+						"show"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Restaurant Update Favourite",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "id",
+							"value": "bdhsjbdsbdshdbsh",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "https://fudikko.bitwissenddev.in/api/customer/restaurant/update-favourite",
+					"protocol": "https",
+					"host": [
+						"fudikko",
+						"bitwissenddev",
+						"in"
+					],
+					"path": [
+						"api",
+						"customer",
+						"restaurant",
+						"update-favourite"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Restaurant Favourites",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://fudikko.bitwissenddev.in/api/customer/restaurant/favourites",
+					"protocol": "https",
+					"host": [
+						"fudikko",
+						"bitwissenddev",
+						"in"
+					],
+					"path": [
+						"api",
+						"customer",
+						"restaurant",
+						"favourites"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
