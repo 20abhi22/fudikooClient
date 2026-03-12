@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/components/apptextfeild.dart';
+import 'package:fudikoclient/routetransitions.dart';
 import 'package:fudikoclient/screens/home/homepage.dart';
 import 'package:fudikoclient/utils/constants.dart';
 
@@ -50,10 +51,12 @@ class Otp extends StatelessWidget {
             AppButton(
               text: 'Verify',
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => HomePage()),
-                );
+                // Navigator.pushAndRemoveUntil(
+                //   context,
+                //   MaterialPageRoute(builder: (context) => HomePage()),
+                //   (route) => false,
+                // );
+                slideRightWidget(newPage: HomePage(), context: context, clearStack: true);
               },
             ),
           ],

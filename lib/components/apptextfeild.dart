@@ -3,6 +3,8 @@ import 'package:fudikoclient/utils/constants.dart';
 
 class AppTextFeild extends StatelessWidget {
   final String? text;
+  final bool? enableInteractiveSelection;  
+  final VoidCallback? onSuffixTap;
   final TextEditingController? controller;
   final IconData? icon;
   final IconData? suffixIcon;
@@ -16,13 +18,15 @@ class AppTextFeild extends StatelessWidget {
   final VoidCallback? suffixIconOnTap;
   final VoidCallback? onboxTap;
   final bool? isreadonly;
+  final TextInputType? keyboardType;
 
-  const 
-  AppTextFeild({
+  const AppTextFeild({
     super.key,
     this.text,
     this.controller,
     this.icon,
+   this.enableInteractiveSelection, 
+    this.onSuffixTap,
     this.suffixIcon,
     this.maxlines,
     this.size,
@@ -31,7 +35,10 @@ class AppTextFeild extends StatelessWidget {
     this.textColor,
     this.isTextCenter,
     this.iconOnTap,
-    this.isreadonly, this.suffixIconOnTap, this.onboxTap
+    this.isreadonly,
+    this.suffixIconOnTap,
+    this.onboxTap,
+    this.keyboardType,
   });
 
   @override
@@ -56,7 +63,7 @@ class AppTextFeild extends StatelessWidget {
           children: [
             icon != null
                 ? GestureDetector(
-                  onTap: iconOnTap,
+                    onTap: iconOnTap,
                     child: Icon(icon, color: iconColor ?? Colors.grey),
                   )
                 : SizedBox.shrink(),
@@ -72,6 +79,8 @@ class AppTextFeild extends StatelessWidget {
                 textAlign: isTextCenter == null
                     ? TextAlign.start
                     : TextAlign.center,
+                keyboardType: keyboardType,
+                enableInteractiveSelection: enableInteractiveSelection ?? true,
                 decoration: InputDecoration(
                   hintText: text,
                   hintStyle: TextStyle(
@@ -86,9 +95,13 @@ class AppTextFeild extends StatelessWidget {
               ),
             ),
             suffixIcon != null
-                ? InkWell(onTap: (){
-                  suffixIconOnTap!();
-                },child: Icon(suffixIcon, color: iconColor ??Colors.grey))
+                ? InkWell(
+                    onTap: onSuffixTap,
+                    borderRadius: BorderRadius.circular(
+                      20,
+                    ), // ← rounds the ripple
+                    child: Icon(suffixIcon, color: Colors.grey, size: 40),
+                  )
                 : SizedBox.shrink(),
           ],
         ),
@@ -96,3 +109,6 @@ class AppTextFeild extends StatelessWidget {
     );
   }
 }
+
+
+

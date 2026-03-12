@@ -8,7 +8,7 @@ class RestaurantBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
 width: double.infinity,
-     height: 150,
+     height: MediaQuery.of(context).size.height * 0.19,
       decoration: BoxDecoration(
       borderRadius: BorderRadius.circular(24),
         image: DecorationImage(image: AssetImage('assets/images/boxbg.png'),fit:BoxFit.cover),
@@ -21,7 +21,7 @@ width: double.infinity,
       child: Stack(
         children: [
           Positioned(
-            bottom: -8,
+            bottom: 0,
             right: 20,
             child: Image.asset(
               'assets/images/boxbg5.png',

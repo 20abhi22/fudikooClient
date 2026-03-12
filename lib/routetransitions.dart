@@ -124,27 +124,50 @@ Future slideRightWidget({
   required Widget newPage,
   required BuildContext context,
   bool opaque = true,
+  bool clearStack = false,//makes the new page the root of the navigation stack, preventing users from navigating back to previous pages
 }) {
-  return Navigator.of(context).push(
-    PageRouteBuilder(
-      opaque: opaque,
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return newPage;
-      },
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        var begin = Offset(1.0, 0.0);
-        var end = Offset(0.0, 0.0);
-        var curve = Curves.easeIn;
+  // return Navigator.of(context).push(
+  //   PageRouteBuilder(
+  //     opaque: opaque,
+  //     pageBuilder: (context, animation, secondaryAnimation) {
+  //       return newPage;
+  //     },
+  //     transitionsBuilder: (context, animation, secondaryAnimation, child) {
+  //       var begin = Offset(1.0, 0.0);
+  //       var end = Offset(0.0, 0.0);
+  //       var curve = Curves.easeIn;
 
-        var tween = Tween(
-          begin: begin,
-          end: end,
-        ).chain(CurveTween(curve: curve));
+  //       var tween = Tween(
+  //         begin: begin,
+  //         end: end,
+  //       ).chain(CurveTween(curve: curve));
 
-        return SlideTransition(position: animation.drive(tween), child: child);
-      },
-    ),
+  //       return SlideTransition(position: animation.drive(tween), child: child);
+  //     },
+  //   ),
+  // );
+  final route = PageRouteBuilder(
+    opaque: opaque,
+    pageBuilder: (context, animation, secondaryAnimation) => newPage,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      var tween = Tween(
+        begin: const Offset(1.0, 0.0),
+        end: Offset.zero,
+      ).chain(CurveTween(curve: Curves.easeIn));
+
+      return SlideTransition(position: animation.drive(tween), child: child);
+    },
   );
+
+  if (clearStack) {
+    return Navigator.of(context).pushAndRemoveUntil(
+      route,
+      (route) => false,       // ← clears all previous routes
+    );
+  }
+
+  return Navigator.of(context).push(route);
+
 }
 
 /// Custom page animation with new page sliding in from lef side
@@ -180,6 +203,7 @@ Future slideUpWidget({
   required Widget newPage,
   required BuildContext context,
   bool opaque = true,
+  
 }) {
   return Navigator.of(context).push(
     PageRouteBuilder(

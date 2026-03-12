@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appfilterdropdown.dart';
 import 'package:fudikoclient/components/appsearchbar.dart';
 import 'package:fudikoclient/components/apptext.dart';
+import 'package:fudikoclient/model/auth/mapplace-model.dart';
 import 'package:fudikoclient/model/restaurant/restaurant-model.dart';
 import 'package:fudikoclient/screens/tabs/components/restaurantCard.dart';
 import 'package:fudikoclient/screens/tabs/home/addnumberofpeople.dart';
@@ -10,12 +11,24 @@ import 'package:fudikoclient/screens/tabs/home/filterbottommodal.dart';
 import 'package:fudikoclient/screens/tabs/home/rating.dart';
 import 'package:fudikoclient/screens/tabs/home/timebottommodal.dart';
 import 'package:fudikoclient/screens/tabs/profile/restaurantProfile.dart';
+import 'package:fudikoclient/service/auth/map-service.dart';
 import 'package:fudikoclient/service/restaurant/restaurant-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:fudikoclient/utils/tokens.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 class Home extends StatefulWidget {
-  const Home({super.key});
+  final String currentCity;
+  final double? currentLat;
+  final double? currentLng;
+
+  const Home({
+    super.key,
+    this.currentCity = "Locating...",
+    this.currentLat,
+    this.currentLng,
+  });
 
   @override
   State<Home> createState() => _HomeState();
@@ -34,6 +47,10 @@ class _HomeState extends State<Home> {
   // double selectedDistance = 0;
   // List<RestaurantModel> filteredList = [];
 
+  late String _currentCity;
+  double? _currentLat;
+  double? _currentLng;
+
   bool isClicked = false;
   bool isOpen = false;
   bool isBookingModalOpen = false;
@@ -46,13 +63,15 @@ class _HomeState extends State<Home> {
   int? selectedTypeIndex;
   double selectedDistance = 0;
   DateTime? selectedDateTime;
-  // bool _mounted = true;
 
   @override
   void initState() {
-    getAllRestaurtantList();
-
     super.initState();
+    _currentCity = widget.currentCity;
+    _currentLat = widget.currentLat;
+    _currentLng = widget.currentLng;
+
+    getAllRestaurtantList();
   }
 
   // Future<void> getAllRestaurtantList() async {
@@ -132,6 +151,41 @@ class _HomeState extends State<Home> {
     }
   }
 
+  Future<void> _fetchLocation() async {
+    try {
+      LocationPermission permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        setState(() => _currentCity = "Location denied");
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      setState(() {
+        _currentLat = position.latitude;
+        _currentLng = position.longitude;
+      });
+
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        final p = placemarks.first;
+        setState(() {
+          _currentCity = p.locality ?? p.subLocality ?? p.name ?? "Unknown";
+        });
+      }
+    } catch (e) {
+      setState(() => _currentCity = "Unknown");
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     // bool isLoading = false;
@@ -144,7 +198,10 @@ class _HomeState extends State<Home> {
             children: [
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 25.h),
-                child: AppSearchBar(),
+                child: AppSearchBar(
+                  city: _currentCity,
+                  onLocationTap: _showLocationPicker,
+                ),
               ),
               Expanded(
                 child: SingleChildScrollView(
@@ -548,6 +605,166 @@ class _HomeState extends State<Home> {
           );
         },
       ),
+    );
+  }
+   Future<void> _showLocationPicker() async {
+    final MapService mapService = MapService();
+    List<String> places = [];
+    List<MapPlacesResponse> locations = [];
+    bool isSearchLoading = false;
+    final TextEditingController searchController = TextEditingController();
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 20.w,
+                right: 20.w,
+                top: 20.h,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Handle bar
+                  Container(
+                    width: 40.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  AppText(
+                    text: "Select Location",
+                    size: 18,
+                    fontWeight: FontWeight.w600,
+                    color: appTextColor3,
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // Use current location button
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      _fetchLocation();
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 12.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: appButtonColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.my_location,
+                            color: appButtonColor,
+                            size: 20.w,
+                          ),
+                          SizedBox(width: 10.w),
+                          AppText(
+                            text: "Use current location",
+                            size: 14,
+                            fontWeight: FontWeight.w500,
+                            color: appButtonColor,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // Search field
+                  TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      hintText: "Search location...",
+                      prefixIcon: Icon(Icons.search, color: appTextColor3),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.r),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.r),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                    ),
+                    onChanged: (val) async {
+                      if (val.length >= 2) {
+                        setModalState(() => isSearchLoading = true);
+                        final response = await mapService.listPlaces(val);
+                        setModalState(() {
+                          places = response
+                              .map((p) => p.mainText ?? '')
+                              .toList();
+                          locations = response;
+                          isSearchLoading = false;
+                        });
+                      }
+                    },
+                  ),
+                  SizedBox(height: 10.h),
+
+                  // Results list
+                  if (isSearchLoading)
+                    Padding(
+                      padding: EdgeInsets.all(16.h),
+                      child: CircularProgressIndicator(),
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: places.length,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          leading: Icon(
+                            Icons.location_on,
+                            color: appTextColor3,
+                          ),
+                          title: Text(places[index]),
+                          onTap: () async {
+                            final placeId = locations[index].placeId ?? '';
+                            try {
+                              final coords = await mapService.getPlace(placeId);
+                              setState(() {
+                                _currentCity = places[index];
+                                _currentLat = double.tryParse(
+                                  coords.lat.toString(),
+                                );
+                                _currentLng = double.tryParse(
+                                  coords.lng.toString(),
+                                );
+                              });
+                            } catch (e) {
+                              setState(() => _currentCity = places[index]);
+                            }
+                            if (!mounted) return;
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
+                    ),
+                  SizedBox(height: 20.h),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

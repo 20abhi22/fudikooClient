@@ -73,9 +73,10 @@ class _InfoPageState extends State<InfoPage> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(response.message)));
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => Otp()),
+          (route) => false,
         );
       } else {
         if (!mounted) return;

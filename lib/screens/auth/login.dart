@@ -4,6 +4,7 @@ import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/components/apptextfeild.dart';
 import 'package:fudikoclient/model/auth/login-model.dart';
+import 'package:fudikoclient/routetransitions.dart';
 import 'package:fudikoclient/screens/auth/changepassword.dart';
 import 'package:fudikoclient/screens/auth/otp.dart';
 import 'package:fudikoclient/screens/auth/register.dart';
@@ -76,10 +77,12 @@ class _LoginState extends State<Login> {
     if (response.status) {
       await saveToken(response.token!);
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage()),
-      );
+      // Navigator.pushAndRemoveUntil(
+      //   context,
+      //   MaterialPageRoute(builder: (context) => HomePage()),
+      //   (route) => false,
+      // );
+    slideRightWidget(newPage: HomePage(), context: context, clearStack: true);  
       print(response.token);
     } else {
       if (!mounted) return;
@@ -118,15 +121,15 @@ class _LoginState extends State<Login> {
                           ),
                         ),
                       ),
-                      Positioned(
-                        bottom: MediaQuery.of(context).size.height / 15,
-                        right: MediaQuery.of(context).size.width / 4,
-                        child: AppText(
-                          text: "PARTNER APP",
-                          size: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      // Positioned(
+                      //   bottom: MediaQuery.of(context).size.height / 15,
+                      //   right: MediaQuery.of(context).size.width / 4,
+                      //   child: AppText(
+                      //     text: "PARTNER APP",
+                      //     size: 20,
+                      //     fontWeight: FontWeight.bold,
+                      //   ),
+                      // ),
                     ],
                   ),
                   AppTextFeild(
@@ -154,9 +157,7 @@ class _LoginState extends State<Login> {
                     onTap: () => {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) =>  Otp(),
-                        ),
+                        MaterialPageRoute(builder: (context) => Otp()),
                       ),
                     },
                     child: AppText(

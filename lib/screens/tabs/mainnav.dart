@@ -9,7 +9,11 @@ import 'package:fudikoclient/screens/tabs/reservation/reservation.dart';
 import 'package:fudikoclient/utils/constants.dart';
 
 class MainNavPage extends StatefulWidget {
-  const MainNavPage({super.key});
+  final String? city;
+  final double? lat;
+  final double? lng;
+
+  const MainNavPage({this.city, this.lat, this.lng});
 
   @override
   State<MainNavPage> createState() => _MainNavPageState();
@@ -35,7 +39,12 @@ class _MainNavPageState extends State<MainNavPage> {
   @override
   Widget build(BuildContext context) {
     screens = [
-      Home(),
+      Home(
+        currentCity: widget.city ?? "Locating...",
+        currentLat: widget.lat,
+        currentLng: widget.lng,
+      ),
+
       Inquery(),
       Reservation(),
       Favorite(),
