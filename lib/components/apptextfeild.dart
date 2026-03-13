@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fudikoclient/utils/constants.dart';
 
 class AppTextFeild extends StatelessWidget {
   final String? text;
-  final bool? enableInteractiveSelection;  
+  final bool? enableInteractiveSelection;
   final VoidCallback? onSuffixTap;
   final TextEditingController? controller;
   final IconData? icon;
@@ -19,13 +20,16 @@ class AppTextFeild extends StatelessWidget {
   final VoidCallback? onboxTap;
   final bool? isreadonly;
   final TextInputType? keyboardType;
+  final int? maxLength;
+  final ValueChanged<String>? onChanged;
+  final FocusNode? focusNode;
 
   const AppTextFeild({
     super.key,
     this.text,
     this.controller,
     this.icon,
-   this.enableInteractiveSelection, 
+    this.enableInteractiveSelection,
     this.onSuffixTap,
     this.suffixIcon,
     this.maxlines,
@@ -39,6 +43,9 @@ class AppTextFeild extends StatelessWidget {
     this.suffixIconOnTap,
     this.onboxTap,
     this.keyboardType,
+    this.maxLength,
+    this.onChanged,
+    this.focusNode,
   });
 
   @override
@@ -71,8 +78,10 @@ class AppTextFeild extends StatelessWidget {
             Expanded(
               child: TextField(
                 onTap: onboxTap,
+                focusNode: focusNode,
                 readOnly: isreadonly ?? false,
                 maxLines: maxlines ?? 1,
+                maxLength: maxLength,
                 controller: controller,
                 cursorColor: appTextColor,
                 obscureText: isObscure ?? false,
@@ -81,7 +90,12 @@ class AppTextFeild extends StatelessWidget {
                     : TextAlign.center,
                 keyboardType: keyboardType,
                 enableInteractiveSelection: enableInteractiveSelection ?? true,
+                onChanged: onChanged, // ← add
+                inputFormatters: maxLength == 1
+                    ? [FilteringTextInputFormatter.digitsOnly]
+                    : null,
                 decoration: InputDecoration(
+                  counterText: '',
                   hintText: text,
                   hintStyle: TextStyle(
                     fontWeight: FontWeight.w400,
@@ -109,6 +123,3 @@ class AppTextFeild extends StatelessWidget {
     );
   }
 }
-
-
-
