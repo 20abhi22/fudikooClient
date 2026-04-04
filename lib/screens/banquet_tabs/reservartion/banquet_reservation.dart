@@ -9,14 +9,14 @@ import 'package:fudikoclient/screens/tabs/reservation/reservationBox.dart';
 import 'package:fudikoclient/screens/tabs/reservation/searchBox.dart';
 import 'package:fudikoclient/utils/constants.dart';
 
-class Reservation extends StatefulWidget {
-  const Reservation({super.key});
+class BanquetReservation extends StatefulWidget {
+  const BanquetReservation({super.key});
 
   @override
-  State<Reservation> createState() => _ReservationState();
+  State<BanquetReservation> createState() => _BanquetReservationState();
 }
 
-class _ReservationState extends State<Reservation> {
+class _BanquetReservationState extends State<BanquetReservation> {
   bool isDeletePressed = false;
   bool isConfirmedPressed = false;
   bool isBookingCanceled = false;
@@ -27,9 +27,6 @@ class _ReservationState extends State<Reservation> {
   bool isCateringRequestPressed = false;
   String selectedStatus = "Entered the wrong details";
   String mainSelectedStatus = "Party";
-
-
-
   String selectedFilter = "All Bookings";
 
   //----------------temp data------------------
@@ -83,7 +80,6 @@ class _ReservationState extends State<Reservation> {
 
   //----------------temp data------------------
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,7 +89,8 @@ class _ReservationState extends State<Reservation> {
           SingleChildScrollView(
             // child: mainSelectedStatus == "Party" ? isPartySearchPressed ? _viewSearchWidget() : _buildMain()
             //       : isCateringSearchPressed ? _viewCateringSearchWidget() : _buildCateringMain(),
-            child: isPartySearchPressed ? _viewSearchWidget() : _buildMain(),
+            // child:isPartySearchPressed ? _viewSearchWidget() : _buildMain(),
+            child: _viewSearchWidget(),
           ),
           // Padding(
           //   padding:  EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
@@ -108,7 +105,10 @@ class _ReservationState extends State<Reservation> {
           // ),
           if (isDeletePressed)
             Positioned.fill(
-              child: Container(color: Colors.black38, child: _deleteBox()),
+              child: Container(
+                color: Colors.black38,
+                child: _deleteSearchBox(),
+              ),
             ),
           if (isPartyRequestPressed)
             Positioned.fill(
@@ -157,7 +157,7 @@ class _ReservationState extends State<Reservation> {
   //           });
   //         },
   //         child: Padding(
-  //           padding:  EdgeInsets.only(left: 20.w, right: 20.w, top: 80.h),
+  //           padding:  EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h),
   //           child: AppTextFeild(
   //             text: "Enter the Coupon Number",
   //             textColor: appTextColor3,
@@ -408,141 +408,141 @@ class _ReservationState extends State<Reservation> {
   //   );
   // }
 
-  Widget _buildMain() {
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              isPartySearchPressed = !isPartySearchPressed;
-            });
-          },
-          child: Padding(
-            padding:  EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h),
-            child: Container(
-              padding:  EdgeInsets.symmetric(vertical: 20.h, horizontal: 20.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Text(
-                  "Search Restaurant",
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w400,
-                    color: appTextColor3,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        SizedBox(height: 20.h),
-        SizedBox(
-          width: 200,
-          child: AppFilterDropDown(
-            hint: "filter",
-            icon: Icons.tune_outlined,
-            toggleDropdown: () {
-              showModalBottomSheet(
-                backgroundColor: Colors.white,
-                context: context,
-                isScrollControlled: true,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                ),
-                builder: (context) {
-                  return Padding(
-                    padding:  EdgeInsets.all(30.w),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        SizedBox(height: 16.h),
-                        Container(
-                          width: MediaQuery.of(context).size.width,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          padding:  EdgeInsets.all(16.w),
-                          child: Column(
-                            children: [
-                              Divider(color: Colors.grey[200]),
-                              SizedBox(height: 10.h),
-                              AppText(
-                                text: "item1",
-                                size: 15,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black,
-                              ),
-                              SizedBox(height: 10.h),
-                              Divider(color: Colors.grey[200]),
-                              SizedBox(height: 10.h),
-                              AppText(
-                                text: "item2",
-                                size: 15,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black,
-                              ),
-                              SizedBox(height: 10.h),
-                              Divider(color: Colors.grey[200]),
-                              SizedBox(height: 10.h),
-                              AppText(
-                                text: "item3",
-                                size: 15,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black,
-                              ),
-                              SizedBox(height: 10.h),
-                              Divider(color: Colors.grey[200]),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-        SizedBox(height: 20.h),
-        Padding(
-          padding:  EdgeInsets.symmetric(horizontal: 20.w),
-          child: ListView.builder(
-            itemCount: 3,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemBuilder: (context, index) {
-              return ReservationBox(
-                onCancelTap: () {
-                  setState(() {
-                    isDeletePressed = !isDeletePressed;
-                  });
-                },
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
+  // Widget _buildMain() {
+  //   return Column(
+  //     children: [
+  //       GestureDetector(
+  //         onTap: () {
+  //           setState(() {
+  //             isPartySearchPressed = !isPartySearchPressed;
+  //           });
+  //         },
+  //         child: Padding(
+  //           padding:  EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h),
+  //           child: Container(
+  //             padding:  EdgeInsets.symmetric(vertical: 20.h, horizontal: 20.w),
+  //             decoration: BoxDecoration(
+  //               color: Colors.white,
+  //               borderRadius: BorderRadius.circular(20),
+  //               boxShadow: [
+  //                 BoxShadow(
+  //                   color: Colors.black.withOpacity(0.2),
+  //                   blurRadius: 10,
+  //                   offset: const Offset(0, 4),
+  //                 ),
+  //               ],
+  //             ),
+  //             child: Center(
+  //               child: Text(
+  //                 "Search Restaurant",
+  //                 style: TextStyle(
+  //                   fontSize: 13.sp,
+  //                   fontWeight: FontWeight.w400,
+  //                   color: appTextColor3,
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+  //       SizedBox(height: 20.h),
+  //       SizedBox(
+  //         width: 200,
+  //         child: AppFilterDropDown(
+  //           hint: "filter",
+  //           icon: Icons.tune_outlined,
+  //           toggleDropdown: () {
+  //             showModalBottomSheet(
+  //               backgroundColor: Colors.white,
+  //               context: context,
+  //               isScrollControlled: true,
+  //               shape: const RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+  //               ),
+  //               builder: (context) {
+  //                 return Padding(
+  //                   padding:  EdgeInsets.all(30.w),
+  //                   child: Column(
+  //                     mainAxisSize: MainAxisSize.min,
+  //                     children: [
+  //                       Container(
+  //                         width: 40,
+  //                         height: 5,
+  //                         decoration: BoxDecoration(
+  //                           color: Colors.grey[300],
+  //                           borderRadius: BorderRadius.circular(10),
+  //                         ),
+  //                       ),
+  //                       SizedBox(height: 16.h),
+  //                       Container(
+  //                         width: MediaQuery.of(context).size.width,
+  //                         decoration: BoxDecoration(
+  //                           color: Colors.white,
+  //                           borderRadius: BorderRadius.circular(20),
+  //                         ),
+  //                         padding:  EdgeInsets.all(16.w),
+  //                         child: Column(
+  //                           children: [
+  //                             Divider(color: Colors.grey[200]),
+  //                             SizedBox(height: 10.h),
+  //                             AppText(
+  //                               text: "item1",
+  //                               size: 15,
+  //                               fontWeight: FontWeight.w500,
+  //                               color: Colors.black,
+  //                             ),
+  //                             SizedBox(height: 10.h),
+  //                             Divider(color: Colors.grey[200]),
+  //                             SizedBox(height: 10.h),
+  //                             AppText(
+  //                               text: "item2",
+  //                               size: 15,
+  //                               fontWeight: FontWeight.w500,
+  //                               color: Colors.black,
+  //                             ),
+  //                             SizedBox(height: 10.h),
+  //                             Divider(color: Colors.grey[200]),
+  //                             SizedBox(height: 10.h),
+  //                             AppText(
+  //                               text: "item3",
+  //                               size: 15,
+  //                               fontWeight: FontWeight.w500,
+  //                               color: Colors.black,
+  //                             ),
+  //                             SizedBox(height: 10.h),
+  //                             Divider(color: Colors.grey[200]),
+  //                           ],
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                 );
+  //               },
+  //             );
+  //           },
+  //         ),
+  //       ),
+  //       SizedBox(height: 20.h),
+  //       Padding(
+  //         padding:  EdgeInsets.symmetric(horizontal: 20.w),
+  //         child: ListView.builder(
+  //           itemCount: 3,
+  //           shrinkWrap: true,
+  //           physics: const NeverScrollableScrollPhysics(),
+  //           itemBuilder: (context, index) {
+  //             return SearchBox(
+  //               onCancelTap: () {
+  //                 setState(() {
+  //                   isDeletePressed = !isDeletePressed;
+  //                 });
+  //               },
+  //             );
+  //           },
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _viewSearchWidget() {
     return Column(
@@ -554,7 +554,7 @@ class _ReservationState extends State<Reservation> {
             });
           },
           child: Padding(
-            padding:  EdgeInsets.only(left: 20.w, right: 20.w, top: 80.h),
+            padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h),
             child: AppTextFeild(
               text: "Enter the Coupon Number",
               textColor: appTextColor3,
@@ -566,105 +566,190 @@ class _ReservationState extends State<Reservation> {
           ),
         ),
         SizedBox(height: 20.h),
+        // SizedBox(
+        //   width: 200,
+        //   child: AppFilterDropDown(
+        //     hint: "filter",
+        //     icon: Icons.tune_outlined,
+        //     toggleDropdown: () {
+        //       showModalBottomSheet(
+        //         backgroundColor: Colors.white,
+        //         context: context,
+        //         isScrollControlled: true,
+        //         shape: const RoundedRectangleBorder(
+        //           borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+        //         ),
+        //         builder: (context) {
+        //           return Padding(
+        //             padding: EdgeInsets.all(30.w),
+        //             child: Column(
+        //               mainAxisSize: MainAxisSize.min,
+        //               children: [
+        //                 Container(
+        //                   width: 40,
+        //                   height: 5,
+        //                   decoration: BoxDecoration(
+        //                     color: Colors.grey[300],
+        //                     borderRadius: BorderRadius.circular(10),
+        //                   ),
+        //                 ),
+        //                 SizedBox(height: 16.h),
+        //                 Container(
+        //                   width: MediaQuery.of(context).size.width,
+        //                   decoration: BoxDecoration(
+        //                     color: Colors.white,
+        //                     borderRadius: BorderRadius.circular(20),
+        //                   ),
+        //                   padding: EdgeInsets.all(16.w),
+        //                   child: Column(
+        //                     children: [
+        //                       Divider(color: Colors.grey[200]),
+        //                       SizedBox(height: 10.h),
+        //                       AppText(
+        //                         text: "item1",
+        //                         size: 15,
+        //                         fontWeight: FontWeight.w500,
+        //                         color: Colors.black,
+        //                       ),
+        //                       SizedBox(height: 10.h),
+        //                       Divider(color: Colors.grey[200]),
+        //                       SizedBox(height: 10.h),
+        //                       AppText(
+        //                         text: "item2",
+        //                         size: 15,
+        //                         fontWeight: FontWeight.w500,
+        //                         color: Colors.black,
+        //                       ),
+        //                       SizedBox(height: 10.h),
+        //                       Divider(color: Colors.grey[200]),
+        //                       SizedBox(height: 10.h),
+        //                       AppText(
+        //                         text: "item3",
+        //                         size: 15,
+        //                         fontWeight: FontWeight.w500,
+        //                         color: Colors.black,
+        //                       ),
+        //                       SizedBox(height: 10.h),
+        //                       Divider(color: Colors.grey[200]),
+        //                     ],
+        //                   ),
+        //                 ),
+        //               ],
+        //             ),
+        //           );
+        //         },
+        //       );
+        //     },
+        //   ),
+        // ),
         SizedBox(
-          width: 200,
-          child: AppFilterDropDown(
-            hint: "filter",
-            icon: Icons.tune_outlined,
-            toggleDropdown: () {
-              showModalBottomSheet(
-                backgroundColor: Colors.white,
-                context: context,
-                isScrollControlled: true,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                ),
-                builder: (context) {
-                  return Padding(
-                    padding:  EdgeInsets.all(30.w),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        SizedBox(height: 16.h),
-                        Container(
-                          width: MediaQuery.of(context).size.width,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          padding:  EdgeInsets.all(16.w),
-                          child: Column(
-                            children: [
-                              Divider(color: Colors.grey[200]),
-                              SizedBox(height: 10.h),
-                              AppText(
-                                text: "item1",
-                                size: 15,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black,
-                              ),
-                              SizedBox(height: 10.h),
-                              Divider(color: Colors.grey[200]),
-                              SizedBox(height: 10.h),
-                              AppText(
-                                text: "item2",
-                                size: 15,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black,
-                              ),
-                              SizedBox(height: 10.h),
-                              Divider(color: Colors.grey[200]),
-                              SizedBox(height: 10.h),
-                              AppText(
-                                text: "item3",
-                                size: 15,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black,
-                              ),
-                              SizedBox(height: 10.h),
-                              Divider(color: Colors.grey[200]),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
-          ),
+  width: 200,
+  child: AppFilterDropDown(
+    hint: selectedFilter,  // ← shows selected option instead of "filter"
+    icon: Icons.tune_outlined,
+    toggleDropdown: () {
+      showModalBottomSheet(
+        backgroundColor: Colors.white,
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
         ),
+        builder: (context) {
+          return Padding(
+            padding: EdgeInsets.all(30.w),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                Container(
+                  width: MediaQuery.of(context).size.width,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: EdgeInsets.all(16.w),
+                  child: Column(
+                    children: [
+                      _buildFilterOption("All Bookings"),
+                      Divider(color: Colors.grey[200]),
+                      _buildFilterOption("Confirmed"),
+                      Divider(color: Colors.grey[200]),
+                      _buildFilterOption("Rejected"),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  ),
+),
         SizedBox(height: 20.h),
+        // Padding(
+        //       padding:  EdgeInsets.symmetric(horizontal: 20.w),
+        //   child: ListView.builder(
+        //     itemCount: 3,
+        //     shrinkWrap: true,
+        //     physics: const NeverScrollableScrollPhysics(),
+        //     itemBuilder: (context, index) {
+        //       return SearchBox(
+        //         onCancelTap: () {
+        //           setState(() {
+        //             isSearchDeletePressed = !isSearchDeletePressed;
+        //           });
+        //         },
+        //         onRequestTap: () {
+        //           setState(() {
+        //             isPartyRequestPressed = !isPartyRequestPressed;
+        //           });
+        //         },
+        //       );
+        //     },
+        //   ),
+        // ),
         Padding(
-              padding:  EdgeInsets.symmetric(horizontal: 20.w),
-          child: ListView.builder(
-            itemCount: 3,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemBuilder: (context, index) {
-              final booking = _filteredBookings[index];
-              return SearchBox(
-                onCancelTap: () {
-                  setState(() {
-                    isSearchDeletePressed = !isSearchDeletePressed;
-                  });
-                },
-                onRequestTap: () {
-                  setState(() {
-                    isPartyRequestPressed = !isPartyRequestPressed;
-                  });
-                }, booking: booking,
-              );
-            },
-          ),
+          padding: EdgeInsets.symmetric(horizontal: 20.w),
+          child: _filteredBookings.isEmpty
+              ? Padding(
+                  padding: EdgeInsets.symmetric(vertical: 60.h),
+                  child: Center(
+                    child: AppText(
+                      text: "No bookings found",
+                      size: 15,
+                      fontWeight: FontWeight.w500,
+                      color: appTextColor3,
+                      isCentered: true,
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: _filteredBookings.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    final booking = _filteredBookings[index];
+                    return SearchBox(
+                      booking: booking,
+                      onCancelTap: () => setState(
+                        () => isSearchDeletePressed = !isSearchDeletePressed,
+                      ),
+                      onRequestTap: () => setState(
+                        () => isPartyRequestPressed = !isPartyRequestPressed,
+                      ),
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -680,10 +765,10 @@ class _ReservationState extends State<Reservation> {
         ),
         Center(
           child: Padding(
-            padding:  EdgeInsets.symmetric(horizontal: 30.w),
+            padding: EdgeInsets.symmetric(horizontal: 30.w),
             child: Container(
               width: double.infinity,
-              padding:  EdgeInsets.only(
+              padding: EdgeInsets.only(
                 left: 40.w,
                 right: 40.w,
                 top: 30.h,
@@ -768,7 +853,7 @@ class _ReservationState extends State<Reservation> {
                     color: appLinkColor2,
                     isCentered: true,
                   ),
-                  SizedBox(height: 20.h ),
+                  SizedBox(height: 20.h),
                   SizedBox(
                     width: 150,
                     height: 40,
@@ -881,13 +966,13 @@ class _ReservationState extends State<Reservation> {
           height: MediaQuery.of(context).size.height,
           width: MediaQuery.of(context).size.width,
           decoration: BoxDecoration(color: Colors.black.withOpacity(0.5)),
-          ),
+        ),
         Center(
           child: Padding(
-            padding:  EdgeInsets.symmetric(horizontal: 30.w),
+            padding: EdgeInsets.symmetric(horizontal: 30.w),
             child: Container(
               width: double.infinity,
-              padding:  EdgeInsets.only(
+              padding: EdgeInsets.only(
                 left: 40.w,
                 right: 40.w,
                 top: 30.h,
@@ -957,10 +1042,10 @@ class _ReservationState extends State<Reservation> {
         ),
         Center(
           child: Padding(
-            padding:  EdgeInsets.symmetric(horizontal: 30.w),
+            padding: EdgeInsets.symmetric(horizontal: 30.w),
             child: Container(
               width: double.infinity,
-              padding:  EdgeInsets.only(
+              padding: EdgeInsets.only(
                 left: 40.w,
                 right: 40.w,
                 top: 30.h,
@@ -1011,7 +1096,7 @@ class _ReservationState extends State<Reservation> {
                                 isBookingCanceled = !isBookingCanceled;
                               });
                             },
-                              borderRadius: 5.r,
+                            borderRadius: 5.r,
                             bgColor1: Colors.green,
                             bgColor2: Colors.green,
                             size: 12,
@@ -1029,7 +1114,7 @@ class _ReservationState extends State<Reservation> {
                                 isDeletePressed = !isDeletePressed;
                               });
                             },
-                                size: 12,
+                            size: 12,
                             borderRadius: 5.r,
                             bgColor1: Colors.red,
                             bgColor2: Colors.red,
@@ -1057,10 +1142,10 @@ class _ReservationState extends State<Reservation> {
         ),
         Center(
           child: Padding(
-            padding:  EdgeInsets.symmetric(horizontal: 30.w),
+            padding: EdgeInsets.symmetric(horizontal: 30.w),
             child: Container(
               width: double.infinity,
-              padding:  EdgeInsets.only(
+              padding: EdgeInsets.only(
                 left: 40.w,
                 right: 40.w,
                 top: 30.h,
@@ -1088,7 +1173,7 @@ class _ReservationState extends State<Reservation> {
                     isCentered: true,
                     lineSpacing: 1.2,
                   ),
-                  SizedBox(height: 10.h ),
+                  SizedBox(height: 10.h),
                   Row(
                     children: [
                       Expanded(
@@ -1120,7 +1205,7 @@ class _ReservationState extends State<Reservation> {
                                 isDeletePressed = !isDeletePressed;
                               });
                             },
-                              size: 12,
+                            size: 12,
                             borderRadius: 5.r,
                             bgColor1: Colors.red,
                             bgColor2: Colors.red,
@@ -1138,16 +1223,49 @@ class _ReservationState extends State<Reservation> {
     );
   }
 
-  Widget _viewCateringRequestWidget(){
+  Widget _buildFilterOption(String label) {
+  final bool isSelected = selectedFilter == label;
+
+  return GestureDetector(
+    onTap: () {
+      setState(() {
+        selectedFilter = label;
+      });
+      Navigator.pop(context); // closes the bottom sheet
+    },
+    child: Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
+      decoration: BoxDecoration(
+        gradient: isSelected
+            ? const LinearGradient(
+                colors: [Color(0xFFEC7B2D), Color(0xFFF7A440)],
+              )
+            : null,
+        color: isSelected ? null : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: AppText(
+        text: label,
+        size: 15,
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+        color: isSelected ? Colors.white : Colors.black,
+        isCentered: true,
+      ),
+    ),
+  );
+}
+
+  Widget _viewCateringRequestWidget() {
     return Positioned.fill(
       child: Container(
         color: Colors.black54,
         child: Center(
           child: Padding(
-            padding:  EdgeInsets.symmetric(horizontal: 30.w),
+            padding: EdgeInsets.symmetric(horizontal: 30.w),
             child: Container(
               width: double.infinity,
-              padding:  EdgeInsets.symmetric(horizontal: 30.w, vertical: 30.h),
+              padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 30.h),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
@@ -1167,7 +1285,8 @@ class _ReservationState extends State<Reservation> {
                       GestureDetector(
                         onTap: () {
                           setState(() {
-                            isCateringRequestPressed = !isCateringRequestPressed;
+                            isCateringRequestPressed =
+                                !isCateringRequestPressed;
                           });
                         },
                         child: Icon(
@@ -1252,7 +1371,7 @@ class _ReservationState extends State<Reservation> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(Icons.people, size: 20, color: appTextColor2),
-                      SizedBox(width: 10.w  ),
+                      SizedBox(width: 10.w),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1367,7 +1486,7 @@ class _ReservationState extends State<Reservation> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 20.h ),
+                  SizedBox(height: 20.h),
                 ],
               ),
             ),
@@ -1377,18 +1496,16 @@ class _ReservationState extends State<Reservation> {
     );
   }
 
-
-
   Widget _viewPartyRequestWidget() {
     return Positioned.fill(
       child: Container(
         color: Colors.black54,
         child: Center(
           child: Padding(
-            padding:  EdgeInsets.symmetric(horizontal: 30.w),
+            padding: EdgeInsets.symmetric(horizontal: 30.w),
             child: Container(
               width: double.infinity,
-              padding:  EdgeInsets.symmetric(horizontal: 30.w, vertical: 30.h),
+              padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 30.h),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20.r),
@@ -1508,7 +1625,7 @@ class _ReservationState extends State<Reservation> {
                               fontWeight: FontWeight.w500,
                               color: Colors.grey,
                             ),
-                            SizedBox(height: 5.h  ),
+                            SizedBox(height: 5.h),
                             AppText(
                               text: "April 12 - 2:30 pm",
                               size: 15,

@@ -7,6 +7,7 @@ import 'package:fudikoclient/screens/aboutapp/about.dart';
 import 'package:fudikoclient/screens/auth/changepassword.dart';
 import 'package:fudikoclient/screens/auth/login.dart';
 import 'package:fudikoclient/screens/badge/badgeinfo.dart';
+import 'package:fudikoclient/screens/banquet_tabs/main_banquet_nav.dart';
 import 'package:fudikoclient/screens/complaint/complaint.dart';
 import 'package:fudikoclient/screens/contact/contact.dart';
 import 'package:fudikoclient/screens/earnPoints/earnPoints.dart';
@@ -19,7 +20,7 @@ import 'package:fudikoclient/screens/languages/languages.dart';
 import 'package:fudikoclient/screens/notification/notification.dart';
 import 'package:fudikoclient/screens/notification/notification_setting.dart';
 import 'package:fudikoclient/screens/reward/reward.dart';
-import 'package:fudikoclient/screens/tabs/mainnav.dart';
+import 'package:fudikoclient/screens/tabs/main_restaurant_nav.dart';
 import 'package:fudikoclient/service/auth/map-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:geocoding/geocoding.dart';
@@ -129,14 +130,14 @@ class _HomePageState extends State<HomePage> {
                                     if (index == 0) ...[
                                       // GestureDetector(
                                       //   onTap: () => slideRightWidget(
-                                      //     newPage: MainNavPage(),
+                                      //     newPage: MainRestaurantNavPage(),
                                       //     context: context,
                                       //   ),
                                       //   child: RestaurantBox(),
                                       // ),
                                       InkWell(
                                         onTap: () => slideRightWidget(
-                                          newPage: MainNavPage(
+                                          newPage: MainRestaurantNavPage(
                                             city: _currentCity,
                                             lat: _currentLat,
                                             lng: _currentLng,
@@ -146,7 +147,17 @@ class _HomePageState extends State<HomePage> {
                                         child: RestaurantBox(),
                                       ),
                                       SizedBox(height: screenHeight * 0.012),
-                                      BanquetBox(),
+                                      InkWell(
+                                        onTap: () => slideRightWidget(
+                                          newPage: MainBanquetNavPage(
+                                            city: _currentCity,
+                                            lat: _currentLat,
+                                            lng: _currentLng,
+                                          ),
+                                          context: context,
+                                        ),
+                                        child: BanquetBox(),
+                                      ),
                                       SizedBox(height: screenHeight * 0.012),
                                       CateringBox(),
                                       SizedBox(height: screenHeight * 0.012),

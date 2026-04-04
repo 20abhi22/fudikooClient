@@ -5,7 +5,7 @@ import 'package:fudikoclient/screens/about/aboutLayout.dart';
 import 'package:fudikoclient/screens/auth/info.dart';
 import 'package:fudikoclient/screens/home/homepage.dart';
 import 'package:fudikoclient/screens/splashscreen/splashscreen.dart';
-import 'package:fudikoclient/screens/tabs/mainnav.dart';
+import 'package:fudikoclient/screens/tabs/main_restaurant_nav.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/rendering.dart';
@@ -48,7 +48,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Fudiko Client',
+      title: 'Fudiko',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,

@@ -6,7 +6,7 @@ import 'package:fudikoclient/routetransitions.dart';
 import 'package:fudikoclient/screens/auth/login.dart';
 import 'package:fudikoclient/screens/auth/register.dart';
 import 'package:fudikoclient/screens/home/homepage.dart';
-import 'package:fudikoclient/screens/tabs/mainnav.dart';
+import 'package:fudikoclient/screens/tabs/main_restaurant_nav.dart';
 import 'package:fudikoclient/utils/tokens.dart';
 
 class SplashScreen extends StatefulWidget {

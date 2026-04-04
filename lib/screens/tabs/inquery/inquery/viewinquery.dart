@@ -4,9 +4,10 @@ import 'package:fudikoclient/components/appfilterdropdown.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/model/inquery/list-party-inquery-modal.dart';
 import 'package:fudikoclient/screens/tabs/inquery/common/inqueryBox.dart';
-import 'package:fudikoclient/screens/tabs/mainnav.dart';
+import 'package:fudikoclient/screens/tabs/main_restaurant_nav.dart';
 import 'package:fudikoclient/service/inquery/inquery-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
+import 'package:intl/intl.dart';
 
 class ViewInquery extends StatefulWidget {
   final Function(bool) onEnquiryTap;
@@ -23,12 +24,18 @@ class _ViewInqueryState extends State<ViewInquery> {
   List<InqueryModel> inqueryList = [];
   bool _loading = true;
 
-  InqueryService inqueryService = InqueryService();
+
+  // ── Filter state ─────────────────────────────────────────
+  // "All" | "Today" | "Custom"
+  String selectedFilter = "All";
+  DateTime? customDate; // only set when selectedFilter == "Custom"
+
+  final InqueryService inqueryService = InqueryService();
 
   @override
   void initState() {
-    fetchInqueryList();
     super.initState();
+    fetchInqueryList();
   }
 
   Future<void> fetchInqueryList() async {
@@ -38,19 +45,114 @@ class _ViewInqueryState extends State<ViewInquery> {
       inqueryList = response.enquiries;
       _loading = false;
     });
-    print(inqueryList);
+  }
+
+  // ── Frontend filter ──────────────────────────────────────
+  List<InqueryModel> get _filteredList {
+    if (selectedFilter == "All") return inqueryList;
+
+    final DateTime compareDate =
+        selectedFilter == "Today" ? DateTime.now() : customDate!;
+
+    final String targetDate = DateFormat('yyyy-MM-dd').format(compareDate);
+
+    return inqueryList.where((item) => item.date == targetDate).toList();
+  }
+
+  // ── Filter label shown on button ─────────────────────────
+  String get _filterLabel {
+    if (selectedFilter == "All") return "All";
+    if (selectedFilter == "Today") return "Today";
+    // Custom: show the picked date
+    return DateFormat('MMM d, yyyy').format(customDate!);
+  }
+
+  // ── Date picker for custom filter ───────────────────────
+  Future<void> _pickCustomDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: customDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: const Color(0xFFEC7B2D),
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        customDate = picked;
+        selectedFilter = "Custom";
+      });
+    }
+  }
+
+  // ── Filter option tile ───────────────────────────────────
+  Widget _buildFilterOption(String label, {bool isCustom = false}) {
+    final bool isSelected = isCustom
+        ? selectedFilter == "Custom"
+        : selectedFilter == label;
+
+    return GestureDetector(
+      onTap: () async {
+        if (isCustom) {
+          Navigator.pop(context); // close sheet first
+          await _pickCustomDate();
+        } else {
+          setState(() {
+            selectedFilter = label;
+            if (label != "Custom") customDate = null;
+          });
+          Navigator.pop(context);
+        }
+      },
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [Color(0xFFEC7B2D), Color(0xFFF7A440)],
+                )
+              : null,
+          color: isSelected ? null : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: AppText(
+          text: isCustom
+              ? (selectedFilter == "Custom" && customDate != null
+                  ? DateFormat('MMM d, yyyy').format(customDate!)
+                  : "Select a Date")
+              : label,
+          size: 15,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+          color: isSelected ? Colors.white : Colors.black,
+          isCentered: true,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final filtered = _filteredList;
+
     return Column(
       children: [
-        // ── back button + filter dropdown in one row ──
+        // ── Header row ───────────────────────────────────────
         Padding(
-          padding:  EdgeInsets.only(left: 30.w, right: 30.w, top: 30.h),
+          padding: EdgeInsets.only(left: 30.w, right: 30.w, top: 30.h),
           child: Row(
             children: [
-              // back button
               GestureDetector(
                 onTap: () => widget.onEnquiryTap(false),
                 child: Icon(
@@ -59,19 +161,19 @@ class _ViewInqueryState extends State<ViewInquery> {
                   size: 28.w,
                 ),
               ),
-              // filter dropdown centered
               Expanded(
                 child: Center(
                   child: SizedBox(
                     width: 180.w,
                     child: AppFilterDropDown(
-                      hint: "Today",
+                      hint: _filterLabel, // ← shows selected label
+                      icon: Icons.tune,
                       toggleDropdown: () {
                         showModalBottomSheet(
                           backgroundColor: Colors.white,
                           context: context,
                           isScrollControlled: true,
-                          shape: RoundedRectangleBorder(
+                          shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.vertical(
                               top: Radius.circular(25),
                             ),
@@ -82,6 +184,7 @@ class _ViewInqueryState extends State<ViewInquery> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  // handle bar
                                   Container(
                                     width: 40.w,
                                     height: 5.h,
@@ -100,34 +203,15 @@ class _ViewInqueryState extends State<ViewInquery> {
                                     padding: EdgeInsets.all(16.w),
                                     child: Column(
                                       children: [
+                                        _buildFilterOption("All"),
                                         Divider(color: Colors.grey[200]),
-                                        SizedBox(height: 10.h),
-                                        AppText(
-                                          text: "item1",
-                                          size: 15,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black,
+                                        _buildFilterOption("Today"),
+                                        Divider(color: Colors.grey[200]),
+                                        // "Select a Date" opens date picker
+                                        _buildFilterOption(
+                                          "Select a Date",
+                                          isCustom: true,
                                         ),
-                                        SizedBox(height: 10.h),
-                                        Divider(color: Colors.grey[200]),
-                                        SizedBox(height: 10.h),
-                                        AppText(
-                                          text: "item2",
-                                          size: 15,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black,
-                                        ),
-                                        SizedBox(height: 10.h),
-                                        Divider(color: Colors.grey[200]),
-                                        SizedBox(height: 10.h),
-                                        AppText(
-                                          text: "item3",
-                                          size: 15,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black,
-                                        ),
-                                        SizedBox(height: 10.h),
-                                        Divider(color: Colors.grey[200]),
                                       ],
                                     ),
                                   ),
@@ -137,61 +221,61 @@ class _ViewInqueryState extends State<ViewInquery> {
                           },
                         );
                       },
-                      icon: Icons.tune,
                     ),
                   ),
                 ),
               ),
-              // invisible spacer to balance the back button on the left
-              SizedBox(width: 28.w),
+              SizedBox(width: 28.w), // balance spacer
             ],
           ),
         ),
         SizedBox(height: 20.h),
-        // ── SINGLE list / loading / empty ──
+
+        // ── List / loading / empty ────────────────────────────
         Expanded(
           child: _loading
               ? const Center(child: CircularProgressIndicator())
-              : inqueryList.isEmpty
-              ? Center(
-                  child: AppText(
-                    text: "No enquiries found",
-                    size: 15,
-                    fontWeight: FontWeight.w500,
-                    color: appTextColor3,
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: inqueryList.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: EdgeInsets.only(left: 30.w, right: 30.w),
-                      child: InqueryBox(
-                        uuid: inqueryList[index].uuid,
-                        enquiryId: inqueryList[index].enquiryId,
-                        userId: inqueryList[index].userId,
-                        lat: inqueryList[index].lat,
-                        lng: inqueryList[index].lng,
-                        menuItems: inqueryList[index].menuItems,
-                        people: inqueryList[index].people,
-                        date: inqueryList[index].date,
-                        time: inqueryList[index].time,
-                        estimatedAmount: inqueryList[index].estimatedAmount,
-                        searchRadius: inqueryList[index].searchRadius,
-                        expirationDate: inqueryList[index].expirationDate,
-                        expirationTime: inqueryList[index].expirationTime,
-                        status: inqueryList[index].status,
-                        onDeleted: () {
-                          fetchInqueryList();
-                        },
-                        onEdit: () {
-                          widget.onEnquiryTap(false);
-                        },
-                        enquiry: inqueryList[index],
+              : filtered.isEmpty
+                  ? Center(
+                      child: AppText(
+                        text: selectedFilter == "All"
+                            ? "No enquiries found"
+                            : "No enquiries for ${_filterLabel}",
+                        size: 15,
+                        fontWeight: FontWeight.w500,
+                        color: appTextColor3,
+                        isCentered: true,
                       ),
-                    );
-                  },
-                ),
+                    )
+                  : ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final item = filtered[index];
+                        return Padding(
+                          padding:
+                              EdgeInsets.only(left: 30.w, right: 30.w),
+                          child: InqueryBox(
+                            uuid: item.uuid,
+                            enquiryId: item.enquiryId,
+                            userId: item.userId,
+                            lat: item.lat,
+                            lng: item.lng,
+                            menuItems: item.menuItems,
+                            people: item.people,
+                            date: item.date,
+                            time: item.time,
+                            estimatedAmount: item.estimatedAmount,
+                            searchRadius: item.searchRadius,
+                            expirationDate: item.expirationDate,
+                            expirationTime: item.expirationTime,
+                            status: item.status,
+                            onDeleted: fetchInqueryList,
+                            onEdit: () => widget.onEnquiryTap(false),
+                            enquiry: item,
+                          ),
+                        );
+                      },
+                    ),
         ),
       ],
     );

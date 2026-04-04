@@ -114,7 +114,7 @@ class AppTextFeild extends StatelessWidget {
                     borderRadius: BorderRadius.circular(
                       20,
                     ), // ← rounds the ripple
-                    child: Icon(suffixIcon, color: Colors.grey, size: 40),
+                    child: Icon(suffixIcon, color: Colors.grey,),
                   )
                 : SizedBox.shrink(),
           ],

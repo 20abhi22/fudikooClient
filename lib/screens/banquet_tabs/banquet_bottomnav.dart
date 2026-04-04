@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-class Bottomnav extends StatelessWidget {
+class BanquetBottomnav extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onTabSelected;
 
-  const Bottomnav({
+  const BanquetBottomnav({
     super.key,
     required this.selectedIndex,
     required this.onTabSelected,
@@ -15,9 +15,9 @@ class Bottomnav extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = [
       {'label': 'Home', 'icon': 'assets/images/homeiconfudiko.png', 'badge': 2},
-      // {'label': 'Inquiry', 'icon': 'assets/images/homeiconfudiko.png', 'badge': 2},
+       {'label': 'Inquiry', 'icon': 'assets/images/homeiconfudiko.png', 'badge': 2},
       {'label': 'Reservation', 'icon': 'assets/images/reservationiconfudiko.png', 'badge': 1},
-      {'label': 'Favorite', 'icon': 'assets/images/likeiconfudiko.png', 'badge': 0},
+      // {'label': 'Favorite', 'icon': 'assets/images/likeiconfudiko.png', 'badge': 0},
       {'label': 'Profile', 'icon': 'assets/images/profileiconfudiko.png', 'badge': 0},
     ];
 

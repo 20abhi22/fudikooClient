@@ -259,7 +259,7 @@ class _InqueryBoxState extends State<InqueryBox> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         AppText(
-                          text: widget.enquiry.enquiryId.substring(0, 6),
+                          text: widget.enquiry.enquiryId,
                           size: 20,
                           fontWeight: FontWeight.bold,
                           color: appTextColor3,

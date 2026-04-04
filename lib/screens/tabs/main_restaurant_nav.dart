@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fudikoclient/screens/banquet_tabs/banquet_bottomnav.dart';
 import 'package:fudikoclient/screens/customerProfile/customerProfile.dart';
 import 'package:fudikoclient/screens/tabs/bottomnav.dart';
 import 'package:fudikoclient/screens/tabs/favorite/favorite.dart';
@@ -8,18 +9,18 @@ import 'package:fudikoclient/screens/tabs/profile/restaurantProfile.dart';
 import 'package:fudikoclient/screens/tabs/reservation/reservation.dart';
 import 'package:fudikoclient/utils/constants.dart';
 
-class MainNavPage extends StatefulWidget {
+class MainRestaurantNavPage extends StatefulWidget {
   final String? city;
   final double? lat;
   final double? lng;
 
-  const MainNavPage({this.city, this.lat, this.lng});
+  const MainRestaurantNavPage({this.city, this.lat, this.lng});
 
   @override
-  State<MainNavPage> createState() => _MainNavPageState();
+  State<MainRestaurantNavPage> createState() => _MainRestaurantNavPageState();
 }
 
-class _MainNavPageState extends State<MainNavPage> {
+class _MainRestaurantNavPageState extends State<MainRestaurantNavPage> {
   int currentIndex = 0;
   bool isDrawerOpen = false;
   late List<Widget> screens;
@@ -45,7 +46,7 @@ class _MainNavPageState extends State<MainNavPage> {
         currentLng: widget.lng,
       ),
 
-      Inquery(),
+      // Inquery(),
       Reservation(),
       Favorite(),
       CustomerProfile()
@@ -53,7 +54,7 @@ class _MainNavPageState extends State<MainNavPage> {
     return SafeArea(
       child: Scaffold(
         backgroundColor: appSecondaryBackgroundColor,
-        bottomNavigationBar: Bottomnav(
+        bottomNavigationBar:Bottomnav(
           selectedIndex: currentIndex,
           onTabSelected: onTabChanged,
         ),
