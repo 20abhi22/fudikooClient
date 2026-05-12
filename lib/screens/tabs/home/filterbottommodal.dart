@@ -6,9 +6,18 @@ import 'package:fudikoclient/utils/constants.dart';
 
 class FilterBottomModal extends StatefulWidget {
   //added
-  final Function(int? discountIndex, int? typeIndex, double distance) onApply;
-  const FilterBottomModal({super.key, required this.onApply});
+  final Future<void> Function(int? discountIndex, int? typeIndex, double distance) onApply;
+  final int? initialDiscountIndex;
+  final int? initialTypeIndex;
+  final double initialDistance;
 
+  const FilterBottomModal({
+    super.key,
+    required this.onApply,
+    this.initialDiscountIndex,
+    this.initialTypeIndex,
+    this.initialDistance = 0,
+  });
   @override
   State<FilterBottomModal> createState() => _FilterBottomModalState();
 }
@@ -27,9 +36,17 @@ class _FilterBottomModalState extends State<FilterBottomModal> {
 
   List<String> typeList = ["Restaurant", "Cafe", "Cool Bar", "Bar", "Buffet"];
 
-  int? selectedDiscountIndex = 0;
-  int? selectedTypeIndex = 0;
+  int? selectedDiscountIndex;
+  int? selectedTypeIndex;
   double _currentDistance = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedDiscountIndex = widget.initialDiscountIndex;
+    selectedTypeIndex = widget.initialTypeIndex;
+    _currentDistance = widget.initialDistance;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +102,8 @@ class _FilterBottomModalState extends State<FilterBottomModal> {
                         selectedDiscountIndex == index,
                         () {
                           setState(() {
-                            selectedDiscountIndex = index;
+                            selectedDiscountIndex =
+                                selectedDiscountIndex == index ? null : index;
                           });
                         },
                       ),
@@ -103,7 +121,8 @@ class _FilterBottomModalState extends State<FilterBottomModal> {
                         selectedTypeIndex == index,
                         () {
                           setState(() {
-                            selectedTypeIndex = index;
+                            selectedTypeIndex =
+                                selectedTypeIndex == index ? null : index;
                           });
                         },
                       ),
@@ -159,8 +178,8 @@ class _FilterBottomModalState extends State<FilterBottomModal> {
                         GestureDetector(
                           onTap: () {
                             setState(() {
-                              selectedDiscountIndex = 0;
-                              selectedTypeIndex = 0;
+                              selectedDiscountIndex = null;
+                              selectedTypeIndex = null;
                               _currentDistance = 0;
                             });
                           },

@@ -8,7 +8,10 @@ class AppButton extends StatelessWidget {
   final Color? bgColor2;
   final double? size;
   final IconData? icon;
+  final String? imageIconPath;
+  final double? iconSize;
   final double? borderRadius;
+  final bool isLoading;
 
   const AppButton({
     super.key,
@@ -18,7 +21,10 @@ class AppButton extends StatelessWidget {
     this.bgColor2,
     this.size,
     this.icon,
+    this.imageIconPath,
+    this.iconSize,
     this.borderRadius,
+    this.isLoading = false,
   });
 
   @override
@@ -51,7 +57,7 @@ class AppButton extends StatelessWidget {
         ],
       ),
       child: TextButton(
-        onPressed: onPressed,
+        onPressed: isLoading ? null : onPressed,
         style: TextButton.styleFrom(
           backgroundColor: Colors.transparent,
           shape: RoundedRectangleBorder(
@@ -61,22 +67,39 @@ class AppButton extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            if (icon != null)
+            if (icon != null && !isLoading)
               Align(
                 alignment: Alignment.centerLeft,
                 child: Padding(
                   padding:  EdgeInsets.only(left: 16.w),
-                  child: Icon(icon, color: Colors.white,size: 25.sp,),
+                  child: imageIconPath != null
+                      ? Image.asset(imageIconPath!, width: iconSize?.w ?? 24.w, height: iconSize?.h ?? 24.h)
+                      : Icon(icon, color: Colors.white, size: iconSize?.sp ?? 25.sp),
                 ),
               ),
             Center(
-              child: Text(
-                text,
-                style: TextStyle(
-                  fontSize: size?.sp ?? 20.sp,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (isLoading)
+                    SizedBox(
+                      width: 20.w,
+                      height: 20.h,
+                      child: const CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  if (isLoading) SizedBox(width: 12.w),
+                  Text(
+                    isLoading ? 'Please wait...' : text,
+                    style: TextStyle(
+                      fontSize: size?.sp ?? 20.sp,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

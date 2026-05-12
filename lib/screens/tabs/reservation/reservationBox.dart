@@ -18,7 +18,7 @@ class ReservationBox extends StatelessWidget {
         onTap: (){
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => QrCoupon()),
+            MaterialPageRoute(builder: (context) => const QrCoupon()),
           );
         },
         child: Container(

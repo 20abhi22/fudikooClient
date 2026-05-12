@@ -14,6 +14,7 @@ class RestaurantModel {
   final String restaurantType;
   final String status;
   final bool isFavorite;
+  final double? distance; 
 
   RestaurantModel({
     required this.uuid,
@@ -31,6 +32,7 @@ class RestaurantModel {
     required this.restaurantType,
     required this.status,
     required this.isFavorite,
+     this.distance,
   });
 
 //   factory RestaurantModel.fromJson(Map<String, dynamic> json) {
@@ -76,6 +78,9 @@ factory RestaurantModel.fromJson(Map<String, dynamic> json) {
     restaurantType: json['restaurant_type']?.toString() ?? '',
     status: json['status']?.toString() ?? '',
     isFavorite: json['is_favourite'] == true || json['is_favourite'] == 1,
+    distance: json['distance'] != null                // ← ADD THIS
+          ? double.tryParse(json['distance'].toString())
+          : null,
   );
 }
 }

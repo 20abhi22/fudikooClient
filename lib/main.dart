@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fudikoclient/api/dio_client.dart';
 import 'package:fudikoclient/screens/about/aboutLayout.dart';
-import 'package:fudikoclient/screens/auth/info.dart';
-import 'package:fudikoclient/screens/home/homepage.dart';
 import 'package:fudikoclient/screens/splashscreen/splashscreen.dart';
-import 'package:fudikoclient/screens/tabs/main_restaurant_nav.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/rendering.dart';
@@ -37,14 +34,22 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  bool? isFirstUse = false;
+  bool? isFirstUse;
+
   @override
   void initState() {
     super.initState();
+    setup();
   }
+
   Future<void> setup() async {
-    isFirstUse = await getIsFirstUse();
+    final firstUse = await getIsFirstUse() ?? true;
+    if (!mounted) return;
+    setState(() {
+      isFirstUse = firstUse;
+    });
   }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -55,9 +60,15 @@ class _MyAppState extends State<MyApp> {
         colorScheme: ColorScheme.fromSeed(seedColor: appTextColor),
         fontFamily: 'Inter',
       ),
-      home:
-       !isFirstUse! ?  SplashScreen() :  
-      AboutLayout(),
+      home: isFirstUse == null
+          ? const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            )
+          : isFirstUse!
+              ? const AboutLayout()
+              : const SplashScreen(),
     );
   }
 }

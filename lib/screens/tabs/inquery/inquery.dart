@@ -437,21 +437,22 @@ class _InqueryState extends State<Inquery> {
                 itemBuilder: (context, index) {
                   return Padding(
                     padding: EdgeInsets.only(left: 30.w, right: 30.w),
-                    child: CtResponseBox(
-                      viewRequestClick: () {
-                        setState(() {
-                          viewCtRequest = !viewCtRequest;
-                        });
-                      },
-                      onAcceptTap: () {
-                        setState(() {
-                          isResponseAcceptOnClick = !isResponseAcceptOnClick;
-                        });
-                      },
-                      onCancelTap: () {
-                        setState(() {});
-                      },
-                    ),
+                    // child: CtResponseBox(
+                    //   viewRequestClick: () {
+                    //     setState(() {
+                    //       viewCtRequest = !viewCtRequest;
+                    //     });
+                    //   },
+                    //   onAcceptTap: () {
+                    //     setState(() {
+                    //       isResponseAcceptOnClick = !isResponseAcceptOnClick;
+                    //     });
+                    //   },
+                    //   onCancelTap: () {
+                    //     setState(() {});
+                    //   },
+                    // ),
+                    child: SizedBox.shrink(),
                   );
                 },
               ),
@@ -569,7 +570,8 @@ class _InqueryState extends State<Inquery> {
                 itemBuilder: (context, index) {
                   return Padding(
                     padding: EdgeInsets.only(left: 30.w, right: 30.w),
-                    child: CtDeclineBox(onCancelTap: () {}),
+                    // child: 
+                    child: SizedBox.shrink(),
                   );
                 },
               ),
@@ -960,21 +962,8 @@ class _InqueryState extends State<Inquery> {
             itemBuilder: (context, index) {
               return Padding(
                 padding: EdgeInsets.symmetric(horizontal: 30.w),
-                child: CtResponseBox(
-                  viewRequestClick: () {
-                    setState(() {
-                      viewCtRequest = !viewCtRequest;
-                    });
-                  },
-                  onAcceptTap: () {
-                    setState(() {
-                      isResponseAcceptOnClick = !isResponseAcceptOnClick;
-                    });
-                  },
-                  onCancelTap: () {
-                    setState(() {});
-                  },
-                ),
+                // child: 
+                child: SizedBox.shrink(),
               );
             },
           ),

@@ -17,3 +17,40 @@ final Color appLinkColor2 = Color(0xFF085692);
 final Color appLangBg = Color.fromARGB(29, 122, 13, 75);
 final Color menuUploadBoxColor = Color.fromARGB(132, 235, 219, 153);
 final Color sliderColor = Color(0xFFF97A0D);
+
+final Color abtTextColor2 = Color(0xFFC95F05);
+final Color abtNextColor2 = Color(0xFFFE943A).withOpacity(.8);
+
+// Search Bar Icons
+final String searchOrange = 'assets/icons/common/search_Orange.png';
+final String backOrange = 'assets/icons/common/backarrow_Orange.png';
+final Color locationTextColor = Color(0xFFD3690E);
+
+//Homapage icons
+final String filtercalenderIcon = 'assets/images/filter_calendar.png';
+final String filterIcon = 'assets/images/setting_filter.png';
+//card icons
+final String pin_to_pinIcon = 'assets/icons/inbox/pintopin.png';
+final String dishIcon = 'assets/icons/inbox/card_dish.png';
+final String locationpinIcon = 'assets/icons/inbox/card_locationpin.png';
+final String reviewStarIcon = 'assets/icons/inbox/review_star.png';
+final String offerIcon = 'assets/icons/inbox/offer_icon.png';
+final String peopleIcon = 'assets/icons/inbox/people_icon.png';
+final String calenderIcon = 'assets/icons/inbox/calender_icon.png';
+final String shopIcon = 'assets/icons/inbox/shop_icon.png';
+final String statusIcon = 'assets/icons/inbox/status_icon.png';
+final String menuBookIcon = 'assets/icons/common/menuBook_icon.png';
+
+//drawer icons
+final String inviteIcon = 'assets/icons/common/invite_icon.png';
+final String bellIcon = 'assets/icons/common/bell_icon.png';
+final String complainIcon = 'assets/icons/common/complain_icon.png';
+final String customerServiceIcon =
+    'assets/icons/common/customerService_icon.png';
+final String helpIcon = 'assets/icons/common/help_icon.png';
+final String infoIcon = 'assets/icons/common/info_icon.png';
+final String languageIcon = 'assets/icons/common/language_icon.png';
+final String logoutIcon = 'assets/icons/common/logout_icon.png';
+final String lockIcon = 'assets/icons/common/lock_icon.png';
+final String rateAppIcon = 'assets/icons/common/rateApp_icon.png';
+final String rewardsIcon = 'assets/icons/common/rewards_icon.png';

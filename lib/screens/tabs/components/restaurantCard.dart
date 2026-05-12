@@ -137,7 +137,12 @@ class _RestaurantCardState extends State<RestaurantCard> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.location_on, size: 14.w, color: Colors.white),
+                      Image.asset(
+                        pin_to_pinIcon,
+                        width: 18.w,
+                        height: 18.h,
+                        color: Colors.white,
+                      ),
                       SizedBox(width: 4.w),
                       Text(
                         '${widget.deliveryServiceArea} km',
@@ -203,10 +208,11 @@ class _RestaurantCardState extends State<RestaurantCard> {
                             flex: 4,
                             child: Row(
                               children: [
-                                Icon(
-                                  Icons.location_on,
+                                Image.asset(
+                                  locationpinIcon,
+                                  width: 18.w,
+                                  height: 18.h,
                                   color: appTextColor3,
-                                  size: 18.w,
                                 ),
                                 SizedBox(width: 5.w),
                                 Expanded(
@@ -237,9 +243,10 @@ class _RestaurantCardState extends State<RestaurantCard> {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(
-                                      Icons.star,
-                                      size: 14.w,
+                                    Image.asset(
+                                      reviewStarIcon,
+                                      width: 18.w,
+                                      height: 18.h,
                                       color: Colors.white,
                                     ),
                                     SizedBox(width: 4.w),
@@ -260,9 +267,10 @@ class _RestaurantCardState extends State<RestaurantCard> {
                       SizedBox(height: 5.h),
                       Row(
                         children: [
-                          Icon(
-                            Icons.restaurant_menu,
-                            size: 18.w,
+                          Image.asset(
+                            dishIcon,
+                            width: 18.w,
+                            height: 18.h,
                             color: appTextColor3,
                           ),
                           SizedBox(width: 5.w),

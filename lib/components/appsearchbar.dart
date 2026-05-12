@@ -33,7 +33,11 @@ class AppSearchBar extends StatelessWidget {
         children: [
           GestureDetector(
             onTap: () => Navigator.pop(context),
-            child: Icon(Icons.arrow_back_rounded, size: 30.r, color: appTextColor3),
+            child: Image.asset( 
+              backOrange,
+              width: 22.w,
+              height: 22.h,
+            ),
           ),
 
           // Tappable location
@@ -43,31 +47,40 @@ class AppSearchBar extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 AppText(
-                  text: "Near You",
-                  size: 12,
-                  fontWeight: FontWeight.w500,
-                  color: appTextColor3,
+                  text: "City",
+                  size: 11.sp,
+                  fontWeight: FontWeight.w600,
+                  color: locationTextColor.withOpacity(0.7),
                 ),
-                SizedBox(height: 4.h),
+                // SizedBox(height: 4.h),
                 Row(
                   children: [
                     Icon(Icons.location_on, size: 16, color: appButtonColor),
                     SizedBox(width: 4.w),
                     AppText(
                       text: city,
-                      size: 12,
-                      fontWeight: FontWeight.w600,
-                      color: appTextColor3,
+                      size: 13.sp,
+                      fontWeight: FontWeight.w400,
+                      color: locationTextColor.withOpacity(0.7),
                     ),
                     SizedBox(width: 2.w),
-                    Icon(Icons.keyboard_arrow_down, size: 14, color: appTextColor3),
+                    // Icon(Icons.keyboard_arrow_down, size: 14, color: locationTextColor),
                   ],
                 ),
               ],
             ),
           ),
 
-          Icon(Icons.search_rounded, size: 30.r, color: appTextColor3),
+          Image.asset(  
+            searchOrange,
+            width: 21.w,
+            height: 21.h,
+          ),
+          // Image.asset(  
+          //   'assets/images/search_icon.png',
+          //   width: 30.w,
+          //   height: 30.h,
+          // ),
         ],
       ),
     );

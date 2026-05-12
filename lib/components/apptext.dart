@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/utils/constants.dart';
 
-
 class AppText extends StatelessWidget {
-
   final String text;
   final double size;
   final FontWeight fontWeight;
@@ -12,6 +10,7 @@ class AppText extends StatelessWidget {
   final bool? isCentered;
   final double? lineSpacing;
   final bool? isShadow;
+  final List<Shadow>? isboxShadow;
 
   const AppText({
     super.key,
@@ -21,7 +20,8 @@ class AppText extends StatelessWidget {
     this.color,
     this.isCentered,
     this.lineSpacing,
-    this.isShadow
+    this.isShadow,
+    this.isboxShadow,
   });
 
   @override
@@ -36,17 +36,21 @@ class AppText extends StatelessWidget {
       style: TextStyle(
         fontSize: size.sp,
         fontWeight: fontWeight,
-        color: color ??appTextColor,
+        color: color ?? appTextColor,
         height: lineSpacing ?? 1.2,
         overflow: TextOverflow.ellipsis,
-        shadows: isShadow == null ? null : [
-          Shadow(
-            blurRadius: 4,
-            color: Colors.black.withOpacity(0.4),
-            offset: Offset(1.5, 1.5),
-          ),
-        ],
-      )
+        shadows:
+            isboxShadow ??
+            (isShadow == true
+                ? [
+                    Shadow(
+                      blurRadius: 4,
+                      color: Colors.black.withOpacity(0.4),
+                      offset: Offset(1.5, 1.5),
+                    ),
+                  ]
+                : null),
+      ),
     );
   }
 }

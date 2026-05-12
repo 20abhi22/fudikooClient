@@ -7,23 +7,36 @@ import 'package:fudikoclient/utils/tokens.dart';
 
 class About4 extends StatelessWidget {
   const About4({super.key});
+  
 
   @override
   Widget build(BuildContext context) {
+    Size screenSize= MediaQuery.of(context).size;
     return Scaffold(
       body: SizedBox(
-        height: MediaQuery.of(context).size.height,
+        height: screenSize.height,
         width: double.infinity,
         child: Stack(
           children: [
             Stack(
               children: [
+                
                 Positioned(
-                  top: MediaQuery.of(context).size.height/2 + 50,
-                  right: -120,
-                  child: Container(
+                  top: screenSize.height * 0.48,
+                  right: screenSize.width * -0.22,
+                  child: Image.asset(
+                    'assets/images/pizza4.png',
                     width: 300.w,
-                    height: 300.h,
+                    height: 300.w,
+                  ),
+                ),
+
+                Positioned(
+                  top: screenSize.height * 0.498,
+                  right: screenSize.width * -0.29,
+                  child: Container(
+                    width: 268.w,
+                    height: 268.w,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
@@ -34,15 +47,6 @@ class About4 extends StatelessWidget {
                     clipBehavior: Clip.hardEdge,
                   ),
                 ),
-                Positioned(
-                  top: MediaQuery.of(context).size.height / 2 + 55,
-                  right: -120,
-                  child: Image.asset(
-                    'assets/images/aboutlogo1.png',
-                    width: 300.w,
-                    height: 300.h,
-                  ),
-                ),
               ],
             ),
             Positioned(
@@ -51,24 +55,32 @@ class About4 extends StatelessWidget {
               child: Padding(
                 padding:  EdgeInsets.symmetric(
                   horizontal: 20.w,
-                  vertical: 40.h,
+                  vertical: 40.w,
                 ),
                 child: GestureDetector(
                   onTap: () async {
                     await saveIsFirstUse(false);
-                    Navigator.push(context, MaterialPageRoute(builder: (context)=> const SplashScreen()));
+                    if (!context.mounted) return;
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SplashScreen(),
+                      ),
+                    );
                   },
                   child: AppText(
                     text: "Next",
                     size: 15,
                     fontWeight: FontWeight.w400,
-                    color: appTextColor,
+                    color: abtNextColor2,
                   ),
                 ),
               ),
             ),
-            Align(
-              alignment: Alignment.center,
+            Positioned(
+              top: 220,
+              left: 50,
+              right: 20,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,47 +89,63 @@ class About4 extends StatelessWidget {
                     text: "Endless Food ",
                     size: 35,
                     fontWeight: FontWeight.w700,
-                    color: appTextColor6,
+                    color: abtTextColor2,
                   ),
                   AppText(
                     text: "Possibilities!",
                     size: 35,
                     fontWeight: FontWeight.w700,
-                    color: appTextColor6,
+                    color: abtTextColor2,
                   ),
                   SizedBox(height: 20.h),
                   AppText(
                     text: "Discounts, bookings, catering",
                     size: 20,
-                    fontWeight: FontWeight.w400,
-                    color: appButtonColor2,
+                    fontWeight: FontWeight.w500,
+                    color: abtTextColor2.withOpacity(.58),
                   ),
                   AppText(
                     text: "& more—right at your",
                     size: 20,
-                    fontWeight: FontWeight.w400,
-                    color: appButtonColor2,
+                    fontWeight: FontWeight.w500,
+                    color: abtTextColor2.withOpacity(.58) ,
                   ),
                   AppText(
                     text: "fingertips",
                     size: 20,
-                    fontWeight: FontWeight.w400,
-                    color: appButtonColor2,
+                    fontWeight: FontWeight.w500,
+                    color: abtTextColor2.withOpacity(.58),
                   ),
                 ],
               ),
             ),
             Positioned(
-              top: -100,
-              left: -100,
+              top: -81,
+              left: -60,
               child: Container(
-                width: 350.w,
-                height: 350.h,
+                width: 259.w,
+                height: 259.w,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Color.fromARGB(112, 249, 123, 13),
-                    width: 20.w,
+                    color: Color(0xFFF97A0D).withOpacity(0.58),
+                    width: 5.w,
+                  ),
+                ),
+                clipBehavior: Clip.hardEdge,
+              ),
+            ),
+            Positioned(
+              bottom: -screenSize.height*0.078,
+              left: -screenSize.width*0.31,
+              child: Container(
+                width: 322.w,
+                height: 322.w,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Color(0xFFF97A0D).withOpacity(0.58),
+                    width: 10.w,
                   ),
                 ),
                 clipBehavior: Clip.hardEdge,
@@ -125,15 +153,15 @@ class About4 extends StatelessWidget {
             ),
             Positioned(
               top: 150,
-              right: -80,
+              right: -50,
               child: Container(
-                width: 200.w,
-                height: 200.h,
+                width: 90.w,
+                height: 90.w,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Color.fromARGB(112, 249, 123, 13),
-                    width: 20.w   ,
+                    color: Color(0xFFF97A0D).withOpacity(0.58),
+                    width: 10.w   ,
                   ),
                 ),
                 clipBehavior: Clip.hardEdge,

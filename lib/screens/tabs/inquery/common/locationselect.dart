@@ -17,9 +17,8 @@ class _LocationSelectState extends State<LocationSelect> {
   double _distance = 10;
   late GoogleMapController mapController;
   final LatLng _center = const LatLng(12.9716, 77.5946);
-  late final String lat;
-  late final String lng;
-
+  late String lat = '12.9716';
+  late String lng = '77.5946';
 
   loc.Location location = loc.Location();
   final Set<Marker> _markers = {};
@@ -27,6 +26,16 @@ class _LocationSelectState extends State<LocationSelect> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
+    // Add initial marker at center
+    setState(() {
+      _markers.add(
+        Marker(
+          markerId: const MarkerId("initial_location"),
+          position: _center,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        ),
+      );
+    });
   }
 
   Future<void> _goToCurrentLocation() async {
@@ -116,6 +125,22 @@ class _LocationSelectState extends State<LocationSelect> {
                 myLocationEnabled: true,
                 myLocationButtonEnabled: false,
                 markers: _markers,
+                onTap: (LatLng tappedLocation) {
+                  setState(() {
+                    lat = tappedLocation.latitude.toString();
+                    lng = tappedLocation.longitude.toString();
+                    _markers.clear();
+                    _markers.add(
+                      Marker(
+                        markerId: const MarkerId("selected_location"),
+                        position: tappedLocation,
+                        icon: BitmapDescriptor.defaultMarkerWithHue(
+                          BitmapDescriptor.hueRed,
+                        ),
+                      ),
+                    );
+                  });
+                },
               ),
 
               // Search bar

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/apptext.dart';
+import 'package:fudikoclient/model/inquery/response_model.dart';
 import 'package:fudikoclient/utils/constants.dart';
 
 class CtResponseBox extends StatelessWidget {
@@ -12,7 +13,7 @@ class CtResponseBox extends StatelessWidget {
     super.key,
     required this.onCancelTap,
     required this.onAcceptTap,
-    required this.viewRequestClick,
+    required this.viewRequestClick, required ResponseModel response,
   });
 
   @override

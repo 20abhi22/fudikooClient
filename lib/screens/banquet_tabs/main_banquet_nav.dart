@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:fudikoclient/screens/banquet_tabs/banquet_bottomnav.dart';
 import 'package:fudikoclient/screens/banquet_tabs/reservartion/banquet_reservation.dart';
 import 'package:fudikoclient/screens/customerProfile/customerProfile.dart';
+import 'package:fudikoclient/screens/home/homepage.dart';
 import 'package:fudikoclient/screens/tabs/bottomnav.dart';
 import 'package:fudikoclient/screens/tabs/favorite/favorite.dart';
 import 'package:fudikoclient/screens/banquet_tabs/home/homepage.dart';
-import 'package:fudikoclient/screens/banquet_tabs/inquery/inquery.dart';
+import 'package:fudikoclient/screens/banquet_tabs/inquery/banquet_inquery.dart';
 import 'package:fudikoclient/screens/tabs/profile/restaurantProfile.dart';
 import 'package:fudikoclient/screens/tabs/reservation/reservation.dart';
 import 'package:fudikoclient/utils/constants.dart';
@@ -29,7 +30,7 @@ class _MainBanquetNavPageState extends State<MainBanquetNavPage> {
   @override
   void initState() {
     super.initState();
-    currentIndex = 0;
+    currentIndex = 1;
   }
 
   void onTabChanged(int index) {
@@ -46,10 +47,10 @@ class _MainBanquetNavPageState extends State<MainBanquetNavPage> {
       //   currentLat: widget.lat,
       //   currentLng: widget.lng,
       // ),
-      Home(),
+      // Home(),
       
-
-      Inquery(),
+      HomePage(),
+      BanquetInquery(),
       BanquetReservation(),
       // Favorite(),
       CustomerProfile()

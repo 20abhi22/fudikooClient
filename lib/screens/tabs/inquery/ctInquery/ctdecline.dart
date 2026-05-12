@@ -2,26 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/apptext.dart';
+import 'package:fudikoclient/model/inquery/response_model.dart';
 import 'package:fudikoclient/utils/constants.dart';
+import 'package:intl/intl.dart';
 
 class CtDeclineBox extends StatelessWidget {
   final VoidCallback onCancelTap;
+  final ResponseModel response;
   // final VoidCallback onAcceptTap;
   // final VoidCallback viewRequestClick;
   const CtDeclineBox({
     super.key,
-    required this.onCancelTap,
+    required this.onCancelTap, required this.response,
     // required this.onAcceptTap,
     // required this.viewRequestClick,
   });
 
   @override
   Widget build(BuildContext context) {
+        final DateTime parsedDate =
+        DateTime.tryParse(response.date) ?? DateTime.now();
+    final String displayDate = DateFormat('MMM d').format(parsedDate);
+
     return Padding(
-      padding:  EdgeInsets.only(bottom: 20.h),
-      child: GestureDetector(
-        onTap: () {},
-        child: Container(
+      padding: EdgeInsets.only(bottom: 20.h),
+      child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
             color: Colors.white,
@@ -30,12 +35,12 @@ class CtDeclineBox extends StatelessWidget {
               BoxShadow(
                 color: Colors.black.withOpacity(0.2),
                 blurRadius: 10,
-                offset: Offset(0, 4),
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Padding(
-            padding:  EdgeInsets.all(20.w),
+            padding: EdgeInsets.all(20.w),
             child: Column(
               children: [
                 Row(
@@ -47,149 +52,50 @@ class CtDeclineBox extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           AppText(
-                            text: "P17854",
+                            text: response.couponId,
                             size: 20,
                             fontWeight: FontWeight.bold,
                             color: appTextColor3,
                           ),
-
                           SizedBox(height: 10.h),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.restaurant,
-                                color: appTextColor5,
-                                size: 18,
-                              ),
-                              SizedBox(width: 5.w),
-                              Flexible(
-                                child: RichText(
-                                  text: TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: 'Slavic  Caters',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                          color: appLinkColor2,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                          _richRow(Icons.restaurant, [
+                            _span(response.restaurantName,
+                                FontWeight.w700, appLinkColor2),
+                          ]),
                           SizedBox(height: 10.h),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.wallet,
-                                color: appTextColor5,
-                                size: 18,
-                              ),
-                              SizedBox(width: 5.w),
-                              Flexible(
-                                child: RichText(
-                                  text: TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: '500 ',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                          color: appTextColor5,
-                                        ),
-                                      ),
-                                      TextSpan(
-                                        text: 'Per Person',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
-                                          color: appTextColor5,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                          _richRow(Icons.wallet, [
+                            _span('${response.pricePerPerson} ',
+                                FontWeight.w700, appTextColor5),
+                            _span('Per Person',
+                             FontWeight.w500, appTextColor5),
+                          ]),
                           SizedBox(height: 10.h),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.discount,
-                                color: appTextColor5,
-                                size: 18,
-                              ),
-                              SizedBox(width: 5.w),
-                              Expanded(
-                                child: RichText(
-                                  text: TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: "5% on extra drinks",
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
-                                          color: appTextColor5,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                          _richRow(Icons.discount, [
+                          _span(response.discount,
+                              FontWeight.w500, appTextColor5),
+                        ]),                       
                           SizedBox(height: 10.h),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.message,
-                                color: appTextColor5,
-                                size: 18,
-                              ),
-                              SizedBox(width: 5.w),
-                              Flexible(
-                                child: RichText(
-                                  text: TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text:
-                                            '-----------------------------------------------',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                          _richRow(Icons.message, [
+                          _span(response.message,
+                              FontWeight.w700, Colors.black),
+                        ]),  
                         ],
                       ),
                     ),
                     SizedBox(width: 10.w),
+                   // ── Top-right date ────────────────────────
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         AppText(
-                          text: "Apr 11",
+                          text: displayDate,
                           size: 10,
                           fontWeight: FontWeight.w600,
                           color: appTextColor3,
                         ),
                         SizedBox(height: 5.h),
                         AppText(
-                          text: "12:30pm",
+                          text: response.time,
                           size: 10,
                           fontWeight: FontWeight.w600,
                           color: appTextColor3,
@@ -234,10 +140,25 @@ class CtDeclineBox extends StatelessWidget {
                   ],
                 ),
               ],
-            ),
           ),
         ),
-      ),
+    ),
     );
   }
+
+  Widget _richRow(IconData icon, List<TextSpan> spans) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: appTextColor5, size: 18),
+        SizedBox(width: 5.w),
+        Flexible(child: RichText(text: TextSpan(children: spans))),
+      ],
+    );
+  }
+
+  TextSpan _span(String text, FontWeight weight, Color color) => TextSpan(
+        text: text,
+        style: TextStyle(fontSize: 15, fontWeight: weight, color: color),
+      );
 }

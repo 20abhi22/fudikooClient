@@ -11,18 +11,21 @@ class BanquetBottomnav extends StatelessWidget {
     required this.onTabSelected,
   });
 
+  static const _activeColor = Color(0xFFE8820C);
+  static const _inactiveColor = Color(0xFF9E9E9E);
+
   @override
   Widget build(BuildContext context) {
     final items = [
-      {'label': 'Home', 'icon': 'assets/images/homeiconfudiko.png', 'badge': 2},
-       {'label': 'Inquiry', 'icon': 'assets/images/homeiconfudiko.png', 'badge': 2},
-      {'label': 'Reservation', 'icon': 'assets/images/reservationiconfudiko.png', 'badge': 1},
-      // {'label': 'Favorite', 'icon': 'assets/images/likeiconfudiko.png', 'badge': 0},
-      {'label': 'Profile', 'icon': 'assets/images/profileiconfudiko.png', 'badge': 0},
+      {'label': 'Home',        'icon': 'assets/icons/home_inactive 1.png',        'badge': 0},
+      {'label': 'Inquries', 'icon': 'assets/icons/history.png', 'badge': 1},
+      {'label': 'Reservation', 'icon': 'assets/icons/reservation_inactive 1.png', 'badge': 1},
+      // {'label': 'Favorite',    'icon': 'assets/icons/heart_inactive 1.png',       'badge': 0},
+      {'label': 'Profile',     'icon': 'assets/icons/user_inactive 1.png',        'badge': 0},
     ];
 
     return Container(
-      padding:  EdgeInsets.symmetric(vertical: 10.h),
+      padding: EdgeInsets.symmetric(vertical: 10.h),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -35,6 +38,7 @@ class BanquetBottomnav extends StatelessWidget {
           final index = entry.key;
           final item = entry.value;
           final isSelected = index == selectedIndex;
+          final badge = item['badge'] as int;
 
           return GestureDetector(
             onTap: () => onTabSelected(index),
@@ -44,28 +48,36 @@ class BanquetBottomnav extends StatelessWidget {
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    Image.asset(
-                      '${item['icon']}',
-                      width: 25.w,
+                    ColorFiltered(
+                      colorFilter: ColorFilter.mode(
+                        isSelected ? _activeColor : _inactiveColor,
+                        BlendMode.srcIn,
+                      ),
+                      child: Image.asset(
+                        item['icon'] as String,
+                        width: 25.w,
+                        height: 25.w,
+                        fit: BoxFit.contain,
+                      ),
                     ),
-                    if ((item['badge'] as int) > 0)
+                    if (badge > 0)
                       Positioned(
                         top: -6,
                         right: -6,
                         child: Container(
-                          padding:  EdgeInsets.all(4.w),
-                            decoration:  BoxDecoration(
+                          padding: EdgeInsets.all(4.w),
+                          decoration: const BoxDecoration(
                             color: Colors.red,
                             shape: BoxShape.circle,
                           ),
-                          constraints:  BoxConstraints(
+                          constraints: BoxConstraints(
                             minWidth: 20.w,
                             minHeight: 20.h,
                           ),
                           child: Center(
                             child: Text(
-                              '${item['badge']}',
-                              style:  TextStyle(
+                              '$badge',
+                              style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.bold,
@@ -76,14 +88,13 @@ class BanquetBottomnav extends StatelessWidget {
                       ),
                   ],
                 ),
-                  SizedBox(height: 4.h),
+                SizedBox(height: 4.h),
                 Text(
                   item['label'] as String,
                   style: TextStyle(
-                    color: isSelected ? Colors.black : Colors.grey[700],
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
+                    color: isSelected ? _activeColor : Colors.grey[700],
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
               ],

@@ -31,9 +31,12 @@ class TakeAway extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.timer, size: 150, color: Colors.black),
+                    // Icon(Icons.timer, size: 150, color: Colors.black),
+                    Container(
+                      child: Image.asset('assets/images/takeaway.png', width: 150,)
+                      ),
                     SizedBox(height: 15,),
-                    AppText(text: "Takeaway Coming Soon", size: 16, fontWeight: FontWeight.w600,color: Colors.black,),
+                    AppText(text: "Takeaway Coming Soon", size: 16, fontWeight: FontWeight.w600,color: const Color.fromARGB(255, 37, 36, 36),),
                     SizedBox(height: 4,),
                     AppText(text: "This feature will be available shortly.", size: 16, fontWeight: FontWeight.w400,color: appTextColor2,),
                     SizedBox(height: 4,),

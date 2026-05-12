@@ -44,7 +44,6 @@ class DeclineBox extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Left content ──────────────────────────
                   Expanded(
                     flex: 4,
                     child: Column(
@@ -107,30 +106,34 @@ class DeclineBox extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  SizedBox(
-                    width: 100.w,
-                    height: 40.h,
-                    child: AppButton(
-                      text: "Delete",
-                      onPressed: onCancelTap,
-                      size: 12,
-                      borderRadius: 10,
-                      bgColor1: Colors.red,
-                      bgColor2: Colors.red,
-                    ),
-                  ),
-                  SizedBox(width: 10.w),
-                  SizedBox(
-                    width: 100.w,
-                    height: 40.h,
-                    child: AppButton(
-                      text: "Restore",
-                      onPressed: () {},
-                      size: 12,
-                      borderRadius: 10,
-                      bgColor1: Colors.blue,
-                      bgColor2: Colors.blue,
-                    ),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 100.w,
+                        height: 40.h,
+                        child: AppButton(
+                          text: "Delete",
+                          onPressed: onCancelTap,
+                          size: 12,
+                          borderRadius: 10,
+                          bgColor1: Colors.red,
+                          bgColor2: Colors.red,
+                        ),
+                      ),
+                      SizedBox(width: 10.w),
+                      SizedBox(
+                        width: 100.w,
+                        height: 40.h,
+                        child: AppButton(
+                          text: "Restore",
+                          onPressed: () {},
+                          size: 12,
+                          borderRadius: 10,
+                          bgColor1: Colors.blue,
+                          bgColor2: Colors.blue,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

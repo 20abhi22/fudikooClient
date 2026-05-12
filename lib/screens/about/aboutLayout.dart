@@ -26,7 +26,7 @@ class _AboutLayoutState extends State<AboutLayout> {
               itemCount: 4,
               onPageChanged: (index) => setState(() => _currentIndex = index),
               itemBuilder: (context, index) {
-                if(index == 0){
+                if (index == 0) {
                   return About1(
                     onPress: () {
                       setState(() {
@@ -37,8 +37,7 @@ class _AboutLayoutState extends State<AboutLayout> {
                       });
                     },
                   );
-                }
-                else if(index == 1){
+                } else if (index == 1) {
                   return About2(
                     onPress: () {
                       setState(() {
@@ -49,7 +48,7 @@ class _AboutLayoutState extends State<AboutLayout> {
                       });
                     },
                   );
-                }else if(index == 2){
+                } else if (index == 2) {
                   return About3(
                     onPress: () {
                       setState(() {
@@ -60,26 +59,27 @@ class _AboutLayoutState extends State<AboutLayout> {
                       });
                     },
                   );
-                }else{
+                } else {
                   return About4();
                 }
-              }
-
+              },
             ),
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding:  EdgeInsets.symmetric(vertical: 20.h),
+                padding: EdgeInsets.symmetric(vertical: 20.h),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
                     4,
                     (index) => Container(
-                      margin:  EdgeInsets.symmetric(horizontal: 4.w),
-                      width: 5.w,
-                      height:5.h,
+                      margin: EdgeInsets.symmetric(horizontal: 4.w),
+                      width: 10.w,
+                      height: 10.h,
                       decoration: BoxDecoration(
-                        color: _currentIndex == index ? Colors.orange : Colors.grey,
+                        color: _currentIndex == index
+                            ? Color(0xFFC95F05)
+                            : Color(0xFFD9D9D9),
                         shape: BoxShape.circle,
                       ),
                     ),

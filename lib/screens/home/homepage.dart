@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fudikoclient/screens/catering_tabs/main_catering_nav.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/model/auth/mapplace-model.dart';
 import 'package:fudikoclient/routetransitions.dart';
@@ -21,6 +22,7 @@ import 'package:fudikoclient/screens/notification/notification.dart';
 import 'package:fudikoclient/screens/notification/notification_setting.dart';
 import 'package:fudikoclient/screens/reward/reward.dart';
 import 'package:fudikoclient/screens/tabs/main_restaurant_nav.dart';
+import 'package:fudikoclient/screens/takeaway_tabs/takeaway.dart';
 import 'package:fudikoclient/service/auth/map-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:geocoding/geocoding.dart';
@@ -159,9 +161,31 @@ class _HomePageState extends State<HomePage> {
                                         child: BanquetBox(),
                                       ),
                                       SizedBox(height: screenHeight * 0.012),
-                                      CateringBox(),
+                                      // CateringBox(),
+                                      InkWell(
+                                        onTap: () => slideRightWidget(
+                                          newPage: MainCateringNavPage(
+                                            city: _currentCity,
+                                            lat: _currentLat,
+                                            lng: _currentLng,
+                                          ),
+                                          context: context,
+                                        ),
+                                        child: CateringBox(),
+                                      ),
                                       SizedBox(height: screenHeight * 0.012),
-                                      TakeAwayBox(),
+                                      InkWell(
+                                        onTap: () => slideRightWidget(
+                                          // newPage: MainCateringNavPage(
+                                          //   city: _currentCity,
+                                          //   lat: _currentLat,
+                                          //   lng: _currentLng,
+                                          // ),
+                                          newPage: TakeAway(),
+                                          context: context,
+                                        ),
+                                        child: TakeAwayBox(),
+                                      ),
                                       SizedBox(height: screenHeight * 0.02),
                                     ] else ...[
                                       ListView.builder(
@@ -358,8 +382,9 @@ class _HomePageState extends State<HomePage> {
                                 SizedBox(height: screenHeight * 0.012),
                                 _drawerItem(
                                   "Change Password",
-                                  Icons.lock,
+                                  lockIcon,
                                   ChangePassword(),
+                                  21.w,
                                 ),
                                 SizedBox(height: screenHeight * 0.012),
                                 Divider(
@@ -370,8 +395,9 @@ class _HomePageState extends State<HomePage> {
                                 SizedBox(height: screenHeight * 0.012),
                                 _drawerItem(
                                   "Notifications",
-                                  Icons.notifications,
+                                  bellIcon,
                                   NotificationScreen(),
+                                  21.w,
                                 ),
                                 SizedBox(height: screenHeight * 0.012),
                                 Divider(
@@ -382,8 +408,9 @@ class _HomePageState extends State<HomePage> {
                                 SizedBox(height: screenHeight * 0.012),
                                 _drawerItem(
                                   "Languages",
-                                  Icons.translate,
+                                  languageIcon,
                                   Languages(),
+                                  21.w,
                                 ),
                                 SizedBox(height: screenHeight * 0.012),
                                 Divider(
@@ -394,8 +421,9 @@ class _HomePageState extends State<HomePage> {
                                 SizedBox(height: screenHeight * 0.012),
                                 _drawerItem(
                                   "Rewards",
-                                  Icons.workspace_premium,
+                                  rewardsIcon,
                                   Reward(),
+                                  21.w,
                                 ),
                                 SizedBox(height: screenHeight * 0.012),
                                 Divider(
@@ -406,8 +434,9 @@ class _HomePageState extends State<HomePage> {
                                 SizedBox(height: screenHeight * 0.012),
                                 _drawerItem(
                                   "Invite a Friend",
-                                  Icons.person_add_alt,
+                                  inviteIcon,
                                   EarnPoints(),
+                                  21.w,
                                 ),
                                 SizedBox(height: screenHeight * 0.012),
                                 Divider(
@@ -436,8 +465,9 @@ class _HomePageState extends State<HomePage> {
                                 SizedBox(height: screenHeight * 0.012),
                                 _drawerItem(
                                   "About the App",
-                                  Icons.info,
+                                  infoIcon,
                                   AboutPage(),
+                                  22.w,
                                 ),
                                 SizedBox(height: screenHeight * 0.012),
                                 Divider(
@@ -448,8 +478,9 @@ class _HomePageState extends State<HomePage> {
                                 SizedBox(height: screenHeight * 0.012),
                                 _drawerItem(
                                   "Badge Earnings",
-                                  Icons.shield,
+                                  helpIcon,
                                   BadgeInfo(),
+                                  26.w,
                                 ),
                                 SizedBox(height: screenHeight * 0.012),
                                 Divider(
@@ -460,8 +491,9 @@ class _HomePageState extends State<HomePage> {
                                 SizedBox(height: screenHeight * 0.012),
                                 _drawerItem(
                                   "Complaints",
-                                  Icons.report,
+                                  complainIcon,
                                   ComplaintPage(),
+                                  26.w,
                                 ),
                                 SizedBox(height: screenHeight * 0.012),
                                 Divider(
@@ -472,8 +504,9 @@ class _HomePageState extends State<HomePage> {
                                 SizedBox(height: screenHeight * 0.012),
                                 _drawerItem(
                                   "Rate the App",
-                                  Icons.rate_review,
+                                  rateAppIcon,
                                   FeedBack(),
+                                  21.w,
                                 ),
                                 SizedBox(height: screenHeight * 0.012),
                                 Divider(
@@ -484,8 +517,9 @@ class _HomePageState extends State<HomePage> {
                                 SizedBox(height: screenHeight * 0.012),
                                 _drawerItem(
                                   "Support",
-                                  Icons.support_agent,
+                                  customerServiceIcon,
                                   ContactPage(),
+                                  21.w,
                                 ),
                                 SizedBox(height: screenHeight * 0.012),
                                 Divider(
@@ -511,8 +545,9 @@ class _HomePageState extends State<HomePage> {
                                 SizedBox(height: screenHeight * 0.012),
                                 _drawerItem(
                                   "Log Out",
-                                  Icons.logout,
+                                  logoutIcon,
                                   Login(),
+                                  20.w,
                                   Colors.red,
                                 ),
                                 SizedBox(height: screenHeight * 0.012),
@@ -540,8 +575,9 @@ class _HomePageState extends State<HomePage> {
 
   Widget _drawerItem(
     String text,
-    IconData icon, [
-    Widget? routeWidget,
+    dynamic icon, // can be String (image path) or IconData
+    Widget? routeWidget, [
+    double? size,
     Color? color,
   ]) {
     return GestureDetector(
@@ -562,11 +598,13 @@ class _HomePageState extends State<HomePage> {
       },
       child: Row(
         children: [
-          Icon(icon, size: 20, color: color ?? appTextColor2),
+          icon is String
+              ? Image.asset(icon, width: size ?? 20.w, height: size ?? 20.w)
+              : Icon(icon, size: size ?? 20.w, color: color ?? appTextColor2),
           SizedBox(width: 10.w),
           AppText(
             text: text,
-            size: 15,
+            size: 13.sp,
             fontWeight: FontWeight.w500,
             color: color ?? appTextColor2,
           ),
@@ -713,23 +751,23 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         // Notification icon on right
-        Align(
-          alignment: Alignment.centerRight,
-          child: GestureDetector(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => NotificationScreen()),
-            ),
-            child: Padding(
-              padding: EdgeInsets.only(top: 10.h),
-              child: Icon(
-                Icons.notifications_outlined,
-                size: 30.w,
-                color: appTextColor3,
-              ),
-            ),
-          ),
-        ),
+        // Align(
+        //   alignment: Alignment.centerRight,
+        //   child: GestureDetector(
+        //     onTap: () => Navigator.push(
+        //       context,
+        //       MaterialPageRoute(builder: (_) => NotificationScreen()),
+        //     ),
+        //     child: Padding(
+        //       padding: EdgeInsets.only(top: 10.h),
+        //       child: Icon(
+        //         Icons.notifications_outlined,
+        //         size: 30.w,
+        //         color: appTextColor3,
+        //       ),
+        //     ),
+        //   ),
+        // ),
       ],
     );
   }

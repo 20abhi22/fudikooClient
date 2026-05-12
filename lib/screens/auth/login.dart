@@ -136,6 +136,7 @@ class _LoginState extends State<Login> {
                     text: "Username",
                     icon: Icons.person,
                     controller: _email,
+                    isTextCenter: true,
                   ),
                   SizedBox(height: 20.h),
                   AppTextFeild(
@@ -143,11 +144,13 @@ class _LoginState extends State<Login> {
                     icon: Icons.lock,
                     isObscure: true,
                     controller: _password,
+                    isTextCenter: true,
                   ),
                   SizedBox(height: 20.h),
                   AppButton(
                     text: 'Login',
-                    onPressed: () {
+                    isLoading: isLoading,
+                    onPressed: isLoading ? null : () {
                       loginUser();
                     },
                   ),

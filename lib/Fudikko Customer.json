@@ -273,7 +273,7 @@
           "formdata": [
             {
               "key": "id",
-              "value": "bdhsjbdsbdshdbsh",
+              "value": "cc71f8ca-9166-45e6-8a64-826d44d2e47b",
               "type": "text",
               "uuid": "791ec854-1cc9-4321-a256-a019d380373a"
             }
@@ -292,6 +292,106 @@
             "customer",
             "restaurant",
             "show"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Restaurant Menu",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "restaurant_id",
+              "value": "cc71f8ca-9166-45e6-8a64-826d44d2e47b",
+              "type": "text",
+              "uuid": "791ec854-1cc9-4321-a256-a019d380373a"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/restaurant/menu",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "restaurant",
+            "menu"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Restaurant Review",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "restaurant_id",
+              "value": "cc71f8ca-9166-45e6-8a64-826d44d2e47b",
+              "type": "text",
+              "uuid": "791ec854-1cc9-4321-a256-a019d380373a"
+            },
+            {
+              "key": "stars",
+              "value": "4",
+              "type": "text",
+              "uuid": "dd9ca133-e20a-473a-827c-d6d79a6d76b4"
+            },
+            {
+              "key": "comment",
+              "value": "Nice Restaurant",
+              "type": "text",
+              "uuid": "8ef6d901-c6a0-4d7e-818d-c7421e004df2"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/restaurant/review",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "restaurant",
+            "review"
           ]
         }
       },
@@ -431,6 +531,50 @@
             "customer",
             "restaurant",
             "reservation"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Reservation QR Code",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "reservation_id",
+              "value": "cc71f8ca-9166-45e6-8a64-826d44d2e47b",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/restaurant/reservation/offer-code",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "restaurant",
+            "reservation",
+            "offer-code"
           ]
         }
       },
@@ -1302,6 +1446,63 @@
             "customer",
             "complaints",
             "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Filter",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "191|JPY8r8JgP8B5z0T8BFznesUUDwCWnJp16cpnC37M1ac89791",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "lat",
+              "value": "10.735765",
+              "type": "text"
+            },
+            {
+              "key": "lng",
+              "value": "75.935815",
+              "type": "text"
+            },
+            {
+              "key": "search_radius",
+              "value": "10",
+              "type": "text"
+            },
+            {
+              "key": "type",
+              "value": "Restaurant",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/filter",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "filter"
           ]
         }
       },

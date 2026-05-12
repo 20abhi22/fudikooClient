@@ -16,7 +16,7 @@ static void addInterceptor() {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           final prefs = await SharedPreferences.getInstance();
-          final token = prefs.getString("token");
+          final token = prefs.getString("auth_token");
 
           if (token != null) {
             options.headers["Authorization"] = "Bearer $token";

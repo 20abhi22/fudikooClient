@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
@@ -10,7 +12,8 @@ import 'package:fudikoclient/utils/constants.dart';
 
 class RestaurantProfile extends StatefulWidget {
   final String uuid;
-  const RestaurantProfile({super.key, required this.uuid});
+  final String? deliveryServiceArea;
+  const RestaurantProfile({super.key, required this.uuid, this.deliveryServiceArea});
 
   @override
   State<RestaurantProfile> createState() => _RestaurantProfileState();
@@ -87,7 +90,7 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _badge(Icons.location_on, '12 km'),
+                              _badge(pin_to_pinIcon, '${widget.deliveryServiceArea} km', 18.w),
                               SizedBox(height: 8.h),
                               InkWell(
                                 onTap: () {
@@ -98,7 +101,7 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
                                     ),
                                   );
                                 },
-                                child: _badge(Icons.star, '4.8'),
+                                child: _badge(reviewStarIcon, '4.8', 18.w),
                               ),
                             ],
                           ),
@@ -127,10 +130,10 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
                               SizedBox(height: 8.h),
                               Row(
                                 children: [
-                                  const Icon(
-                                    Icons.location_on,
-                                    size: 15,
-                                    color: Colors.white,
+                                   Image.asset(  
+                                    locationpinIcon,
+                                    width: 16,
+                                    height: 16,
                                   ),
                                   SizedBox(width: 4.w),
                                   //R addresss---------------------------
@@ -497,6 +500,9 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
                       width: 150.w,
                       height: 40.h,
                       child: AppButton(
+                        imageIconPath: menuBookIcon,
+                        bgColor1: appButtonColor,
+                        bgColor2: Color( 0xFF934808),
                         text: "View Menu",
                         size: 12,
                         borderRadius: 10.r,
@@ -516,7 +522,7 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
     );
   }
 
-  Widget _badge(IconData icon, String text) {
+  Widget _badge(String? imageIconPath, String text,double? iconSize) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
       decoration: BoxDecoration(
@@ -526,7 +532,9 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 10, color: Colors.white),
+          imageIconPath != null
+              ? Image.asset(imageIconPath, width: iconSize?.w ?? 10.w, height: iconSize?.h ?? 10.h)
+              : Icon(Icons.info, size: iconSize?.sp ?? 10.sp, color: Colors.white),
           SizedBox(width: 4.w),
           Text(text, style: TextStyle(color: Colors.white)),
         ],
