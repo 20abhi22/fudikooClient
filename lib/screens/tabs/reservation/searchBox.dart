@@ -22,8 +22,8 @@ class SearchBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color statusColor =
-        booking.status == "Confirmed" ? Colors.green : 
-        booking.status == "Processing" ? Color(0xFF4A90E2) :
+        booking.status == "Confirmed" ? Color(0xFF32BA7C).withOpacity(.9) : 
+        booking.status == "Processing" ? Color(0xFF3954DB).withOpacity(.9) :
         Colors.red;
 
     final String eventDateStr =
@@ -95,22 +95,22 @@ class SearchBox extends StatelessWidget {
                 SizedBox(height: 14.h),
 
                 // ── Restaurant name ──
-                _iconRow(Icons.business, booking.restaurantName, Colors.black,
+                _iconRow(shopIcon, booking.restaurantName, Colors.black,
                     fontWeight: FontWeight.w600, fontSize: 14),
                 SizedBox(height: 10.h),
 
                 // ── Discount info ──
-                _iconRow(Icons.local_offer, '${booking.discount}% offer for entire menu', 
+                _iconRow(offerIcon, '${booking.discount}% offer for entire menu', 
                     Colors.black, fontWeight: FontWeight.w500, fontSize: 13),
                 SizedBox(height: 10.h),
 
                 // ── Event date and time ──
-                _iconRow(Icons.calendar_today, '$eventDateStr - $eventTimeStr', 
+                _iconRow(calenderIcon, '$eventDateStr - $eventTimeStr', 
                     Colors.black, fontWeight: FontWeight.w600, fontSize: 13),
                 SizedBox(height: 10.h),
 
                 // ── Number of persons ──
-                _iconRow(Icons.people, '${booking.persons} Person', 
+                _iconRow(peopleIcon, '${booking.persons} Person', 
                     Colors.black, fontWeight: FontWeight.w600, fontSize: 13),
                 SizedBox(height: 12.h),
 
@@ -118,7 +118,11 @@ class SearchBox extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Icon(Icons.info_outline, color: statusColor, size: 18),
+                    Image.asset(
+                      statusIcon,
+                      width: 18,
+                      height: 18,
+                    ),
                     SizedBox(width: 5.w),
                     AppText(
                       text: booking.status,
@@ -140,7 +144,7 @@ class SearchBox extends StatelessWidget {
                         text: "Cancel",
                         size: 13,
                         fontWeight: FontWeight.w500,
-                        color: Colors.red,
+                        color: Color(0xFFCE3F3F).withOpacity(.9),
                       ),
                     ),
                     SizedBox(
@@ -172,12 +176,16 @@ class SearchBox extends StatelessWidget {
 
   // ── Helpers ──────────────────────────────────────────────
 
-  Widget _iconRow(IconData icon, String text, Color textColor,
+  Widget _iconRow(String imageIconPath, String text, Color textColor,
       {FontWeight fontWeight = FontWeight.w500, double fontSize = 14}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: textColor, size: 18),
+        Image.asset(
+          imageIconPath,
+          width: 18,
+          height: 18,
+        ),
         SizedBox(width: 8.w),
         Flexible(
           child: Text(

@@ -27,35 +27,35 @@ class QrCoupon extends StatelessWidget {
 
   Widget _buildQrCard() {
     return Container(
-      height: 200.h,
-      width: 200.w,
-      padding: EdgeInsets.all(18.r),
+      height: 250.h,
+      width: 250.w,
+      padding: EdgeInsets.all(1.r),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        // borderRadius: BorderRadius.circular(24.r),
+        // boxShadow: [
+        //   BoxShadow(
+        //     color: Colors.black.withOpacity(0.08),
+        //     blurRadius: 12,
+        //     offset: const Offset(0, 6),
+        //   ),
+        // ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.qr_code_2,
-            size: 120.r,
-            color: appTextColor3,
+            size: 248.r,
+            color: Colors.black,
           ),
           SizedBox(height: 8.h),
-          AppText(
-            text: _couponId,
-            size: 12,
-            fontWeight: FontWeight.w600,
-            color: appTextColor2,
-          ),
+          // AppText(
+          //   text: _couponId,
+          //   size: 12,
+          //   fontWeight: FontWeight.w600,
+          //   color: Colors.black,
+          // ),
         ],
       ),
     );
@@ -77,87 +77,88 @@ class QrCoupon extends StatelessWidget {
               constraints: BoxConstraints(
                 minHeight: MediaQuery.of(context).size.height - 150.h,
               ),
-              child: IntrinsicHeight(
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.pop(context);
-                          },
-                          child: Icon(Icons.close, color: appTextColor, size: 30.r),
-                        ),
-                      ],
-                    ),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AppText(
-                            text: _restaurantName,
-                            size: 25,
-                            fontWeight: FontWeight.w600,
-                            color: appTextColor3,
-                          ),
-                          Stack(
-                            children: [
-                              Image.asset(
-                                "assets/images/couponbody.png",
-                                height: 500.h,
-                                width: 300.w,
-                                fit: BoxFit.contain,
-                              ),
-                              Positioned(
-                                top: 80.h,
-                                left: 45.w,
-                                child: _buildQrCard(),
-                              ),
-                              Positioned(
-                                bottom: 120.h,
-                                left: 100.w,
-                                child: Column(
-                                  children: [
-                                    AppText(
-                                      text: eventDateStr.toUpperCase(),
-                                      size: 16,
-                                      fontWeight: FontWeight.w400,
-                                      color: appTextColor3,
-                                    ),
-                                    SizedBox(height: 10.h),
-                                    SizedBox(
-                                      width: 100.w,
-                                      height: 40.h,
-                                      child: AppButton(
-                                        text: eventTimeStr,
-                                        onPressed: () {},
-                                        size: 15,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
-                          AppText(
-                            text: '$_discountStr% offer for entire menu',
-                            size: 20,
-                            fontWeight: FontWeight.w700,
-                            color: appTextColor2,
-                          ),
-                          SizedBox(height: 10.h),
-                          AppText(
-                            text: '$_persons Person',
-                            size: 20,
-                            fontWeight: FontWeight.w700,
-                            color: appTextColor2,
-                          ),
-                        ],
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: Icon(Icons.close, color: appTextColor, size: 30.r),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                  SizedBox(height: 100.h),
+                  AppText(
+                    text: _restaurantName,
+                    size: 25,
+                    fontWeight: FontWeight.w600,
+                    color: appTextColor3,
+                    isCentered: true,
+                  ),
+                  // SizedBox(height: 5.h),
+                  Stack(
+                    children: [
+                      Image.asset(
+                        "assets/images/couponbody.png",
+                        height: 480.h,
+                        width: 350.w,
+                        fit: BoxFit.fill,
+                      ),
+                      Positioned(
+                        top: 80.h,
+                        left: 45.w,
+                        child: _buildQrCard(),
+                      ),
+                      Positioned(
+                        bottom: 60.h,
+                        left: 75.w,
+                        child: Column(
+                          children: [
+                            AppText(
+                              text: eventDateStr.toUpperCase(),
+                              size: 16,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.black,
+                            ),
+                            SizedBox(height: 30.h),
+                            SizedBox(
+                              width: 147.w,
+                              height: 44.h,
+                              child: AppButton(
+                                buttonwidth: 147.w,
+                                buttonheight: 44.h,
+                                borderRadius: 116.r,
+                                bgColor1: Color(0xFFF97A0D),
+                                bgColor2: Color(0xFFF97A0D),
+                                text: eventTimeStr,
+                                onPressed: () {},
+                                size: 20.sp,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                  AppText(
+                    text: '$_discountStr% offer for entire menu',
+                    size: 20,
+                    fontWeight: FontWeight.w700,
+                    color: appTextColor2,
+                    isCentered: true,
+                  ),
+                  SizedBox(height: 10.h),
+                  AppText(
+                    text: '$_persons Person',
+                    size: 20,
+                    fontWeight: FontWeight.w700,
+                    color: appTextColor2,
+                    isCentered: true,
+                  ),
+                ],
               ),
             ),
           ),

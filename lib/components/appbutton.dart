@@ -12,6 +12,8 @@ class AppButton extends StatelessWidget {
   final double? iconSize;
   final double? borderRadius;
   final bool isLoading;
+  final double? buttonwidth;
+  final double? buttonheight;
 
   const AppButton({
     super.key,
@@ -25,13 +27,15 @@ class AppButton extends StatelessWidget {
     this.iconSize,
     this.borderRadius,
     this.isLoading = false,
+    this.buttonwidth,
+    this.buttonheight,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      height: 60.h,
+      width: buttonwidth ?? double.infinity,
+      height: buttonheight ?? 60.h,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(  borderRadius?.r ?? 20.r),
         gradient: bgColor1 == null && bgColor2 == null
