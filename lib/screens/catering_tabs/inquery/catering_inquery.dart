@@ -53,6 +53,11 @@ class _CateringInqueryState extends State<CateringInquery> {
   Map<String, String> ctEnquiryData = {};
   List<CateringInqueryModel> _ctEnquiries = [];
   bool _ctEnquiriesLoading = false;
+  bool _ctResponsesLoading = false;
+  String _ctResponsesError = '';
+  Timer? _ctConfirmCloseTimer;
+  String _pendingCtResponseUuid = '';
+  String _pendingCtRestaurantName = '';
   // for timer in ct review
   Timer? _ctTimer;
   int _ctSeconds = 180; // 3 minutes = 180 seconds
@@ -84,84 +89,17 @@ DateTime? _ctDeclineCustomDate;
 String _ctEnquiryFilter = "All";
 DateTime? _ctEnquiryCustomDate;
 
-// ── Dummy data (reuse ResponseModel for ct responses/declines) ──
-final List<ResponseModel> _allCtResponses = [
-  ResponseModel(
-    couponId: "C17854",
-    restaurantName: "Bollywood Restaurant",
-    pricePerPerson: 950,
-    discount: "5% on extra drinks",
-    message: "If you have more than 50 people, we can offer 850 per head.",
-    date: "2026-04-07", // today
-    time: "12:30pm",
-  ),
-  ResponseModel(
-    couponId: "C17855",
-    restaurantName: "Spice Garden",
-    pricePerPerson: 800,
-    discount: "10% on desserts",
-    message: "Complimentary welcome drinks for groups above 30.",
-    date: "2026-04-03",
-    time: "3:00pm",
-  ),
-  ResponseModel(
-    couponId: "C17856",
-    restaurantName: "The Grand Feast",
-    pricePerPerson: 1200,
-    discount: "3% on beverages",
-    message: "Special dessert platter for groups above 20.",
-    date: "2026-04-07", // today
-    time: "6:45pm",
-  ),
-  ResponseModel(
-    couponId: "C17857",
-    restaurantName: "Royal Dine",
-    pricePerPerson: 1100,
-    discount: "7% on starters",
-    message: "Free mocktails for the first 10 guests.",
-    date: "2026-03-30",
-    time: "11:00am",
-  ),
-  ResponseModel(
-    couponId: "C17858",
-    restaurantName: "The Coastal Kitchen",
-    pricePerPerson: 750,
-    discount: "8% on seafood",
-    message: "Live music available for events above 60 people.",
-    date: "2026-04-01",
-    time: "8:00pm",
-  ),
-];
+List<ResponseModel> _allCtResponses = [];
 
-final List<ResponseModel> _allCtDeclinedResponses = [
-  ResponseModel(
-    couponId: "C17860",
-    restaurantName: "Bollywood Restaurant",
-    pricePerPerson: 950,
-    discount: "5% on extra drinks",
-    message: "If you have more than 50 people, we can offer 850 per head.",
-    date: "2026-04-07",
-    time: "12:30pm",
-  ),
-  ResponseModel(
-    couponId: "C17861",
-    restaurantName: "Spice Garden",
-    pricePerPerson: 800,
-    discount: "10% on desserts",
-    message: "Complimentary welcome drinks for groups above 30.",
-    date: "2026-04-03",
-    time: "3:00pm",
-  ),
-  ResponseModel(
-    couponId: "C17862",
-    restaurantName: "The Grand Feast",
-    pricePerPerson: 1200,
-    discount: "3% on beverages",
-    message: "Special dessert platter for groups above 20.",
-    date: "2026-04-07",
-    time: "6:45pm",
-  ),
-];
+List<ResponseModel> _allCtDeclinedResponses = [];
+
+// ── Lifecycle methods ─────────────────────────────────────
+@override
+void initState() {
+  super.initState();
+  _fetchCtEnquiries();
+  _fetchCtResponses();
+}
 
 // ── Filtered getters ─────────────────────────────────────
 List<ResponseModel> get _filteredCtResponses {
@@ -515,6 +453,44 @@ void _showCtFilterSheet({
     });
   }
 
+  Future<void> _fetchCtResponses() async {
+    print('[DEBUG] Starting _fetchCtResponses');
+    setState(() {
+      _ctResponsesLoading = true;
+      _ctResponsesError = '';
+    });
+
+    final result = await InqueryService().fetchCateringEnquiryResponses();
+
+    if (!mounted) {
+      print('[DEBUG] Widget not mounted, skipping setState');
+      return;
+    }
+
+    print('[DEBUG] Fetch complete - status: ${result.status}, response count: ${result.responses.length}');
+
+    final declined = result.responses.where((response) {
+      final normalized = response.status.toLowerCase();
+      return normalized == 'declined' ||
+          normalized == 'rejected' ||
+          normalized == 'cancelled';
+    }).toList();
+
+    print('[DEBUG] Declined count: ${declined.length}');
+
+    setState(() {
+      _allCtResponses = result.responses;
+      _allCtDeclinedResponses = declined;
+      _ctResponsesLoading = false;
+      _ctResponsesError = result.status
+          ? ''
+          : (result.message.isEmpty
+              ? 'Unable to fetch catering responses right now.'
+              : result.message);
+      print('[DEBUG] State updated - all responses: ${_allCtResponses.length}');
+    });
+  }
+
   Future<void> _submitCateringEnquiry() async {
     final InqueryService service = InqueryService();
     final model = CreateCateringInqueryModel(
@@ -588,9 +564,21 @@ void _showCtFilterSheet({
   @override
   void dispose() {
     _ctTimer?.cancel();
+    _ctConfirmCloseTimer?.cancel();
     _ctSearchController.dispose();
     // _partyTimer?.cancel(); 
     super.dispose();
+  }
+
+  void _autoCloseCtConfirmBox() {
+    _ctConfirmCloseTimer?.cancel();
+    _ctConfirmCloseTimer = Timer(const Duration(seconds: 3), () {
+      if (!mounted) return;
+      setState(() {
+        isConfirmClicked = false;
+        isResponseAcceptConfirmOnClick = false;
+      });
+    });
   }
 
   @override
@@ -1085,21 +1073,34 @@ void _showCtFilterSheet({
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            SizedBox(
-              width: 150.w,
-              child: AppFilterDropDown(
-                hint: _ctResponseFilterLabel,
-                icon: Icons.tune,
-                toggleDropdown: () => _showCtFilterSheet(
-                  currentFilter: _ctResponseFilter,
-                  currentCustomDate: _ctResponseCustomDate,
-                  onPickDate: _pickCtResponseCustomDate,
-                  onSelect: (label) => setState(() {
-                    _ctResponseFilter = label;
-                    if (label != "Custom") _ctResponseCustomDate = null;
-                  }),
+            Row(
+              children: [
+                SizedBox(
+                  width: 120.w,
+                  child: AppFilterDropDown(
+                    hint: _ctResponseFilterLabel,
+                    icon: Icons.tune,
+                    toggleDropdown: () => _showCtFilterSheet(
+                      currentFilter: _ctResponseFilter,
+                      currentCustomDate: _ctResponseCustomDate,
+                      onPickDate: _pickCtResponseCustomDate,
+                      onSelect: (label) => setState(() {
+                        _ctResponseFilter = label;
+                        if (label != "Custom") _ctResponseCustomDate = null;
+                      }),
+                    ),
+                  ),
                 ),
-              ),
+                SizedBox(width: 10.w),
+                GestureDetector(
+                  onTap: _fetchCtResponses,
+                  child: Icon(
+                    Icons.refresh,
+                    size: 20.w,
+                    color: appLinkColor2,
+                  ),
+                ),
+              ],
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -1132,37 +1133,55 @@ void _showCtFilterSheet({
       ),
       SizedBox(height: 20.h),
       Expanded(
-        child: responses.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.inbox_outlined, size: 48.w, color: appTextColor3.withOpacity(0.4)),
-                    SizedBox(height: 12.h),
-                    AppText(
-                      text: "No responses for $_ctResponseFilterLabel",
+        child: _ctResponsesLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _ctResponsesError.isNotEmpty
+                ? Center(
+                    child: AppText(
+                      text: _ctResponsesError,
                       size: 15,
                       fontWeight: FontWeight.w500,
                       color: appTextColor3,
                       isCentered: true,
                     ),
-                  ],
-                ),
-              )
-            : ListView.builder(
-                itemCount: responses.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 30.w),
-                    child: CtResponseBox(
-                      response: responses[index],
-                      viewRequestClick: () => setState(() => viewCtRequest = !viewCtRequest),
-                      onAcceptTap: () => setState(() => isResponseAcceptOnClick = !isResponseAcceptOnClick),
-                      onCancelTap: () => setState(() {}),
-                    ),
-                  );
-                },
-              ),
+                  )
+                : responses.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.inbox_outlined, size: 48.w, color: appTextColor3.withOpacity(0.4)),
+                            SizedBox(height: 12.h),
+                            AppText(
+                              text: "No responses for $_ctResponseFilterLabel",
+                              size: 15,
+                              fontWeight: FontWeight.w500,
+                              color: appTextColor3,
+                              isCentered: true,
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: responses.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 30.w),
+                            child: CtResponseBox(
+                              response: responses[index],
+                              viewRequestClick: () => setState(() => viewCtRequest = !viewCtRequest),
+                              onAcceptTap: () {
+                                setState(() {
+                                  _pendingCtResponseUuid = responses[index].uuid;
+                                  _pendingCtRestaurantName = responses[index].restaurantName;
+                                  isResponseAcceptOnClick = true;
+                                });
+                              },
+                              onCancelTap: () => setState(() {}),
+                            ),
+                          );
+                        },
+                      ),
       ),
     ],
   );
@@ -1900,10 +1919,9 @@ void _showCtFilterSheet({
                       GestureDetector(
                         onTap: () {
                           setState(() {
-                            isResponseAcceptConfirmOnClick =
-                                !isResponseAcceptConfirmOnClick;
+                            isResponseAcceptConfirmOnClick = false;
                             if (isConfirmClicked) {
-                              isConfirmClicked = !isConfirmClicked;
+                              isConfirmClicked = false;
                             }
                           });
                         },
@@ -1943,7 +1961,7 @@ void _showCtFilterSheet({
                         SizedBox(height: 20.h),
                         AppText(
                           text:
-                              "After confirmation, your party order will be booked at Bollywood Restaurant.",
+                              "After confirmation, your catering order will be booked at $_pendingCtRestaurantName.",
                           size: 15,
                           fontWeight: FontWeight.w500,
                           color: appTextColor2,
@@ -1955,10 +1973,28 @@ void _showCtFilterSheet({
                           height: 40.h,
                           child: AppButton(
                             text: "Confirm",
-                            onPressed: () {
-                              setState(() {
-                                isConfirmClicked = !isConfirmClicked;
-                              });
+                            onPressed: () async {
+                              if (_pendingCtResponseUuid.isEmpty) return;
+
+                              final result = await InqueryService()
+                                  .confirmCateringEnquiry(
+                                    _pendingCtResponseUuid,
+                                  );
+                              if (!mounted) return;
+
+                              if (result['status'] == true) {
+                                setState(() => isConfirmClicked = true);
+                                _autoCloseCtConfirmBox();
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      result['message'] ??
+                                          'Confirmation failed',
+                                    ),
+                                  ),
+                                );
+                              }
                             },
                             bgColor1: Colors.green,
                             bgColor2: Colors.green,
@@ -2468,7 +2504,7 @@ void _showCtFilterSheet({
                   ),
                   SizedBox(height: 10.h),
                   AppText(
-                    text: "Switch Banquet Booking?",
+                    text: "Confirm Catering Booking?",
                     isCentered: true,
                     lineSpacing: 1.5,
                     size: 15,
@@ -2478,7 +2514,7 @@ void _showCtFilterSheet({
                   SizedBox(height: 10.h),
                   AppText(
                     text:
-                        " You already have a banquet booked at Bollywood Restaurant. Booking another Banquet will automatically cancel your previous booking.",
+                        "After confirmation, your catering order will be booked at $_pendingCtRestaurantName.",
                     isCentered: true,
                     lineSpacing: 1.5,
                     size: 15,
@@ -2500,13 +2536,11 @@ void _showCtFilterSheet({
                         width: 120.w,
                         height: 40.h,
                         child: AppButton(
-                          text: "Yes,Book",
+                          text: "Confirm",
                           onPressed: () {
                             setState(() {
-                              isResponseAcceptOnClick =
-                                  !isResponseAcceptOnClick;
-                              isResponseAcceptConfirmOnClick =
-                                  !isResponseAcceptConfirmOnClick;
+                              isResponseAcceptOnClick = false;
+                              isResponseAcceptConfirmOnClick = true;
                             });
                           },
                           size: 15,

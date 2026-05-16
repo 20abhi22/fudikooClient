@@ -11,6 +11,7 @@ enum ModalStep { selectPeople, selectDateTime, confirmation }
 
 class NumberOfPeopleModal extends StatefulWidget {
   final String uuid;
+  final String? offerId; // ← add
   final int initialPeopleCount;
   final int minPeople;
   final int maxPeople;
@@ -19,6 +20,7 @@ class NumberOfPeopleModal extends StatefulWidget {
   const NumberOfPeopleModal({
     super.key,
     required this.uuid,
+     this.offerId, // ← add
     this.initialPeopleCount = 2,
     this.minPeople = 1,
     this.maxPeople = 20,
@@ -141,6 +143,7 @@ class _NumberOfPeopleModalState extends State<NumberOfPeopleModal>
       id: widget.uuid,
       time: _selectedTime!,
       date: _selectedDate!,
+      offerId: widget.offerId, // ← add
     );
     NewReservationModelResponse response = await reservationService
         .createReservation(reservationdata);

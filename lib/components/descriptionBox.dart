@@ -10,6 +10,7 @@ class DescriptionTextArea extends StatefulWidget {
   final void Function(String)? onChanged;
   final Color? iconColor;
   final int? maxLines;
+  final double? height;
   final String? topHintText;
   final TextEditingController? controller;
 
@@ -21,7 +22,9 @@ class DescriptionTextArea extends StatefulWidget {
     this.onChanged,
     this.iconColor,
     this.maxLines,
-    this.topHintText, this.controller
+    this.height,
+    this.topHintText,
+    this.controller,
   });
 
   @override
@@ -31,9 +34,51 @@ class DescriptionTextArea extends StatefulWidget {
 class _DescriptionTextAreaState extends State<DescriptionTextArea> {
   int _charCount = 0;
 
+  Widget _buildTextField() {
+    // Use expanding text field only when a fixed parent height is provided.
+    if (widget.height != null) {
+      return Expanded(
+        child: TextField(
+          controller: widget.controller,
+          maxLines: null,
+          expands: true,
+          maxLength: widget.maxLength,
+          onChanged: (val) {
+            setState(() => _charCount = val.length);
+            if (widget.onChanged != null) widget.onChanged!(val);
+          },
+          decoration: InputDecoration(
+            counterText: "",
+            hintText: widget.hintText,
+            hintStyle: TextStyle(color: Colors.grey, fontSize: 12.sp),
+            border: InputBorder.none,
+          ),
+          textAlignVertical: TextAlignVertical.top,
+        ),
+      );
+    }
+
+    return TextField(
+      controller: widget.controller,
+      maxLines: widget.maxLines ?? 5,
+      maxLength: widget.maxLength,
+      onChanged: (val) {
+        setState(() => _charCount = val.length);
+        if (widget.onChanged != null) widget.onChanged!(val);
+      },
+      decoration: InputDecoration(
+        counterText: "",
+        hintText: widget.hintText,
+        hintStyle: TextStyle(color: Colors.grey, fontSize: 12.sp),
+        border: InputBorder.none,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: widget.height,
       padding:  EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -62,21 +107,7 @@ class _DescriptionTextAreaState extends State<DescriptionTextArea> {
             ],
           ),
           SizedBox(height: 8.h),
-          TextField(
-            controller: widget.controller,
-            maxLines: widget.maxLines ?? 5,
-            maxLength: widget.maxLength,
-            onChanged: (val) {
-              setState(() => _charCount = val.length);
-              if (widget.onChanged != null) widget.onChanged!(val);
-            },
-            decoration: InputDecoration(
-              counterText: "",
-              hintText: widget.hintText,
-                hintStyle:  TextStyle(color: Colors.grey,fontSize: 12.sp),
-              border: InputBorder.none,
-            ),
-          ),
+          _buildTextField(),
         ],
       ),
     );

@@ -4,17 +4,42 @@ import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/model/inquery/response_model.dart';
 import 'package:fudikoclient/utils/constants.dart';
+import 'package:intl/intl.dart';
 
 class CtResponseBox extends StatelessWidget {
+  final ResponseModel response;
   final VoidCallback onCancelTap;
   final VoidCallback onAcceptTap;
   final VoidCallback viewRequestClick;
   const CtResponseBox({
     super.key,
+    required this.response,
     required this.onCancelTap,
     required this.onAcceptTap,
-    required this.viewRequestClick, required ResponseModel response,
+    required this.viewRequestClick,
   });
+
+  String _formatDateLabel() {
+    if (response.createdAt != null) {
+      return DateFormat('MMM d').format(response.createdAt!);
+    }
+    if (response.date.isNotEmpty) {
+      final parsed = DateTime.tryParse(response.date);
+      if (parsed != null) {
+        return DateFormat('MMM d').format(parsed);
+      }
+      return response.date;
+    }
+    return '';
+  }
+
+  String _formatTimeLabel() {
+    if (response.time.isNotEmpty) return response.time;
+    if (response.createdAt != null) {
+      return DateFormat('h:mma').format(response.createdAt!).toLowerCase();
+    }
+    return '';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +73,7 @@ class CtResponseBox extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           AppText(
-                            text: "P17854",
+                            text: response.couponId,
                             size: 20,
                             fontWeight: FontWeight.bold,
                             color: appTextColor3,
@@ -69,7 +94,9 @@ class CtResponseBox extends StatelessWidget {
                                   text: TextSpan(
                                     children: [
                                       TextSpan(
-                                        text: 'Felicia Catering Service',
+                                        text: response.restaurantName.isNotEmpty
+                                            ? response.restaurantName
+                                            : 'Catering Service',
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w700,
@@ -97,7 +124,7 @@ class CtResponseBox extends StatelessWidget {
                                   text: TextSpan(
                                     children: [
                                       TextSpan(
-                                        text: '400 ',
+                                        text: '${response.pricePerPerson} ',
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w700,
@@ -133,7 +160,9 @@ class CtResponseBox extends StatelessWidget {
                                   text: TextSpan(
                                     children: [
                                       TextSpan(
-                                        text: "Free delivery included",
+                                        text: response.discount.isNotEmpty
+                                            ? response.discount
+                                            : 'No offer added',
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w500,
@@ -161,8 +190,9 @@ class CtResponseBox extends StatelessWidget {
                                   text: TextSpan(
                                     children: [
                                       TextSpan(
-                                        text:
-                                            'If you have more than 50 people, we can offer you a price of 850 per head.',
+                                        text: response.message.isNotEmpty
+                                            ? response.message
+                                            : 'No comments provided',
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w700,
@@ -183,14 +213,14 @@ class CtResponseBox extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         AppText(
-                          text: "Apr 11",
+                          text: _formatDateLabel(),
                           size: 10,
                           fontWeight: FontWeight.w600,
                           color: appTextColor3,
                         ),
                         SizedBox(height: 5.h),
                         AppText(
-                          text: "12:30pm",
+                          text: _formatTimeLabel(),
                           size: 10,
                           fontWeight: FontWeight.w600,
                           color: appTextColor3,

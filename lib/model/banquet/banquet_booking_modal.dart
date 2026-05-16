@@ -1,18 +1,23 @@
 // booking_model.dart
+
 class BookingModel {
   final String id;
+  final String uuid;
   final String couponId;
+  final double discount;
   final String restaurantName;
   final int pricePerPerson;
-  final double discount;
   final String message;
-  final DateTime eventDate; // April 12 - 2:30 pm
-  final DateTime bookingDate; // Apr 11 - 12:30 pm (used for sorting)
+  final DateTime eventDate;
+  final DateTime bookingDate;
   final int persons;
-  final String status; // "Confirmed" or "Rejected"
+  final String status;
+  final String? applicableFor;
+  final String? offerCode;
 
   BookingModel({
     this.id = '',
+    this.uuid = '',
     required this.couponId,
     required this.restaurantName,
     required this.pricePerPerson,
@@ -22,30 +27,36 @@ class BookingModel {
     required this.bookingDate,
     required this.persons,
     required this.status,
+    this.applicableFor,
+    this.offerCode,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
     final DateTime now = DateTime.now();
+    final offer = json['offer'] as Map<String, dynamic>?;
+
     return BookingModel(
       id: (json['id'] ?? '').toString(),
-      couponId: (json['enquiry_id'] ?? json['coupon_id'] ?? '').toString(),
-      restaurantName: (json['restaurant_name'] ?? '').toString(),
-      pricePerPerson: _toInt(json['amount']) ?? 0,
-      discount: _toDouble(json['extra_offer']) ?? 0,
-      message: (json['comments'] ?? json['message'] ?? '').toString(),
-      eventDate:
-          _parseDateTime(
+      uuid: (json['uuid'] ?? '').toString(),
+      couponId: (json['reservation_id'] ?? json['offer_code'] ?? json['enquiry_id'] ?? json['coupon_id'] ?? '').toString(),
+      restaurantName: (json['restaurant_name'] ?? json['restaurant']?['name'] ?? json['restaurant_id'] ?? '').toString(),
+      pricePerPerson: _toInt(json['amount'] ?? json['bill_amount']) ?? 0,
+      discount: _toDouble(offer?['discount_percentage'] ?? json['extra_offer']) ?? 0,
+      message: (json['comments'] ?? json['message'] ?? json['offer_code_status'] ?? '').toString(),
+      eventDate: _parseDateTime(
             date: (json['date'] ?? '').toString(),
             time: (json['time'] ?? '').toString(),
-          ) ??
-          now,
-      bookingDate:
-          DateTime.tryParse((json['created_at'] ?? '').toString()) ?? now,
+          ) ?? now,
+      bookingDate: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? now,
       persons: _toInt(json['people']) ?? 0,
       status: (json['status'] ?? '').toString(),
+      applicableFor: offer?['applicable_for']?.toString(),
+      offerCode: json['offer_code']?.toString(),
     );
   }
-}
+}  // ← class ends here
+
+// ── helpers are OUTSIDE the class ──────────────────────────
 
 int? _toInt(dynamic value) {
   if (value is int) return value;

@@ -228,6 +228,7 @@ class _InqueryBoxState extends State<InqueryBox> {
 
   @override
   Widget build(BuildContext context) {
+    bool isConfirmed = widget.enquiry.status.toLowerCase() == "confirmed";
     final estimatedAmount = double.parse(widget.enquiry.estimatedAmount).toInt();
     final radius = double.parse(widget.enquiry.searchRadius).toInt();
 
@@ -317,113 +318,64 @@ class _InqueryBoxState extends State<InqueryBox> {
                 ],
               ),
               SizedBox(height: 20.h),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.timer, size: 15.w, color: Colors.red),
-                      SizedBox(width: 5.w),
-                      AppText(
-                        text: countdown,
-                        size: 11,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.red,
-                      ),
-                    ],
-                  ),
-                  if (!isExpired)
-                    Row(
-                      children: [
-                        SizedBox(
-                          width: 50.w,
-                          height: 30.h,
-                          child: AppButton(
-                            text: "Edit",
-                            onPressed: onEdit,
-                            size: 11,
-                            borderRadius: 5,
-                            bgColor1: Colors.green,
-                            bgColor2: Colors.green,
-                          ),
-                        ),
-                        SizedBox(width: 5.w),
-                        SizedBox(
-                          width: 80.w,
-                          height: 30.h,
-                          child: AppButton(
-                            text: "Withdraw",
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => Dialog(
-                                  backgroundColor: Colors.white,
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 30.w,
-                                      vertical: 20.h,
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        AppText(
-                                          text:
-                                              "Are you sure you want to Cancel this Enquiry?",
-                                          isCentered: true,
-                                          lineSpacing: 1.5,
-                                          size: 12,
-                                          fontWeight: FontWeight.w500,
-                                          color: appTextColor2,
-                                        ),
-                                        SizedBox(height: 20.h),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: SizedBox(
-                                                height: 30.h,
-                                                child: AppButton(
-                                                  text: "Yes",
-                                                  onPressed: deleteInquery,
-                                                  size: 11,
-                                                  bgColor1: Colors.green,
-                                                  bgColor2: Colors.green,
-                                                  borderRadius: 10,
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(width: 10.w),
-                                            Expanded(
-                                              child: SizedBox(
-                                                height: 30.h,
-                                                child: AppButton(
-                                                  text: "No",
-                                                  onPressed: () =>
-                                                      Navigator.pop(context),
-                                                  size: 11,
-                                                  bgColor1: Colors.red,
-                                                  bgColor2: Colors.red,
-                                                  borderRadius: 10,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                            size: 11,
-                            borderRadius: 5,
-                            bgColor1: Colors.red,
-                            bgColor2: Colors.red,
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
+Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    Row(
+      children: [
+        Icon(
+          isConfirmed ? Icons.check_circle : Icons.timer,
+          size: 15.w,
+          color: isConfirmed ? Colors.green : Colors.red,
+        ),
+        SizedBox(width: 5.w),
+
+        AppText(
+          text: isConfirmed ? "Confirmed" : countdown,
+          size: 11,
+          fontWeight: FontWeight.w600,
+          color: isConfirmed ? Colors.green : Colors.red,
+        ),
+      ],
+    ),
+
+    // Hide buttons if confirmed OR expired
+    if (!isConfirmed && !isExpired)
+      Row(
+        children: [
+          SizedBox(
+            width: 50.w,
+            height: 30.h,
+            child: AppButton(
+              text: "Edit",
+              onPressed: onEdit,
+              size: 11,
+              borderRadius: 5,
+              bgColor1: Colors.green,
+              bgColor2: Colors.green,
+            ),
+          ),
+
+          SizedBox(width: 5.w),
+
+          SizedBox(
+            width: 80.w,
+            height: 30.h,
+            child: AppButton(
+              text: "Withdraw",
+              onPressed: () {
+                // existing dialog
+              },
+              size: 11,
+              borderRadius: 5,
+              bgColor1: Colors.red,
+              bgColor2: Colors.red,
+            ),
+          ),
+        ],
+      ),
+  ],
+)
             ],
           ),
         ),

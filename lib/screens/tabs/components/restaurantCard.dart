@@ -4,11 +4,12 @@ import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/model/restaurant/restaurant_liked.dart';
 import 'package:fudikoclient/service/restaurant/restaurant-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
+import 'package:fudikoclient/model/restaurant/restaurant-model.dart';
 
 class RestaurantCard extends StatefulWidget {
   final VoidCallback? onRatingOnClick;
-  final VoidCallback? onBoxClicked;
-  final String uuid;
+// Change callback type to carry an optional offerId
+final void Function(String? offerId)? onBoxClicked;  final String uuid;
   final String name;
   final String type;
   final String address;
@@ -24,6 +25,10 @@ class RestaurantCard extends StatefulWidget {
   final String status;
   final bool? isFavourite;
   final bool isFavoriteBox;
+  final List<OfferModel> offers; 
+  final String? image;
+  
+
 
   const RestaurantCard({
     super.key,
@@ -45,6 +50,10 @@ class RestaurantCard extends StatefulWidget {
     required this.status,
     this.isFavourite,
     this.isFavoriteBox = false,
+    required this.offers, // ← add
+    this.image,
+    
+
   });
 
   @override
@@ -59,6 +68,11 @@ class _RestaurantCardState extends State<RestaurantCard> {
     super.initState();
     isLiked = widget.isFavourite ?? false;
   }
+  String _todayShortName() {
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  // DateTime.weekday: 1=Mon … 7=Sun
+  return days[DateTime.now().weekday - 1];
+}
 
   Future<void> onLikeOnTap() async {
     RestaurantLikedDislikedModel data = RestaurantLikedDislikedModel(
@@ -104,26 +118,39 @@ class _RestaurantCardState extends State<RestaurantCard> {
         children: [
           Stack(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                child: Stack(
-                  children: [
-                    Image.asset(
+                      ClipRRect(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          child: Stack(
+            children: [
+              widget.image != null                        // ← NEW CODE STARTS HERE
+                  ? Image.network(
+                      widget.image!,
+                      height: 180.h,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Image.asset(
+                        'assets/images/restaurantBanner.png',
+                        height: 180.h,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Image.asset(
                       'assets/images/restaurantBanner.png',
                       height: 180.h,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                    ),
-                    Container(
-                      height: 180.h,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.4),
-                      ),
-                    ),
-                  ],
+                    ),                             // ← NEW CODE ENDS HERE
+              Container(                           // ← this stays untouched
+                height: 180.h,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.4),
                 ),
               ),
+            ],
+          ),
+        ),
 
               Positioned(
                 top: 20,
@@ -193,7 +220,7 @@ class _RestaurantCardState extends State<RestaurantCard> {
             ],
           ),
           GestureDetector(
-            onTap: widget.onBoxClicked,
+            onTap: () => widget.onBoxClicked?.call(null),
             child: Column(
               children: [
                 Padding(
@@ -293,177 +320,329 @@ class _RestaurantCardState extends State<RestaurantCard> {
                     ],
                   ),
                 ),
-                SizedBox(
-                  height: 135.h,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    padding: EdgeInsets.only(
-                      left: 15.w,
-                      right: 15.w,
-                      bottom: 15.h,
-                    ),
-                    children: List.generate(5, (index) {
-                      final discounts = [
-                        '-40%',
-                        '-40%',
-                        '-30%',
-                        '-25%',
-                        '-40%',
-                      ];
-                      final texts = [
-                        'for entire menu',
-                        'for entire menu',
-                        'for entire menu',
-                        'for entire drinks',
-                        'for entire menu',
-                      ];
-                      final times = [
-                        '12:00PM',
-                        '12:30PM',
-                        '01:00PM',
-                        '05:00PM',
-                        '12:00PM',
-                      ];
-                      final dates = [
-                        'TODAY',
-                        'TODAY',
-                        'TODAY',
-                        'TODAY',
-                        'MAY 1',
-                      ];
+                // SizedBox(
+                //   height: 135.h,
+                //   child: ListView(
+                //     scrollDirection: Axis.horizontal,
+                //     padding: EdgeInsets.only(
+                //       left: 15.w,
+                //       right: 15.w,
+                //       bottom: 15.h,
+                //     ),
+                //     // children: List.generate(5, (index) {
+                //     //   final discounts = [
+                //     //     '-40%',
+                //     //     '-40%',
+                //     //     '-30%',
+                //     //     '-25%',
+                //     //     '-40%',
+                //     //   ];
+                //     //   final texts = [
+                //     //     'for entire menu',
+                //     //     'for entire menu',
+                //     //     'for entire menu',
+                //     //     'for entire drinks',
+                //     //     'for entire menu',
+                //     //   ];
+                //     //   final times = [
+                //     //     '12:00PM',
+                //     //     '12:30PM',
+                //     //     '01:00PM',
+                //     //     '05:00PM',
+                //     //     '12:00PM',
+                //     //   ];
+                //     //   final dates = [
+                //     //     'TODAY',
+                //     //     'TODAY',
+                //     //     'TODAY',
+                //     //     'TODAY',
+                //     //     'MAY 1',
+                //     //   ];
 
-                      return Padding(
-                        padding: EdgeInsets.only(right: 5.w),
-                        child: Container(
-                          width: 85.w,
-                          decoration: BoxDecoration(
-                            color: Color(0XFF417629),
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(5.r),
-                              topRight: Radius.circular(5.r),
-                              bottomLeft: Radius.circular(10.r),
-                              bottomRight: Radius.circular(10.r),
+                //     //   return Padding(
+                //     //     padding: EdgeInsets.only(right: 5.w),
+                //     //     child: Container(
+                //     //       width: 85.w,
+                //     //       decoration: BoxDecoration(
+                //     //         color: Color(0XFF417629),
+                //     //         borderRadius: BorderRadius.only(
+                //     //           topLeft: Radius.circular(5.r),
+                //     //           topRight: Radius.circular(5.r),
+                //     //           bottomLeft: Radius.circular(10.r),
+                //     //           bottomRight: Radius.circular(10.r),
+                //     //         ),
+                //     //       ),
+                //     //       child: Stack(
+                //     //         children: [
+                //     //           Padding(
+                //     //             padding: EdgeInsets.all(8.w),
+                //     //             child: Column(
+                //     //               mainAxisAlignment:
+                //     //                   MainAxisAlignment.spaceBetween,
+                //     //               children: [
+                //     //                 Column(
+                //     //                   children: [
+                //     //                     Text(
+                //     //                       discounts[index],
+                //     //                       style: TextStyle(
+                //     //                         fontSize: 16.sp,
+                //     //                         color: Colors.white,
+                //     //                         fontWeight: FontWeight.bold,
+                //     //                       ),
+                //     //                     ),
+                //     //                     SizedBox(height: 4.h),
+                //     //                     AppText(
+                //     //                       text: texts[index],
+                //     //                       size: 10.sp,
+                //     //                       color: Colors.white,
+                //     //                       fontWeight: FontWeight.w400,
+                //     //                       isCentered: true,
+                //     //                     ),
+                //     //                   ],
+                //     //                 ),
+                //     //                 SizedBox(height: 10),
+                //     //                 Row(
+                //     //                   children: List.generate(
+                //     //                     15,
+                //     //                     (i) => Expanded(
+                //     //                       child: Container(
+                //     //                         height: 1.h,
+                //     //                         color: i % 2 == 0
+                //     //                             ? Colors.white
+                //     //                             : Colors.transparent,
+                //     //                       ),
+                //     //                     ),
+                //     //                   ),
+                //     //                 ),
+
+                //     //                 Column(
+                //     //                   children: [
+                //     //                     SizedBox(height: 2.h),
+                //     //                     Text(
+                //     //                       dates[index],
+                //     //                       style: TextStyle(
+                //     //                         fontSize: 6.sp,
+                //     //                         color: Colors.white70,
+                //     //                         fontWeight: FontWeight.w500,
+                //     //                       ),
+                //     //                     ),
+                //     //                     SizedBox(height: 6.h),
+                //     //                     Container(
+                //     //                       padding: EdgeInsets.symmetric(
+                //     //                         horizontal: 8.w,
+                //     //                         vertical: 4.h,
+                //     //                       ),
+                //     //                       decoration: BoxDecoration(
+                //     //                         color: Colors.white,
+                //     //                         borderRadius: BorderRadius.circular(
+                //     //                           6.r,
+                //     //                         ),
+                //     //                       ),
+                //     //                       child: Text(
+                //     //                         times[index],
+                //     //                         style: TextStyle(
+                //     //                           fontSize: 11.sp,
+                //     //                           color: Colors.green.shade700,
+                //     //                           fontWeight: FontWeight.w600,
+                //     //                         ),
+                //     //                       ),
+                //     //                     ),
+                //     //                   ],
+                //     //                 ),
+                //     //               ],
+                //     //             ),
+                //     //           ),
+
+                //     //           Positioned(
+                //     //             left: -8.w,
+                //     //             top: 20,
+                //     //             bottom: 0,
+                //     //             child: Center(
+                //     //               child: Container(
+                //     //                 width: 16.w,
+                //     //                 height: 16.w,
+                //     //                 decoration: BoxDecoration(
+                //     //                   color: Colors.grey.shade100,
+                //     //                   shape: BoxShape.circle,
+                //     //                 ),
+                //     //               ),
+                //     //             ),
+                //     //           ),
+
+                //     //           Positioned(
+                //     //             right: -8.w,
+                //     //             top: 20,
+                //     //             bottom: 0,
+                //     //             child: Center(
+                //     //               child: Container(
+                //     //                 width: 16.w,
+                //     //                 height: 16.w,
+                //     //                 decoration: BoxDecoration(
+                //     //                   color: Colors.grey.shade100,
+                //     //                   shape: BoxShape.circle,
+                //     //                 ),
+                //     //               ),
+                //     //             ),
+                //     //           ),
+                //     //         ],
+                //     //       ),
+                //     //     ),
+                //     //   );
+                //     // }),
+                //   ),
+                // ),
+                SizedBox(
+  height: 135.h,
+  child: widget.offers.isEmpty
+      ? Padding(
+          padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 10.h),
+          child: Center(
+            child: Text(
+              'No offers available',
+              style: TextStyle(color: Colors.grey, fontSize: 13.sp),
+            ),
+          ),
+        )
+      : ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.only(left: 15.w, right: 15.w, bottom: 15.h),
+          itemCount: widget.offers.length,
+          itemBuilder: (context, index) {
+            final offer = widget.offers[index];
+            final discountStr =
+                '-${offer.discountPercentage.toStringAsFixed(0)}%';
+            final forText = 'for ${offer.applicableFor}';
+            final timeStr = offer.startTime;
+            final today = _todayShortName();
+            final days = offer.activeDays
+                .split(',')
+                .map((d) => d.trim())
+                .toList();
+            final dateLabel =
+                days.contains(today) ? 'TODAY' : days.first.toUpperCase();
+      
+            return GestureDetector(
+               onTap: () => widget.onBoxClicked?.call(offer.uuid), // Pass offer ID on tap
+              child: Padding(
+                padding: EdgeInsets.only(right: 5.w),
+                child: Container(
+                  width: 85.w,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF417629),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(5.r),
+                      topRight: Radius.circular(5.r),
+                      bottomLeft: Radius.circular(10.r),
+                      bottomRight: Radius.circular(10.r),
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(8.w),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              children: [
+                                Text(
+                                  discountStr,
+                                  style: TextStyle(
+                                    fontSize: 16.sp,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 4.h),
+                                AppText(
+                                  text: forText,
+                                  size: 10.sp,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w400,
+                                  isCentered: true,
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: List.generate(
+                                15,
+                                (i) => Expanded(
+                                  child: Container(
+                                    height: 1.h,
+                                    color: i % 2 == 0
+                                        ? Colors.white
+                                        : Colors.transparent,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Column(
+                              children: [
+                                SizedBox(height: 2.h),
+                                Text(
+                                  dateLabel,
+                                  style: TextStyle(
+                                    fontSize: 6.sp,
+                                    color: Colors.white70,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                SizedBox(height: 6.h),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8.w,
+                                    vertical: 4.h,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(6.r),
+                                  ),
+                                  child: Text(
+                                    timeStr,
+                                    style: TextStyle(
+                                      fontSize: 11.sp,
+                                      color: Colors.green.shade700,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Positioned(
+                        left: -8.w, top: 20, bottom: 0,
+                        child: Center(
+                          child: Container(
+                            width: 16.w, height: 16.w,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              shape: BoxShape.circle,
                             ),
                           ),
-                          child: Stack(
-                            children: [
-                              Padding(
-                                padding: EdgeInsets.all(8.w),
-                                child: Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      children: [
-                                        Text(
-                                          discounts[index],
-                                          style: TextStyle(
-                                            fontSize: 16.sp,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        SizedBox(height: 4.h),
-                                        AppText(
-                                          text: texts[index],
-                                          size: 10.sp,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w400,
-                                          isCentered: true,
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 10),
-                                    Row(
-                                      children: List.generate(
-                                        15,
-                                        (i) => Expanded(
-                                          child: Container(
-                                            height: 1.h,
-                                            color: i % 2 == 0
-                                                ? Colors.white
-                                                : Colors.transparent,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-
-                                    Column(
-                                      children: [
-                                        SizedBox(height: 2.h),
-                                        Text(
-                                          dates[index],
-                                          style: TextStyle(
-                                            fontSize: 6.sp,
-                                            color: Colors.white70,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                        SizedBox(height: 6.h),
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 8.w,
-                                            vertical: 4.h,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius: BorderRadius.circular(
-                                              6.r,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            times[index],
-                                            style: TextStyle(
-                                              fontSize: 11.sp,
-                                              color: Colors.green.shade700,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              Positioned(
-                                left: -8.w,
-                                top: 20,
-                                bottom: 0,
-                                child: Center(
-                                  child: Container(
-                                    width: 16.w,
-                                    height: 16.w,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade100,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              Positioned(
-                                right: -8.w,
-                                top: 20,
-                                bottom: 0,
-                                child: Center(
-                                  child: Container(
-                                    width: 16.w,
-                                    height: 16.w,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade100,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                        ),
+                      ),
+                      Positioned(
+                        right: -8.w, top: 20, bottom: 0,
+                        child: Center(
+                          child: Container(
+                            width: 16.w, height: 16.w,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              shape: BoxShape.circle,
+                            ),
                           ),
                         ),
-                      );
-                    }),
+                      ),
+                    ],
                   ),
                 ),
+              ),
+            );
+          },
+        ),
+),
               ],
             ),
           ),

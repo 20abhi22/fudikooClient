@@ -21,19 +21,20 @@ class SearchBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color statusColor =
-        booking.status == "Confirmed" ? Color(0xFF32BA7C).withOpacity(.9) : 
-        booking.status == "Processing" ? Color(0xFF3954DB).withOpacity(.9) :
-        Colors.red;
+    final Color statusColor = booking.status == "Confirmed"
+        ? Color(0xFF32BA7C).withOpacity(.9)
+        : booking.status == "Processing"
+        ? Color(0xFF3954DB).withOpacity(.9)
+        : Colors.red;
 
-    final String eventDateStr =
-        DateFormat("MMM d").format(booking.eventDate);
-    final String eventTimeStr =
-        DateFormat("h:mm a").format(booking.eventDate);
-    final String bookingDateStr =
-        DateFormat("MMM d").format(booking.bookingDate);
-    final String bookingTimeStr =
-        DateFormat("h:mm a").format(booking.bookingDate);
+    final String eventDateStr = DateFormat("MMM d").format(booking.eventDate);
+    final String eventTimeStr = DateFormat("h:mm a").format(booking.eventDate);
+    final String bookingDateStr = DateFormat(
+      "MMM d",
+    ).format(booking.bookingDate);
+    final String bookingTimeStr = DateFormat(
+      "h:mm a",
+    ).format(booking.bookingDate);
 
     return Padding(
       padding: EdgeInsets.only(bottom: 20.h),
@@ -95,34 +96,50 @@ class SearchBox extends StatelessWidget {
                 SizedBox(height: 14.h),
 
                 // ── Restaurant name ──
-                _iconRow(shopIcon, booking.restaurantName, Colors.black,
-                    fontWeight: FontWeight.w600, fontSize: 14),
+                _iconRow(
+                  shopIcon,
+                  booking.restaurantName,
+                  Colors.black,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
                 SizedBox(height: 10.h),
 
                 // ── Discount info ──
-                _iconRow(offerIcon, '${booking.discount}% offer for entire menu', 
-                    Colors.black, fontWeight: FontWeight.w500, fontSize: 13),
+                _iconRow(
+                  offerIcon,
+                  '${booking.discount.toStringAsFixed(0)}% offer for ${booking.applicableFor ?? 'entire menu'}',
+                  Colors.black,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                ),
                 SizedBox(height: 10.h),
 
                 // ── Event date and time ──
-                _iconRow(calenderIcon, '$eventDateStr - $eventTimeStr', 
-                    Colors.black, fontWeight: FontWeight.w600, fontSize: 13),
+                _iconRow(
+                  calenderIcon,
+                  '$eventDateStr - $eventTimeStr',
+                  Colors.black,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
                 SizedBox(height: 10.h),
 
                 // ── Number of persons ──
-                _iconRow(peopleIcon, '${booking.persons} Person', 
-                    Colors.black, fontWeight: FontWeight.w600, fontSize: 13),
+                _iconRow(
+                  peopleIcon,
+                  '${booking.persons} Person',
+                  Colors.black,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
                 SizedBox(height: 12.h),
 
                 // ── Status ──
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Image.asset(
-                      statusIcon,
-                      width: 18,
-                      height: 18,
-                    ),
+                    Image.asset(statusIcon, width: 18, height: 18),
                     SizedBox(width: 5.w),
                     AppText(
                       text: booking.status,
@@ -176,16 +193,17 @@ class SearchBox extends StatelessWidget {
 
   // ── Helpers ──────────────────────────────────────────────
 
-  Widget _iconRow(String imageIconPath, String text, Color textColor,
-      {FontWeight fontWeight = FontWeight.w500, double fontSize = 14}) {
+  Widget _iconRow(
+    String imageIconPath,
+    String text,
+    Color textColor, {
+    FontWeight fontWeight = FontWeight.w500,
+    double fontSize = 14,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Image.asset(
-          imageIconPath,
-          width: 18,
-          height: 18,
-        ),
+        Image.asset(imageIconPath, width: 18, height: 18),
         SizedBox(width: 8.w),
         Flexible(
           child: Text(

@@ -209,212 +209,254 @@ class _CtInqueryBoxState extends State<CtInqueryBox> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final amount =
-        double.tryParse(widget.enquiry.estimatedAmount)?.toInt() ??
-        widget.enquiry.estimatedAmount;
-    final radius =
-        double.tryParse(widget.enquiry.searchRadius)?.toInt() ??
-        widget.enquiry.searchRadius;
+Widget build(BuildContext context) {
+  bool isConfirmed =
+      widget.enquiry.status.toLowerCase() == "confirmed";
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: 20.h),
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(20.w),
-          child: Column(
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 4,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AppText(
-                          text: widget.enquiry.enquiryId,
-                          size: 20,
-                          fontWeight: FontWeight.bold,
-                          color: appTextColor3,
-                        ),
-                        SizedBox(height: 10.h),
-                        _infoRow(
-                          Icons.wallet,
-                          "$amount Per Person",
-                          fontWeight: FontWeight.w900,
-                        ),
-                        _infoRow(
-                          Icons.calendar_today_sharp,
-                          "${widget.enquiry.date} - ${widget.enquiry.time}",
-                          fontWeight: FontWeight.w700,
-                        ),
-                        _infoRow(
-                          Icons.people,
-                          "${widget.enquiry.people} Person",
-                          fontWeight: FontWeight.w700,
-                        ),
-                        _infoRow(Icons.dashboard, widget.enquiry.menuItems),
-                        _infoRow(
-                          Icons.analytics,
-                          placeName.isEmpty
-                              ? "${widget.enquiry.lat}, ${widget.enquiry.lng} - ${widget.enquiry.searchRadius}km Radius"
-                              : "$placeName - ${widget.enquiry.searchRadius}km Radius",
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black,
-                        ),
-                      ],
+  final amount =
+      double.tryParse(widget.enquiry.estimatedAmount)?.toInt() ??
+      widget.enquiry.estimatedAmount;
+
+  final radius =
+      double.tryParse(widget.enquiry.searchRadius)?.toInt() ??
+      widget.enquiry.searchRadius;
+
+  return Padding(
+    padding: EdgeInsets.only(bottom: 20.h),
+    child: Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(20.w),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 4,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText(
+                        text: widget.enquiry.enquiryId,
+                        size: 20,
+                        fontWeight: FontWeight.bold,
+                        color: appTextColor3,
+                      ),
+
+                      SizedBox(height: 10.h),
+
+                      _infoRow(
+                        Icons.wallet,
+                        "$amount Per Person",
+                        fontWeight: FontWeight.w900,
+                      ),
+
+                      _infoRow(
+                        Icons.calendar_today_sharp,
+                        "${widget.enquiry.date} & ${widget.enquiry.time}",
+                        fontWeight: FontWeight.w700,
+                      ),
+
+                      _infoRow(
+                        Icons.people,
+                        "${widget.enquiry.people} Person",
+                        fontWeight: FontWeight.w700,
+                      ),
+
+                      _infoRow(
+                        Icons.dashboard,
+                        widget.enquiry.menuItems
+                            .split(',')
+                            .join(" , "),
+                      ),
+
+                      _infoRow(
+                        Icons.analytics,
+                        placeName.isEmpty
+                            ? "${widget.enquiry.lat}, ${widget.enquiry.lng} - ${widget.enquiry.searchRadius}km Radius"
+                            : "$placeName - ${widget.enquiry.searchRadius}km Radius",
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black,
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(width: 10.w),
+
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    AppText(
+                      text: widget.enquiry.expirationDate,
+                      size: 10,
+                      fontWeight: FontWeight.w600,
+                      color: appTextColor3,
                     ),
-                  ),
-                  SizedBox(width: 10.w),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      AppText(
-                        text: widget.enquiry.expirationDate,
-                        size: 10,
-                        fontWeight: FontWeight.w600,
-                        color: appTextColor3,
-                      ),
-                      SizedBox(height: 5.h),
-                      AppText(
-                        text: widget.enquiry.expirationTime,
-                        size: 10,
-                        fontWeight: FontWeight.w600,
-                        color: appTextColor3,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              SizedBox(height: 20.h),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.timer, size: 15.w, color: Colors.red),
-                      SizedBox(width: 5.w),
-                      AppText(
-                        text: countdown,
-                        size: 11,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.red,
-                      ),
-                    ],
-                  ),
-                  if (!isExpired)
-                    Row(
-                      children: [
-                        SizedBox(
-                          width: 50.w,
-                          height: 30.h,
-                          child: AppButton(
-                            text: "Edit",
-                            onPressed:
-                                onEdit, // ← fires callback to parent
-                            size: 11,
-                            borderRadius: 5,
-                            bgColor1: Colors.green,
-                            bgColor2: Colors.green,
-                          ),
-                        ),
-                        SizedBox(width: 5.w),
 
-                        SizedBox(
-                          width: 90.w,
-                          height: 32.h,
-                          child: AppButton(
-                            text: "Withdraw",
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => Dialog(
-                                  backgroundColor: Colors.white,
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 30.w,
-                                      vertical: 20.h,
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        AppText(
-                                          text:
-                                              "Are you sure you want to withdraw this enquiry?",
-                                          isCentered: true,
-                                          lineSpacing: 1.5,
-                                          size: 12,
-                                          fontWeight: FontWeight.w500,
-                                          color: appTextColor2,
-                                        ),
-                                        SizedBox(height: 20.h),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: SizedBox(
-                                                height: 30.h,
-                                                child: AppButton(
-                                                  text: "Yes",
-                                                  onPressed: deleteEnquiry,
-                                                  size: 11,
-                                                  bgColor1: Colors.green,
-                                                  bgColor2: Colors.green,
-                                                  borderRadius: 10,
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(width: 10.w),
-                                            Expanded(
-                                              child: SizedBox(
-                                                height: 30.h,
-                                                child: AppButton(
-                                                  text: "No",
-                                                  onPressed: () =>
-                                                      Navigator.pop(context),
-                                                  size: 11,
-                                                  bgColor1: Colors.red,
-                                                  bgColor2: Colors.red,
-                                                  borderRadius: 10,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
+                    SizedBox(height: 5.h),
+
+                    AppText(
+                      text: widget.enquiry.expirationTime,
+                      size: 10,
+                      fontWeight: FontWeight.w600,
+                      color: appTextColor3,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+
+            SizedBox(height: 20.h),
+
+            // ✅ Same as InqueryBox
+            Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    Row(
+      children: [
+        Icon(
+          widget.enquiry.status.toLowerCase() == "confirmed"
+              ? Icons.check_circle
+              : Icons.timer,
+          size: 15.w,
+          color: widget.enquiry.status.toLowerCase() == "confirmed"
+              ? Colors.green
+              : Colors.red,
+        ),
+        SizedBox(width: 5.w),
+
+        AppText(
+          text: widget.enquiry.status.toLowerCase() == "confirmed"
+              ? "Confirmed"
+              : countdown,
+          size: 11,
+          fontWeight: FontWeight.w600,
+          color: widget.enquiry.status.toLowerCase() == "confirmed"
+              ? Colors.green
+              : Colors.red,
+        ),
+      ],
+    ),
+
+    // Hide buttons if confirmed OR expired
+    if (widget.enquiry.status.toLowerCase() != "confirmed" &&
+        !isExpired)
+      Row(
+        children: [
+          SizedBox(
+            width: 50.w,
+            height: 30.h,
+            child: AppButton(
+              text: "Edit",
+              onPressed: onEdit,
+              size: 11,
+              borderRadius: 5,
+              bgColor1: Colors.green,
+              bgColor2: Colors.green,
+            ),
+          ),
+
+          SizedBox(width: 5.w),
+
+          SizedBox(
+            width: 80.w,
+            height: 30.h,
+            child: AppButton(
+              text: "Withdraw",
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => Dialog(
+                    backgroundColor: Colors.white,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 30.w,
+                        vertical: 20.h,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AppText(
+                            text:
+                                "Are you sure you want to withdraw this enquiry?",
+                            isCentered: true,
+                            lineSpacing: 1.5,
+                            size: 12,
+                            fontWeight: FontWeight.w500,
+                            color: appTextColor2,
+                          ),
+
+                          SizedBox(height: 20.h),
+
+                          Row(
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  height: 30.h,
+                                  child: AppButton(
+                                    text: "Yes",
+                                    onPressed: deleteEnquiry,
+                                    size: 11,
+                                    bgColor1: Colors.green,
+                                    bgColor2: Colors.green,
+                                    borderRadius: 10,
                                   ),
                                 ),
-                              );
-                            },
-                            size: 11,
-                            borderRadius: 5,
-                            bgColor1: Colors.red,
-                            bgColor2: Colors.red,
+                              ),
+
+                              SizedBox(width: 10.w),
+
+                              Expanded(
+                                child: SizedBox(
+                                  height: 30.h,
+                                  child: AppButton(
+                                    text: "No",
+                                    onPressed: () =>
+                                        Navigator.pop(context),
+                                    size: 11,
+                                    bgColor1: Colors.red,
+                                    bgColor2: Colors.red,
+                                    borderRadius: 10,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                ],
-              ),
-            ],
+                  ),
+                );
+              },
+              size: 11,
+              borderRadius: 5,
+              bgColor1: Colors.red,
+              bgColor2: Colors.red,
+            ),
           ),
+        ],
+      ),
+  ],
+)
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 
@@ -452,383 +494,5 @@ class _CtInqueryBoxState extends State<CtInqueryBox> {
 
 
 
-
-
-// import 'package:flutter/material.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
-// import 'package:fudikoclient/components/appbutton.dart';
-// import 'package:fudikoclient/components/apptext.dart';
-// import 'package:fudikoclient/model/inquery/list-catering-inquery-model.dart';
-// import 'package:fudikoclient/utils/constants.dart';
-
-// class CtInqueryBox extends StatelessWidget {
-//   final VoidCallback onCancelTap;
-//   final CateringInqueryModel enquiry;
-//   const  CtInqueryBox({
-//     super.key,
-//     required this.onCancelTap,
-//     required this.enquiry,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Padding(
-//       padding: EdgeInsets.only(bottom: 20.h),
-//       child: GestureDetector(
-//         onTap: () {
-//           // Navigator.push(
-//           //   context,
-//           //   MaterialPageRoute(builder: (context) => QrCoupon()),
-//           // );
-//         },
-//         child: Container(
-//           width: double.infinity,
-//           decoration: BoxDecoration(
-//             color: Colors.white,
-//             borderRadius: BorderRadius.circular(20.r),
-//             boxShadow: [
-//               BoxShadow(
-//                 color: Colors.black.withOpacity(0.2),
-//                 blurRadius: 10,
-//                 offset: Offset(0, 4),
-//               ),
-//             ],
-//           ),
-//           child: Padding(
-//             padding: EdgeInsets.all(20.w),
-//             child: Column(
-//               children: [
-//                 Row(
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                   children: [
-//                     Expanded(
-//                       flex: 4,
-//                       child: Column(
-//                         crossAxisAlignment: CrossAxisAlignment.start,
-//                         children: [
-//                           AppText(
-//                             text: enquiry.enquiryId,
-//                             size: 20,
-//                             fontWeight: FontWeight.bold,
-//                             color: appTextColor3,
-//                           ),
-//                           SizedBox(height: 10.h),
-//                           // Row(
-//                           //   crossAxisAlignment: CrossAxisAlignment.start,
-//                           //   children: [
-//                           //     Icon(
-//                           //       Icons.wallet,
-//                           //       color: appTextColor5,
-//                           //       size: 18,
-//                           //     ),
-//                           //     SizedBox(width: 5.w),
-//                           //     Flexible(
-//                           //       child: RichText(
-//                           //         text: TextSpan(
-//                           //           children: [
-//                           //             TextSpan(
-//                           //               text: '1000',
-//                           //               style: TextStyle(
-//                           //                 fontSize: 15,
-//                           //                 fontWeight: FontWeight.w900,
-//                           //                 color: appTextColor5,
-//                           //               ),
-//                           //             ),
-//                           //             TextSpan(
-//                           //               text: ' Per Person',
-//                           //               style: TextStyle(
-//                           //                 fontSize: 15,
-//                           //                 fontWeight: FontWeight.w500,
-//                           //                 color: appTextColor5,
-//                           //               ),
-//                           //             ),
-//                           //           ],
-//                           //         ),
-//                           //       ),
-//                           //     ),
-//                           //   ],
-//                           // ),
-//                           SizedBox(height: 10.h),
-//                         _infoRow(
-//                           Icons.wallet,
-//                           '${enquiry.estimatedAmount}',
-//                           ' Per Person',
-//                         ),
-//                           SizedBox(height: 10.h),
-//                           // Row(
-//                           //   crossAxisAlignment: CrossAxisAlignment.start,
-//                           //   children: [
-//                           //     Icon(
-//                           //       Icons.calendar_today_sharp,
-//                           //       color: appTextColor5,
-//                           //       size: 18,
-//                           //     ),
-//                           //     SizedBox(width: 5.w),
-//                           //     Flexible(
-//                           //       child: RichText(
-//                           //         text: TextSpan(
-//                           //           children: [
-//                           //             TextSpan(
-//                           //               text: 'April 12',
-//                           //               style: TextStyle(
-//                           //                 fontSize: 15,
-//                           //                 fontWeight: FontWeight.w700,
-//                           //                 color: appTextColor5,
-//                           //               ),
-//                           //             ),
-//                           //             TextSpan(
-//                           //               text: ' - 2:30 pm',
-//                           //               style: TextStyle(
-//                           //                 fontSize: 15,
-//                           //                 fontWeight: FontWeight.w500,
-//                           //                 color: appTextColor5,
-//                           //               ),
-//                           //             ),
-//                           //           ],
-//                           //         ),
-//                           //       ),
-//                           //     ),
-//                           //   ],
-//                           // ),
-//                           _infoRow(
-//                           Icons.calendar_today_sharp,
-//                           enquiry.date,
-//                           ' - ${enquiry.time}',
-//                         ),
-//                           SizedBox(height: 10.h),
-//                           // Row(
-//                           //   crossAxisAlignment: CrossAxisAlignment.start,
-//                           //   children: [
-//                           //     Icon(
-//                           //       Icons.people,
-//                           //       color: appTextColor5,
-//                           //       size: 18,
-//                           //     ),
-//                           //     SizedBox(width: 5.w),
-//                           //     Flexible(
-//                           //       child: RichText(
-//                           //         text: TextSpan(
-//                           //           children: [
-//                           //             TextSpan(
-//                           //               text: '12 ',
-//                           //               style: TextStyle(
-//                           //                 fontSize: 15,
-//                           //                 fontWeight: FontWeight.w700,
-//                           //                 color: appTextColor5,
-//                           //               ),
-//                           //             ),
-//                           //             TextSpan(
-//                           //               text: 'Person',
-//                           //               style: TextStyle(
-//                           //                 fontSize: 15,
-//                           //                 fontWeight: FontWeight.w500,
-//                           //                 color: appTextColor5,
-//                           //               ),
-//                           //             ),
-//                           //           ],
-//                           //         ),
-//                           //       ),
-//                           //     ),
-//                           //   ],
-//                           // ),
-
-//                            _infoRow(
-//                           Icons.people,
-//                           '${enquiry.people} ',
-//                           'Person',
-//                         ),
-//                           SizedBox(height: 10.h),
-//                           Row(
-//                             crossAxisAlignment: CrossAxisAlignment.start,
-//                             children: [
-//                               Icon(
-//                                 Icons.dashboard,
-//                                 color: appTextColor5,
-//                                 size: 18,
-//                               ),
-//                               SizedBox(width: 5.w),
-//                               Expanded(
-//                                 child: RichText(
-//                                   text: TextSpan(
-//                                     children: [
-//                                       TextSpan(
-//                                         text: enquiry.menuItems,
-//                                             // 'Chicken Biriyani , Porotta ,Rotti ,Salad , Payasam, Butter Chicken , Ice cream.',
-//                                         style: TextStyle(
-//                                           fontSize: 15,
-//                                           fontWeight: FontWeight.w500,
-//                                           color: appTextColor5,
-//                                         ),
-//                                       ),
-//                                     ],
-//                                   ),
-//                                 ),
-//                               ),
-//                             ],
-//                           ),
-//                           SizedBox(height: 10.h),
-//                           Row(
-//                             crossAxisAlignment: CrossAxisAlignment.start,
-//                             children: [
-//                               Icon(
-//                                 Icons.handshake,
-//                                 color: appTextColor5,
-//                                 size: 18,
-//                               ),
-//                               SizedBox(width: 5.w),
-//                               Flexible(
-//                                 child: RichText(
-//                                   text: TextSpan(
-//                                     children: [
-//                                       TextSpan(
-//                                         text: '7 Service boys needed.',
-//                                         style: TextStyle(
-//                                           fontSize: 15,
-//                                           fontWeight: FontWeight.w700,
-//                                           color: Colors.black,
-//                                         ),
-//                                       ),
-//                                     ],
-//                                   ),
-//                                 ),
-//                               ),
-//                             ],
-//                           ),
-//                           SizedBox(height: 10.h),
-//                           Row(
-//                             crossAxisAlignment: CrossAxisAlignment.start,
-//                             children: [
-//                               Icon(
-//                                 Icons.analytics,
-//                                 color: appTextColor5,
-//                                 size: 18,
-//                               ),
-//                               SizedBox(width: 5.w),
-//                               Flexible(
-//                                 child: RichText(
-//                                   text: TextSpan(
-//                                     children: [
-//                                       TextSpan(
-//                                         text:'${enquiry.lat}, ${enquiry.lng} - ${enquiry.searchRadius}km Radius',
-//                                         style: TextStyle(
-//                                           fontSize: 15,
-//                                           fontWeight: FontWeight.w700,
-//                                           color: Colors.black,
-//                                         ),
-//                                       ),
-//                                     ],
-//                                   ),
-//                                 ),
-//                               ),
-//                             ],
-//                           ),
-//                         ],
-//                       ),
-//                     ),
-//                     SizedBox(width: 10.w),
-//                     Column(
-//                       crossAxisAlignment: CrossAxisAlignment.end,
-//                       children: [
-//                         AppText(
-//                           text:enquiry.expirationDate,
-//                           //  "Apr 11",
-//                           size: 10,
-//                           fontWeight: FontWeight.w600,
-//                           color: appTextColor3,
-//                         ),
-//                         SizedBox(height: 5.h),
-//                         AppText(
-//                           text: enquiry.expirationTime,
-//                           // "12:30pm",
-//                           size: 10,
-//                           fontWeight: FontWeight.w600,
-//                           color: appTextColor3,
-//                         ),
-//                       ],
-//                     ),
-//                   ],
-//                 ),
-//                 SizedBox(height: 20.h),
-//                 Padding(
-//                   padding: EdgeInsets.symmetric(horizontal: 20.w),
-//                   child: Row(
-//                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                     crossAxisAlignment: CrossAxisAlignment.center,
-//                     children: [
-//                       GestureDetector(
-//                         onTap: onCancelTap,
-//                         child: Row(
-//                           crossAxisAlignment: CrossAxisAlignment.center,
-//                           children: [
-//                             Icon(Icons.timer, size: 15.w, color: Colors.red),
-//                             SizedBox(width: 5.w),
-//                             AppText(
-//                               text: "02:53:49",
-//                               size: 12,
-//                               fontWeight: FontWeight.w400,
-//                               color: Colors.red,
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                       SizedBox(width: 20.w),
-//                       SizedBox(
-//                         width: 100.w,
-//                         height: 40.h,
-//                         child: AppButton(
-//                           text: "Withdraw",
-//                           onPressed: onCancelTap,
-//                           size: 12,
-//                           borderRadius: 10,
-//                           bgColor1: Colors.red,
-//                           bgColor2: Colors.red,
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-//   //new widget
-
-//  Widget _infoRow(IconData icon, String boldText, String normalText) {
-//     return Row(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         Icon(icon, color: appTextColor5, size: 18),
-//         SizedBox(width: 5.w),
-//         Flexible(
-//           child: RichText(
-//             text: TextSpan(
-//               children: [
-//                 TextSpan(
-//                   text: boldText,
-//                   style: TextStyle(
-//                     fontSize: 15,
-//                     fontWeight: FontWeight.w700,
-//                     color: appTextColor5,
-//                   ),
-//                 ),
-//                 TextSpan(
-//                   text: normalText,
-//                   style: TextStyle(
-//                     fontSize: 15,
-//                     fontWeight: FontWeight.w500,
-//                     color: appTextColor5,
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-// }
 
 

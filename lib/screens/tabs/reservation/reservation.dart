@@ -7,6 +7,7 @@ import 'package:fudikoclient/components/apptextfeild.dart';
 import 'package:fudikoclient/model/banquet/banquet_booking_modal.dart';
 import 'package:fudikoclient/screens/tabs/reservation/reservationBox.dart';
 import 'package:fudikoclient/screens/tabs/reservation/searchBox.dart';
+import 'package:fudikoclient/service/reservation/reservation-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 
 class Reservation extends StatefulWidget {
@@ -32,41 +33,34 @@ class _ReservationState extends State<Reservation> {
 
   final TextEditingController _couponController = TextEditingController();
 
-  final List<BookingModel> _allBookings = [
-    BookingModel(
-      couponId: "P17854",
-      restaurantName: "Bollywood Restaurant",
-      pricePerPerson: 950,
-      discount: 5,
-      message: "If you have more than 50 people, we can offer 850 per head.",
-      eventDate: DateTime(2025, 4, 12, 14, 30),
-      bookingDate: DateTime(2025, 4, 11, 12, 30),
-      persons: 12,
-      status: "Confirmed",
-    ),
-    BookingModel(
-      couponId: "P17855",
-      restaurantName: "Spice Garden",
-      pricePerPerson: 800,
-      discount: 10,
-      message: "Complimentary welcome drinks for groups above 30.",
-      eventDate: DateTime(2025, 4, 20, 19, 0),
-      bookingDate: DateTime(2025, 4, 15, 10, 0),
-      persons: 40,
-      status: "Rejected",
-    ),
-    BookingModel(
-      couponId: "P17856",
-      restaurantName: "The Grand Feast",
-      pricePerPerson: 1200,
-      discount: 3,
-      message: "Special dessert platter for groups above 20.",
-      eventDate: DateTime(2025, 5, 1, 13, 0),
-      bookingDate: DateTime(2025, 4, 18, 9, 0),
-      persons: 25,
-      status: "Confirmed",
-    ),
-  ];
+  final ReservationService _reservationService = ReservationService();
+  final List<BookingModel> _allBookings = [];
+  bool _isLoadingBookings = true;
+  String? _loadError;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchBookings();
+  }
+
+  Future<void> _fetchBookings() async {
+    setState(() {
+      _isLoadingBookings = true;
+      _loadError = null;
+    });
+
+    final bookings = await _reservationService.fetchReservations();
+    if (!mounted) return;
+
+    setState(() {
+      _allBookings
+        ..clear()
+        ..addAll(bookings);
+      _isLoadingBookings = false;
+      _loadError = bookings.isEmpty ? 'No reservations found' : null;
+    });
+  }
 
   List<BookingModel> get _filteredBookings {
     List<BookingModel> result = selectedFilter == "All Bookings"
@@ -207,12 +201,17 @@ class _ReservationState extends State<Reservation> {
         // ── Booking list ──
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: _filteredBookings.isEmpty
+          child: _isLoadingBookings
+              ? Padding(
+                  padding: EdgeInsets.symmetric(vertical: 60.h),
+                  child: const Center(child: CircularProgressIndicator()),
+                )
+              : _filteredBookings.isEmpty
               ? Padding(
                   padding: EdgeInsets.symmetric(vertical: 60.h),
                   child: Center(
                     child: AppText(
-                      text: "No bookings found",
+                      text: _loadError ?? "No bookings found",
                       size: 15,
                       fontWeight: FontWeight.w500,
                       color: appTextColor3,

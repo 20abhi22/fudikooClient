@@ -11,6 +11,9 @@ class AppText extends StatelessWidget {
   final double? lineSpacing;
   final bool? isShadow;
   final List<Shadow>? isboxShadow;
+  final int? maxLines;
+  final TextOverflow overflow;
+  final bool softWrap;
 
   const AppText({
     super.key,
@@ -22,15 +25,18 @@ class AppText extends StatelessWidget {
     this.lineSpacing,
     this.isShadow,
     this.isboxShadow,
+    this.maxLines,
+    this.overflow = TextOverflow.visible,
+    this.softWrap = true,
   });
 
   @override
   Widget build(BuildContext context) {
     return Text(
-      softWrap: true,
-      overflow: TextOverflow.visible,
+      softWrap: softWrap,
+      overflow: overflow,
       text,
-      maxLines: 2,
+      maxLines: maxLines ?? 2,
 
       textAlign: isCentered ?? false ? TextAlign.center : TextAlign.start,
       style: TextStyle(
@@ -38,7 +44,6 @@ class AppText extends StatelessWidget {
         fontWeight: fontWeight,
         color: color ?? appTextColor,
         height: lineSpacing ?? 1.2,
-        overflow: TextOverflow.ellipsis,
         shadows:
             isboxShadow ??
             (isShadow == true

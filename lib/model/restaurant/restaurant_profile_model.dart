@@ -1,3 +1,5 @@
+import 'restaurant-model.dart';
+
 class RestaurantDetailsResponseModel {
   final bool status;
   final Restaurant? restaurant;
@@ -32,6 +34,10 @@ class Restaurant {
   final String deliveryServiceArea;
   final String restaurantType;
   final String status;
+  final String? image;           // banner image
+  final List<String> images;     // gallery images
+  final List<OfferModel> offers;  // offers for the restaurant
+  final bool isFavourite;
 
   Restaurant({
     required this.uuid,
@@ -48,6 +54,10 @@ class Restaurant {
     required this.deliveryServiceArea,
     required this.restaurantType,
     required this.status,
+    this.image,
+    this.images = const [],
+    this.offers = const [],
+    required this.isFavourite,
   });
 
   factory Restaurant.fromJson(Map<String, dynamic> json) {
@@ -66,6 +76,15 @@ class Restaurant {
       deliveryServiceArea: json['delivery_service_area'] ?? '',
       restaurantType: json['restaurant_type'] ?? '',
       status: json['status'] ?? '',
+      image: json['image']?.toString(),
+        offers: (json['offers'] as List? ?? [])
+          .map((item) => OfferModel.fromJson(item))
+          .toList(),
+      isFavourite: json['is_favourite'] == true || json['is_favourite'] == 1,
+      images: (json['images'] as List? ?? [])
+          .map((img) => img['image']?.toString() ?? '')
+          .where((url) => url.isNotEmpty)
+          .toList(),
     );
   }
 }

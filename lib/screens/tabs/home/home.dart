@@ -280,266 +280,6 @@ class _HomeState extends State<Home> {
     }
   }
 
-  // Widget build(BuildContext context) {
-  //   // bool isLoading = false;
-  //   // String errorMessage = '';
-  //   return Scaffold(
-  //     backgroundColor: Color(0xfffdf8f5),
-  //     body: Stack(
-  //       children: [
-  //         Column(
-  //           children: [
-  //             Padding(
-  //               padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 25.h),
-  //               child: AppSearchBar(
-  //                 city: _currentCity,
-  //                 onLocationTap: _showLocationPicker,
-  //               ),
-  //             ),
-  //             Expanded(
-  //               child: SingleChildScrollView(
-  //                 child: Column(
-  //                   children: [
-  //                     _discountBuilder(),
-  //                     _mapBuilder(),
-  //                     _dropDownBuilder(),
-
-  //                     // ListView.builder(
-  //                     //   // itemCount: restaurantsList.length,
-  //                     //   itemCount: filteredList.length,
-  //                     //   shrinkWrap: true,
-  //                     //   physics: const NeverScrollableScrollPhysics(),
-  //                     //   itemBuilder: (context, index) {
-  //                     //     // isLoading
-  //                     //     //     ? Center(child: CircularProgressIndicator())
-  //                     //     //     : errorMessage != null
-  //                     //     //     ? Center(child: Text('Error: $errorMessage'))
-  //                     //     //     : restaurantsList.isEmpty
-  //                     //     //     ? Center(child: Text('No restaurants found'))
-  //                     //     //     : ListView.builder(
-  //                     //     //         itemCount: restaurantsList.length,
-  //                     //     //         shrinkWrap: true,
-  //                     //     //         physics: const NeverScrollableScrollPhysics(),
-  //                     //     //         itemBuilder: (context, index) {
-  //                     //     //final restaurant = restaurantsList[index];
-  //                     //     final restaurant = filteredList[index];
-
-  //                     //     return GestureDetector(
-  //                     //       onTap: () {
-  //                     //         setState(() {
-  //                     //           isClicked = true;
-  //                     //         });
-  //                     //       },
-  //                     //       child: InkWell(
-  //                     //         onTap: () {
-  //                     //           Navigator.push(
-  //                     //             context,
-  //                     //             MaterialPageRoute(
-  //                     //               builder: (context) => RestaurantProfile(
-  //                     //                 uuid: restaurant.uuid,
-  //                     //               ),
-  //                     //             ),
-  //                     //           );
-  //                     //         },
-  //                     //         child: RestaurantCard(
-  //                     //           uuid: restaurant.uuid,
-  //                     //           name: restaurant.name,
-  //                     //           type: restaurant.type,
-  //                     //           address: restaurant.address,
-  //                     //           phone: restaurant.phone,
-  //                     //           lat: restaurant.lat,
-  //                     //           lng: restaurant.lng,
-  //                     //           description: restaurant.description,
-  //                     //           availableDishes: restaurant.availableDishes,
-  //                     //           takeAwayService: restaurant.takeAwayService,
-  //                     //           deliveryService: restaurant.deliveryService,
-  //                     //           deliveryServiceArea:
-  //                     //               restaurant.deliveryServiceArea,
-  //                     //           restaurantType: restaurant.restaurantType,
-  //                     //           status: restaurant.status,
-  //                     //           isFavourite: restaurant.isFavorite,
-  //                     //           onRatingOnClick: () {
-  //                     //             Navigator.push(
-  //                     //               context,
-  //                     //               MaterialPageRoute(
-  //                     //                 builder: (context) => RatingPage(),
-  //                     //               ),
-  //                     //             );
-  //                     //           },
-  //                     //           onBoxClicked: () {
-  //                     //             setState(() {
-  //                     //               isBookingModalOpen = !isBookingModalOpen;
-  //                     //             });
-  //                     //             if (isBookingModalOpen) {
-  //                     //               showModalBottomSheet(
-  //                     //                 backgroundColor: Colors.white,
-  //                     //                 context: context,
-  //                     //                 isScrollControlled: true,
-  //                     //                 shape: const RoundedRectangleBorder(
-  //                     //                   borderRadius: BorderRadius.vertical(
-  //                     //                     top: Radius.circular(25),
-  //                     //                   ),
-  //                     //                 ),
-  //                     //                 builder: (context) {
-  //                     //                   return NumberOfPeopleModal(
-  //                     //                     uuid: restaurant.uuid,
-  //                     //                   );
-  //                     //                 },
-  //                     //               );
-  //                     //             }
-  //                     //           },
-  //                     //         ),
-  //                     //       ),
-  //                     //     );
-  //                     //   },
-  //                     // ),
-  //                     isLoading
-  //                         ? const Padding(
-  //                             padding: EdgeInsets.symmetric(vertical: 50),
-  //                             child: Center(child: CircularProgressIndicator()),
-  //                           )
-  //                         : errorMessage.isNotEmpty
-  //                         ? Center(
-  //                             child: Padding(
-  //                               padding: EdgeInsets.symmetric(vertical: 50),
-  //                               child: AppText(
-  //                                 text: 'Error: $errorMessage',
-  //                                 size: 14,
-  //                                 fontWeight: FontWeight.w400,
-  //                                 color: Colors.red,
-  //                               ),
-  //                             ),
-  //                           )
-  //                         : filteredList.isEmpty
-  //                         ? Center(
-  //                             child: Padding(
-  //                               padding: EdgeInsets.symmetric(vertical: 50),
-  //                               child: Column(
-  //                                 children: [
-  //                                   Icon(
-  //                                     Icons.search_off,
-  //                                     size: 60,
-  //                                     color: Colors.grey,
-  //                                   ),
-  //                                   SizedBox(height: 10.h),
-  //                                   AppText(
-  //                                     text: "No restaurants found",
-  //                                     size: 16,
-  //                                     fontWeight: FontWeight.w500,
-  //                                     color: Colors.grey,
-  //                                   ),
-  //                                   SizedBox(height: 10.h),
-  //                                   GestureDetector(
-  //                                     onTap: () {
-  //                                       setState(() {
-  //                                         filteredList = restaurantsList;
-  //                                         selectedDiscountIndex = null;
-  //                                         selectedTypeIndex = null;
-  //                                         selectedDistance = 0;
-  //                                       });
-  //                                     },
-  //                                     child: AppText(
-  //                                       text: "Clear filters",
-  //                                       size: 14,
-  //                                       fontWeight: FontWeight.w500,
-  //                                       color: appTextColor3,
-  //                                     ),
-  //                                   ),
-  //                                 ],
-  //                               ),
-  //                             ),
-  //                           )
-  //                         : ListView.builder(
-  //                             itemCount: filteredList.length,
-  //                             shrinkWrap: true,
-  //                             physics: const NeverScrollableScrollPhysics(),
-  //                             itemBuilder: (context, index) {
-  //                               final restaurant = filteredList[index];
-  //                               return GestureDetector(
-  //                                 onTap: () {
-  //                                   setState(() {
-  //                                     isClicked = true;
-  //                                   });
-  //                                 },
-  //                                 child: InkWell(
-  //                                   onTap: () {
-  //                                     Navigator.push(
-  //                                       context,
-  //                                       MaterialPageRoute(
-  //                                         builder: (context) =>
-  //                                             RestaurantProfile(
-  //                                               uuid: restaurant.uuid,
-  //                                             ),
-  //                                       ),
-  //                                     );
-  //                                   },
-  //                                   child: RestaurantCard(
-  //                                     uuid: restaurant.uuid,
-  //                                     name: restaurant.name,
-  //                                     type: restaurant.type,
-  //                                     address: restaurant.address,
-  //                                     phone: restaurant.phone,
-  //                                     lat: restaurant.lat,
-  //                                     lng: restaurant.lng,
-  //                                     description: restaurant.description,
-  //                                     availableDishes:
-  //                                         restaurant.availableDishes,
-  //                                     takeAwayService:
-  //                                         restaurant.takeAwayService,
-  //                                     deliveryService:
-  //                                         restaurant.deliveryService,
-  //                                     deliveryServiceArea:
-  //                                         restaurant.deliveryServiceArea,
-  //                                     restaurantType: restaurant.restaurantType,
-  //                                     status: restaurant.status,
-  //                                     isFavourite: restaurant.isFavorite,
-  //                                     onRatingOnClick: () {
-  //                                       Navigator.push(
-  //                                         context,
-  //                                         MaterialPageRoute(
-  //                                           builder: (context) => RatingPage(),
-  //                                         ),
-  //                                       );
-  //                                     },
-  //                                     onBoxClicked: () {
-  //                                       setState(() {
-  //                                         isBookingModalOpen =
-  //                                             !isBookingModalOpen;
-  //                                       });
-  //                                       if (isBookingModalOpen) {
-  //                                         showModalBottomSheet(
-  //                                           backgroundColor: Colors.white,
-  //                                           context: context,
-  //                                           isScrollControlled: true,
-  //                                           shape: const RoundedRectangleBorder(
-  //                                             borderRadius:
-  //                                                 BorderRadius.vertical(
-  //                                                   top: Radius.circular(25),
-  //                                                 ),
-  //                                           ),
-  //                                           builder: (context) {
-  //                                             return NumberOfPeopleModal(
-  //                                               uuid: restaurant.uuid,
-  //                                             );
-  //                                           },
-  //                                         );
-  //                                       }
-  //                                     },
-  //                                   ),
-  //                                 ),
-  //                               );
-  //                             },
-  //                           ),
-  //                   ],
-  //                 ),
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
   @override
   Widget build(BuildContext context) {
     final double filterHeaderHeight = 72.h;
@@ -649,13 +389,29 @@ class _HomeState extends State<Home> {
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final restaurant = filteredList[index];
                       return InkWell(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                RestaurantProfile(uuid: restaurant.uuid,deliveryServiceArea: restaurant.deliveryServiceArea,),
-                          ),
-                        ),
+                        onTap: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => RestaurantProfile(
+                                uuid: restaurant.uuid,
+                                deliveryServiceArea: restaurant.deliveryServiceArea,
+                                 isFavourite: restaurant.isFavorite, 
+                              ),
+                            ),
+                          );
+                          if (result is bool) {
+                            if (!mounted) return;
+                            setState(() {
+                              restaurantsList = restaurantsList
+                                  .map((r) => r.uuid == restaurant.uuid ? r.copyWith(isFavorite: result) : r)
+                                  .toList();
+                              filteredList = filteredList
+                                  .map((r) => r.uuid == restaurant.uuid ? r.copyWith(isFavorite: result) : r)
+                                  .toList();
+                            });
+                          }
+                        },
                         child: RestaurantCard(
                           uuid: restaurant.uuid,
                           name: restaurant.name,
@@ -672,11 +428,16 @@ class _HomeState extends State<Home> {
                           restaurantType: restaurant.restaurantType,
                           status: restaurant.status,
                           isFavourite: restaurant.isFavorite,
+                          image: restaurant.image, 
+                          offers: restaurant.offers,
                           onRatingOnClick: () => Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => RatingPage()),
+                            MaterialPageRoute(builder: (_) => RatingPage(
+  restaurantId: restaurant.uuid,
+  restaurantName: restaurant.name,
+)),
                           ),
-                          onBoxClicked: () {
+                          onBoxClicked: (String? offerId) {
                             setState(
                               () => isBookingModalOpen = !isBookingModalOpen,
                             );
@@ -691,7 +452,7 @@ class _HomeState extends State<Home> {
                                   ),
                                 ),
                                 builder: (_) =>
-                                    NumberOfPeopleModal(uuid: restaurant.uuid),
+                                    NumberOfPeopleModal(uuid: restaurant.uuid, offerId: offerId),
                               );
                             }
                           },

@@ -220,13 +220,13 @@ class _PlanAPartyState extends State<PlanAParty> {
           SizedBox(height: 20.h),
 
           // ── other services ──
-          AppTextFeild(
-            text: "Other Services",
-            icon: Icons.handshake,
-            iconColor: appTextColor2,
-            controller: otherServicesController,
-          ),
-          SizedBox(height: 20.h),
+          // AppTextFeild(
+          //   text: "Other Services",
+          //   icon: Icons.handshake,
+          //   iconColor: appTextColor2,
+          //   controller: otherServicesController,
+          // ),
+          // SizedBox(height: 20.h),
 
           // ── people ──
           AppTextFeild(

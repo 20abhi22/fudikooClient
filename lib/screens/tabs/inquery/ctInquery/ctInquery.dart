@@ -10,10 +10,21 @@ import 'package:fudikoclient/service/inquery/inquery-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-class CtInquery extends StatefulWidget { 
-  // final VoidCallback onReviewTap;
+
+// ── orange theme reused from PlanAParty ──────────────────────
+ThemeData _orangePickerTheme() => ThemeData.light().copyWith(
+      colorScheme: const ColorScheme.light(
+        primary: Color(0xfff87b0d),
+        onPrimary: Colors.white,
+        onSurface: Colors.black,
+      ),
+      dialogBackgroundColor: Colors.white,
+    );
+
+class CtInquery extends StatefulWidget {
   final Function(Map<String, String> data) onReviewTap;
   final VoidCallback viewEnquiryOnTap;
+
   const CtInquery({
     super.key,
     required this.onReviewTap,
@@ -25,7 +36,6 @@ class CtInquery extends StatefulWidget {
 }
 
 class _CtInqueryState extends State<CtInquery> {
-  // bool isReviewOnClick = false;
   // ── service ──────────────────────────────────────────
   final InqueryService _cateringInqueryService = InqueryService();
 
@@ -39,9 +49,9 @@ class _CtInqueryState extends State<CtInquery> {
   final TextEditingController amountController = TextEditingController();
 
   // ── date & time ──────────────────────────────────────
-  DateTime? selectedDateTime; // for "Date & Time" field
-  DateTime? expirationDate; // for "Enquiry valid for" date
-  TimeOfDay? expirationTime; // for "Enquiry valid for" time
+  DateTime? selectedDateTime;
+  DateTime? expirationDate;
+  TimeOfDay? expirationTime;
 
   // ── location ─────────────────────────────────────────
   String lat = '';
@@ -68,54 +78,34 @@ class _CtInqueryState extends State<CtInquery> {
     return "$h:${minute.toString().padLeft(2, '0')} $period";
   }
 
-  // ── submit ───────────────────────────────────────────
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  // ── validation + submit ──────────────────────────────
   Future<void> _submitEnquiry() async {
-    // if (menuController.text.isEmpty ||
-    //     peopleController.text.isEmpty ||
-    //     amountController.text.isEmpty ||
-    //     selectedDateTime == null ||
-    //     expirationDate == null ||
-    //     expirationTime == null ||
-    //     lat.isEmpty) {
-    //   ScaffoldMessenger.of(
-    //     context,
-    //   ).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
-    //   return;
-    // }
     if (menuController.text.isEmpty) {
-      ScaffoldMessenger.of( 
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Menu is empty')));
+      _showSnack('Menu is empty');
       return;
     }
     if (peopleController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('People is empty')));
+      _showSnack('Number of people is empty');
       return;
     }
     if (amountController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Amount is empty')));
+      _showSnack('Expected amount is empty');
       return;
     }
     if (selectedDateTime == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Date & Time not selected')));
+      _showSnack('Date & Time not selected');
       return;
     }
     if (expirationDate == null || expirationTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Expiration date/time not selected')),
-      );
+      _showSnack('Expiration date/time not selected');
       return;
     }
     if (lat.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Location not selected')));
+      _showSnack('Location not selected');
       return;
     }
 
@@ -128,18 +118,12 @@ class _CtInqueryState extends State<CtInquery> {
     );
 
     if (!expirationDateTime.isBefore(selectedDateTime!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enquiry expiry must be before the event date & time'),
-        ),
-      );
+      _showSnack('Enquiry expiry must be before the event date & time');
       return;
     }
 
     if (expirationDateTime.isBefore(DateTime.now())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enquiry expiry cannot be in the past')),
-      );
+      _showSnack('Enquiry expiry cannot be in the past');
       return;
     }
 
@@ -162,18 +146,22 @@ class _CtInqueryState extends State<CtInquery> {
     });
   }
 
-  // ── date & time picker ───────────────────────────────
+  // ── date & time picker (orange-themed, from PlanAParty) ──────
   Future<void> _selectDateTime(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
+      firstDate: DateTime.now(), // disallow past dates
       lastDate: DateTime(2101),
+      builder: (context, child) =>
+          Theme(data: _orangePickerTheme(), child: child!),
     );
     if (pickedDate != null) {
       final TimeOfDay? pickedTime = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.now(),
+        builder: (context, child) =>
+            Theme(data: _orangePickerTheme(), child: child!),
       );
       if (pickedTime != null) {
         setState(() {
@@ -216,16 +204,10 @@ class _CtInqueryState extends State<CtInquery> {
             ),
           ),
           SizedBox(height: 20.h),
-          // DescriptionTextArea(
-          //   hintText:
-          //       "Example: Chicken Biriyani , Porotta ,Rotti  , Payasam, Butter Chicken , Ice cream,.Salad",
-          //   topHintText: "Your Menu",
-          //   iconColor: appTextColor2,
-          //   icon: Icons.dashboard,
-          //   maxLength: 300,
-          // ),
+
           // ── menu ──
           DescriptionTextArea(
+            height: 200.h,
             hintText:
                 "Example: Chicken Biriyani , Porotta ,Rotti  , Payasam, Butter Chicken , Ice cream, Salad",
             topHintText: "Your Menu",
@@ -235,26 +217,20 @@ class _CtInqueryState extends State<CtInquery> {
             controller: menuController,
           ),
           SizedBox(height: 20.h),
-          // AppTextFeild(
-          //   text: "Other Services",
-          //   icon: Icons.handshake,
-          //   iconColor: appTextColor2,
-          // ),
-          // ── other services ──
-          AppTextFeild(
-            text: "Other Services",
-            icon: Icons.handshake,
+
+          // ── other services (kept from CtInquery) ──
+          DescriptionTextArea(
+            height: 110.h,
+            hintText: "Example: 10 Service Boys needed",
+            topHintText: "Other Services",
             iconColor: appTextColor2,
+            icon: Icons.handshake,
+            maxLength: 100,
             controller: otherServicesController,
           ),
           SizedBox(height: 20.h),
 
-          // AppTextFeild(
-          //   text: "Number of  People",
-          //   icon: Icons.people,
-          //   iconColor: appTextColor2,
-          // ),
-          //---people----
+          // ── people ──
           AppTextFeild(
             text: "Number of People",
             icon: Icons.people,
@@ -262,15 +238,8 @@ class _CtInqueryState extends State<CtInquery> {
             controller: peopleController,
           ),
           SizedBox(height: 20.h),
-          // GestureDetector(
-          //   onTap: () => _selectDateTime(context),
-          //   child: AppTextFeild(
-          //     text: "Date & Time",
-          //     icon: Icons.calendar_today_sharp,
-          //     iconColor: appTextColor2,
-          //   ),
-          // ),
-          // ── date & time ──
+
+          // ── date & time (orange-themed picker) ──
           GestureDetector(
             onTap: () => _selectDateTime(context),
             child: AppTextFeild(
@@ -284,11 +253,7 @@ class _CtInqueryState extends State<CtInquery> {
           ),
           SizedBox(height: 20.h),
 
-          // AppTextFeild(
-          //   text: "Expected amount per person",
-          //   icon: Icons.wallet,
-          //   iconColor: appTextColor2,
-          // ),
+          // ── expected amount ──
           AppTextFeild(
             text: "Expected amount per person",
             icon: Icons.wallet,
@@ -296,18 +261,7 @@ class _CtInqueryState extends State<CtInquery> {
             controller: amountController,
           ),
           SizedBox(height: 20.h),
-          // GestureDetector(
-          //   onTap: () => Navigator.push(
-          //     context,
-          //     MaterialPageRoute(builder: (context) => LocationSelect(
-          //       returndata: (lat, lng, distance) {
 
-          //           print(lat);
-          //           print(lng);
-          //           print(distance);
-          //         },
-          //     )),
-          //   ),
           // ── location ──
           GestureDetector(
             onTap: () => Navigator.push(
@@ -342,7 +296,8 @@ class _CtInqueryState extends State<CtInquery> {
                       });
                     } catch (_) {
                       setState(() {
-                        locationLabel = '$newLat, $newLng - ${distance}km Radius';
+                        locationLabel =
+                            '$newLat, $newLng - ${distance}km Radius';
                       });
                     }
                   },
@@ -363,24 +318,18 @@ class _CtInqueryState extends State<CtInquery> {
                 ],
               ),
               child: Center(
-                // child: AppText(
-                //   text: "Moscow City - 20km Radius",
-                //   size: 15,
-                //   fontWeight: FontWeight.w400,
-                //   color: Colors.white,
-                // ),
-                child: Center(
-                  child: AppText(
-                    text: locationLabel,
-                    size: 15,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.white,
-                  ),
+                child: AppText(
+                  text: locationLabel,
+                  size: 15,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.white,
                 ),
               ),
             ),
           ),
           SizedBox(height: 40.h),
+
+          // ── enquiry valid for (orange-themed pickers) ──
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -396,7 +345,8 @@ class _CtInqueryState extends State<CtInquery> {
                 ),
               ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                padding:
+                    EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                 decoration: BoxDecoration(
                   color: appSecondaryBackgroundColor,
                   borderRadius: BorderRadius.circular(15.r),
@@ -405,16 +355,7 @@ class _CtInqueryState extends State<CtInquery> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // _IconTextButton(
-                    //   icon: Icons.calendar_today,
-                    //   label: 'Date',
-                    //   onTap: () => showDatePicker(
-                    //     context: context,
-                    //     initialDate: DateTime.now(),
-                    //     firstDate: DateTime(2020),
-                    //     lastDate: DateTime(2101),
-                    //   ),
-                    // ),
+                    // ── expiration date ──
                     _IconTextButton(
                       icon: Icons.calendar_today,
                       label: expirationDate != null
@@ -424,18 +365,16 @@ class _CtInqueryState extends State<CtInquery> {
                         final picked = await showDatePicker(
                           context: context,
                           initialDate: DateTime.now(),
-                          firstDate: DateTime(2020),
+                          firstDate: DateTime.now(), // disallow past
                           lastDate: DateTime(2101),
+                          builder: (context, child) =>
+                              Theme(data: _orangePickerTheme(), child: child!),
                         );
                         if (picked != null)
                           setState(() => expirationDate = picked);
                       },
                     ),
-                    // _IconTextButton(
-                    //   icon: Icons.access_time,
-                    //   label: 'Time',
-                    //   onTap: () {},
-                    // ),
+                    // ── expiration time ──
                     _IconTextButton(
                       icon: Icons.access_time,
                       label: expirationTime != null
@@ -448,6 +387,8 @@ class _CtInqueryState extends State<CtInquery> {
                         final picked = await showTimePicker(
                           context: context,
                           initialTime: TimeOfDay.now(),
+                          builder: (context, child) =>
+                              Theme(data: _orangePickerTheme(), child: child!),
                         );
                         if (picked != null)
                           setState(() => expirationTime = picked);
@@ -459,20 +400,8 @@ class _CtInqueryState extends State<CtInquery> {
             ],
           ),
           SizedBox(height: 30.h),
-          // SizedBox(
-          //   width: 150.w,
-          //   height: 50.h,
-          //   child: AppButton(
-          //     text: "Review",
-          //     onPressed: widget.onReviewTap,
-          //     size: 15,
-          //     borderRadius: 10,
-          //     bgColor1: Colors.green,
-          //     bgColor2: Colors.green,
-          //   ),
-          // ),
-          // SizedBox(height: 30.h),
-          // ── submit button ──
+
+          // ── review button ──
           SizedBox(
             width: 150.w,
             height: 50.h,
@@ -492,6 +421,7 @@ class _CtInqueryState extends State<CtInquery> {
   }
 }
 
+// ── shared helper widget ─────────────────────────────────────
 class _IconTextButton extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -523,32 +453,5 @@ class _IconTextButton extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-Future<void> _selectDateTime(BuildContext context) async {
-  final DateTime? pickedDate = await showDatePicker(
-    context: context,
-    initialDate: DateTime.now(),
-    firstDate: DateTime(2020),
-    lastDate: DateTime(2101),
-  );
-
-  if (pickedDate != null) {
-    final TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-
-    if (pickedTime != null) {
-      // Combine date & time
-      DateTime fullDateTime = DateTime(
-        pickedDate.year,
-        pickedDate.month,
-        pickedDate.day,
-        pickedTime.hour,
-        pickedTime.minute,
-      );
-    }
   }
 }

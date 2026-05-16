@@ -15,6 +15,8 @@ class RestaurantModel {
   final String status;
   final bool isFavorite;
   final double? distance; 
+  final List<OfferModel> offers; 
+  final String? image;   
 
   RestaurantModel({
     required this.uuid,
@@ -33,30 +35,52 @@ class RestaurantModel {
     required this.status,
     required this.isFavorite,
      this.distance,
+    required this.offers, // ← add
+    this.image,
   });
 
-//   factory RestaurantModel.fromJson(Map<String, dynamic> json) {
-//     return RestaurantModel(
-//       uuid: json['uuid'],
-//       name: json['name'],
-//       type: json['type'],
-//       address: json['address'],
-//       phone: json['phone'],
-//       lat: json['lat'],
-//       lng: json['lng'],
-//       description: json['description'],
-//       availableDishes: json['available_dishes'],
-//       takeAwayService: json['takeaway_service'],
-//       deliveryService: json['delivery_service'],
-//       deliveryServiceArea: json['delivery_service_area'],
-//       restaurantType: json['restaurant_type'],
-//       status: json['status'],
-//       isFavorite: json['is_favourite'],
-//     );
-//   }
+  RestaurantModel copyWith({
+    String? uuid,
+    String? name,
+    String? type,
+    String? address,
+    String? phone,
+    String? lat,
+    String? lng,
+    String? description,
+    String? availableDishes,
+    int? takeAwayService,
+    int? deliveryService,
+    String? deliveryServiceArea,
+    String? restaurantType,
+    String? status,
+    bool? isFavorite,
+    double? distance,
+    List<OfferModel>? offers,
+    String? image,
+  }) {
+    return RestaurantModel(
+      uuid: uuid ?? this.uuid,
+      name: name ?? this.name,
+      type: type ?? this.type,
+      address: address ?? this.address,
+      phone: phone ?? this.phone,
+      lat: lat ?? this.lat,
+      lng: lng ?? this.lng,
+      description: description ?? this.description,
+      availableDishes: availableDishes ?? this.availableDishes,
+      takeAwayService: takeAwayService ?? this.takeAwayService,
+      deliveryService: deliveryService ?? this.deliveryService,
+      deliveryServiceArea: deliveryServiceArea ?? this.deliveryServiceArea,
+      restaurantType: restaurantType ?? this.restaurantType,
+      status: status ?? this.status,
+      isFavorite: isFavorite ?? this.isFavorite,
+      distance: distance ?? this.distance,
+      offers: offers ?? this.offers,
+      image: image ?? this.image,
+    );
+  }
 
-
-// }
 factory RestaurantModel.fromJson(Map<String, dynamic> json) {
   return RestaurantModel(
     uuid: json['uuid']?.toString() ?? '',
@@ -81,6 +105,11 @@ factory RestaurantModel.fromJson(Map<String, dynamic> json) {
     distance: json['distance'] != null                // ← ADD THIS
           ? double.tryParse(json['distance'].toString())
           : null,
+    offers: (json['offers'] as List)
+        .map((item) => OfferModel.fromJson(item))
+        .toList(),
+        image: json['image']?.toString(),
+
   );
 }
 }
@@ -97,6 +126,47 @@ class RestaurantListResponse {
       restaurant: (json['restaurants'] as List)
           .map((item) => RestaurantModel.fromJson(item))
           .toList(),
+    );
+  }
+}
+
+class OfferModel {
+  final String uuid;
+  final String partnerUid;
+  final double discountPercentage;
+  final String applicableFor;
+  final String dineType;
+  final String startTime;
+  final String endTime;
+  final String activeDays;
+  final String status;
+
+  OfferModel({
+    required this.uuid,
+    required this.partnerUid,
+    required this.discountPercentage,
+    required this.applicableFor,
+    required this.dineType,
+    required this.startTime,
+    required this.endTime,
+    required this.activeDays,
+    required this.status,
+  });
+
+  factory OfferModel.fromJson(Map<String, dynamic> json) {
+    return OfferModel(
+      uuid: json['uuid']?.toString() ?? '',
+      partnerUid: json['partner_uid']?.toString() ?? '',
+      discountPercentage: double.tryParse(
+            json['discount_percentage']?.toString() ?? '0',
+          ) ??
+          0.0,
+      applicableFor: json['applicable_for']?.toString() ?? '',
+      dineType: json['dine_type']?.toString() ?? '',
+      startTime: json['start_time']?.toString() ?? '',
+      endTime: json['end_time']?.toString() ?? '',
+      activeDays: json['active_days']?.toString() ?? '',
+      status: json['status']?.toString() ?? '',
     );
   }
 }

@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class DioClient {
   static final Dio dio = Dio(
     BaseOptions(
-      baseUrl: 'https://fudikko.bitwissenddev.in/api/',
+      baseUrl: 'https://fudikko.bitwissenddev.in/api',
       connectTimeout: const Duration(seconds: 60),
       receiveTimeout: const Duration(seconds: 60),
       headers: {'Accept': 'application/json'},

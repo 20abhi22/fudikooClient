@@ -29,10 +29,10 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> check() async{
     final token = await getToken();
     if(token != null) {
-      slideRightWidget(newPage: HomePage(), context: context, clearStack: true);
+      pushWidgetWhileRemove(newPage: HomePage(), context: context);
     }
     else {
-      slideRightWidget(newPage: Login(), context: context, clearStack: true );
+      pushWidgetWhileRemove(newPage: Login(), context: context);
     }
   }
 

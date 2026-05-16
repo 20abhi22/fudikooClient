@@ -52,7 +52,7 @@ class InqueryService {
     try {
       final response = await DioClient.dio.get(
         '/customer/enquiry/all',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        // options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       if (response.statusCode == 200) {
         print(response.data);
@@ -220,6 +220,25 @@ class InqueryService {
       );
     }
   }
+Future<Map<String, dynamic>> confirmEnquiry(String enquiryId) async {
+  final token = await getToken();
+  try {
+    final response = await DioClient.dio.post(
+      '/customer/enquiry/confirm',
+      data: FormData.fromMap({'response_id': enquiryId}),
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    print('CONFIRM RESPONSE: ${response.data}');
+    return response.data as Map<String, dynamic>;
+  } catch (e) {
+    if (e is DioException && e.response != null) {
+      print('CONFIRM ERROR BODY: ${e.response?.data}');  // ← this shows exact validation message
+      return e.response?.data as Map<String, dynamic>? ?? 
+             {'status': false, 'message': e.toString()};
+    }
+    return {'status': false, 'message': e.toString()};
+  }
+}
 
   Future<EnquiryResponsesListModel> fetchEnquiryResponses() async {
     final token = await getToken();
@@ -246,4 +265,58 @@ class InqueryService {
       );
     }
   }
+
+  Future<EnquiryResponsesListModel> fetchCateringEnquiryResponses() async {
+    final token = await getToken();
+    try {
+      final response = await DioClient.dio.get(
+        '/customer/catering-enquiry/responses',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      if (response.statusCode == 200) {
+        print('Catering responses received: ${response.data}');
+        final model = EnquiryResponsesListModel.fromJson(response.data);
+        print('Parsed ${model.responses.length} catering responses');
+        return model;
+      }
+
+      print('Catering responses error: ${response.statusCode}');
+      return EnquiryResponsesListModel(
+        status: false,
+        message: 'Failed to fetch catering responses: ${response.statusCode}',
+        responses: [],
+      );
+    } catch (e) {
+      print('Catering responses exception: $e');
+      return EnquiryResponsesListModel(
+        status: false,
+        message: 'Something went wrong: $e',
+        responses: [],
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> confirmCateringEnquiry(String responseId) async {
+    final token = await getToken();
+    try {
+      final response = await DioClient.dio.post(
+        '/customer/catering-enquiry/confirm',
+        data: FormData.fromMap({'response_id': responseId}),
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      if (e is DioException && e.response != null) {
+        return e.response?.data as Map<String, dynamic>? ?? {
+          'status': false,
+          'message': e.toString(),
+        };
+      }
+
+      return {'status': false, 'message': e.toString()};
+    }
+  }
+  
 }
