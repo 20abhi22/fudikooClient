@@ -134,14 +134,14 @@ class _LoginState extends State<Login> {
                   ),
                   AppTextFeild(
                     text: "Username",
-                    icon: Icons.person,
+                    iconImagePath: userIcon,
                     controller: _email,
                     isTextCenter: true,
                   ),
                   SizedBox(height: 20.h),
                   AppTextFeild(
                     text: "Password",
-                    icon: Icons.lock,
+                    iconImagePath: padlockOutlineIcon,
                     isObscure: true,
                     controller: _password,
                     isTextCenter: true,
@@ -211,12 +211,13 @@ class _LoginState extends State<Login> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const Register(),
-                            ),
-                          );
+                          slideRightWidget(newPage: const Register(), context: context);
+                          // Navigator.push(
+                          //   context,
+                          //   MaterialPageRoute(
+                          //     builder: (context) => const Register(),
+                          //   ),
+                          // );
                         },
                         child: AppText(
                           text: "Sign Up",

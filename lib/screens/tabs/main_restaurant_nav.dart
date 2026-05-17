@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:fudikoclient/screens/banquet_tabs/banquet_bottomnav.dart';
 import 'package:fudikoclient/screens/customerProfile/customerProfile.dart';
 import 'package:fudikoclient/screens/tabs/bottomnav.dart';
 import 'package:fudikoclient/screens/tabs/favorite/favorite.dart';
 import 'package:fudikoclient/screens/tabs/home/home.dart';
-import 'package:fudikoclient/screens/tabs/inquery/inquery.dart';
-import 'package:fudikoclient/screens/tabs/profile/restaurantProfile.dart';
 import 'package:fudikoclient/screens/tabs/reservation/reservation.dart';
 import 'package:fudikoclient/utils/constants.dart';
 
@@ -22,7 +19,6 @@ class MainRestaurantNavPage extends StatefulWidget {
 
 class _MainRestaurantNavPageState extends State<MainRestaurantNavPage> {
   int currentIndex = 0;
-  bool isDrawerOpen = false;
   late List<Widget> screens;
 
   @override
@@ -49,20 +45,16 @@ class _MainRestaurantNavPageState extends State<MainRestaurantNavPage> {
       // Inquery(),
       Reservation(),
       Favorite(),
-      CustomerProfile()
+      CustomerProfile(),
     ];
     return SafeArea(
       child: Scaffold(
         backgroundColor: appSecondaryBackgroundColor,
-        bottomNavigationBar:Bottomnav(
+        bottomNavigationBar: Bottomnav(
           selectedIndex: currentIndex,
           onTabSelected: onTabChanged,
         ),
-        body: Stack(
-          children: [
-            screens[currentIndex],
-          ],
-        ),
+        body: Stack(children: [screens[currentIndex]]),
       ),
     );
   }

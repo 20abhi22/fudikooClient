@@ -1,3 +1,5 @@
+
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
@@ -24,6 +26,8 @@ class _ReservationState extends State<Reservation> {
   bool isSearchDeletePressed = false;
   bool isPartyRequestPressed = false;
   bool isCateringRequestPressed = false;
+  BookingModel? selectedBooking;
+  Timer? _bookingCancelTimer;
 
   // Controls whether we show coupon input or the "Search Restaurant" button
   bool isCouponSearchMode = false;
@@ -62,6 +66,25 @@ class _ReservationState extends State<Reservation> {
     });
   }
 
+void _showBookingCanceledPopup() {
+  _bookingCancelTimer?.cancel();
+
+  setState(() {
+    isBookingCanceled = true;
+  });
+
+  _bookingCancelTimer = Timer(
+    const Duration(seconds: 3),
+    () {
+      if (!mounted) return;
+
+      setState(() {
+        isBookingCanceled = false;
+      });
+    },
+  );
+}
+
   List<BookingModel> get _filteredBookings {
     List<BookingModel> result = selectedFilter == "All Bookings"
         ? List.from(_allBookings)
@@ -73,6 +96,7 @@ class _ReservationState extends State<Reservation> {
   @override
   void dispose() {
     _couponController.dispose();
+     _bookingCancelTimer?.cancel();
     super.dispose();
   }
 
@@ -141,58 +165,71 @@ class _ReservationState extends State<Reservation> {
         SizedBox(height: 20.h),
 
         // ── Filter dropdown ──
-        SizedBox(
-          width: 200,
-          child: AppFilterDropDown(
-            hint: selectedFilter,
-            icon: Icons.tune_outlined,
-            toggleDropdown: () {
-              showModalBottomSheet(
-                backgroundColor: Colors.white,
-                context: context,
-                isScrollControlled: true,
-                shape: const RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(25)),
+        SizedBox(width: 150.w,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10.r),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0x1A000000),
+                  offset: const Offset(0, 0),
+                  blurRadius: 10,
+                  spreadRadius: 2,
                 ),
-                builder: (context) {
-                  return Padding(
-                    padding: EdgeInsets.all(30.w),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(10),
+              ],
+            ),
+            child: AppFilterDropDown(
+              hint: selectedFilter,
+              imageIconPath: filterIcon,
+              imageIconSize: 15.sp,
+              toggleDropdown: () {
+                showModalBottomSheet(
+                  backgroundColor: Colors.white,
+                  context: context,
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(25)),
+                  ),
+                  builder: (context) {
+                    return Padding(
+                      padding: EdgeInsets.all(30.w),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 16.h),
-                        Container(
-                          width: MediaQuery.of(context).size.width,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
+                          SizedBox(height: 16.h),
+                          Container(
+                            width: MediaQuery.of(context).size.width,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            padding: EdgeInsets.all(16.w),
+                            child: Column(
+                              children: [
+                                _buildFilterOption("All Bookings"),
+                                Divider(color: Colors.grey[200]),
+                                _buildFilterOption("Confirmed"),
+                                Divider(color: Colors.grey[200]),
+                                _buildFilterOption("Rejected"),
+                              ],
+                            ),
                           ),
-                          padding: EdgeInsets.all(16.w),
-                          child: Column(
-                            children: [
-                              _buildFilterOption("All Bookings"),
-                              Divider(color: Colors.grey[200]),
-                              _buildFilterOption("Confirmed"),
-                              Divider(color: Colors.grey[200]),
-                              _buildFilterOption("Rejected"),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ),
 
@@ -226,14 +263,24 @@ class _ReservationState extends State<Reservation> {
                   itemBuilder: (context, index) {
                     final booking = _filteredBookings[index];
                     return SearchBox(
-                      booking: booking,
-                      onCancelTap: () => setState(
-                        () => isSearchDeletePressed = !isSearchDeletePressed,
-                      ),
-                      onRequestTap: () => setState(
-                        () => isPartyRequestPressed = !isPartyRequestPressed,
-                      ),
-                    );
+  booking: booking,
+  onCancelTap: () {
+    selectedBooking = booking;
+
+    if (booking.status == "Confirmed") {
+      setState(() {
+        isConfirmedPressed = true;
+      });
+    } else {
+      setState(() {
+        isSearchDeletePressed = true;
+      });
+    }
+  },
+  onRequestTap: () => setState(
+    () => isPartyRequestPressed = !isPartyRequestPressed,
+  ),
+);
                   },
                 ),
         ),
@@ -262,13 +309,11 @@ class _ReservationState extends State<Reservation> {
           ],
         ),
         child: Center(
-          child: Text(
-            "Search Restaurant",
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w400,
-              color: appTextColor3,
-            ),
+          child: AppText(
+            text:"Search Restaurant",
+            size: 14,
+            fontWeight: FontWeight.w400,
+            color: menuIconColor.withOpacity(.8),
           ),
         ),
       ),
@@ -398,118 +443,82 @@ class _ReservationState extends State<Reservation> {
 
   // ── Overlays ──────────────────────────────────────────────
   Widget _deleteSearchBox() {
-    return Stack(
-      children: [
-        Container(
-          height: MediaQuery.of(context).size.height,
-          width: MediaQuery.of(context).size.width,
-          color: Colors.black.withOpacity(0.5),
+  return Center(
+    child: Padding(
+      padding: EdgeInsets.symmetric(horizontal: 30.w),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(
+          horizontal: 25.w,
+          vertical: 30.h,
         ),
-        Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 30.w),
-            child: Container(
-              width: double.infinity,
-              padding: EdgeInsets.only(
-                left: 40.w,
-                right: 40.w,
-                top: 30.h,
-                bottom: 30.h,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10.r,
-                    offset: Offset(0, 4.r),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      AppText(
-                        text: "Reason for Cancel",
-                        size: 13,
-                        fontWeight: FontWeight.w500,
-                        color: appTextColor3,
-                        isCentered: true,
-                      ),
-                      const Spacer(),
-                      GestureDetector(
-                        onTap: () => setState(() {
-                          isDeletePressed = false;
-                          isSearchDeletePressed = false;
-                        }),
-                        child: Icon(Icons.close, size: 25, color: appTextColor3),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20.h),
-                  SizedBox(height: 40.h, child: buildStatusButton("I changed my mind")),
-                  SizedBox(height: 10.h),
-                  SizedBox(height: 40.h, child: buildStatusButton("I need to reschedule the event")),
-                  SizedBox(height: 10.h),
-                  SizedBox(height: 40.h, child: buildStatusButton("Entered the wrong details")),
-                  SizedBox(height: 10.h),
-                  SizedBox(height: 40.h, child: buildStatusButton("I booked by mistake")),
-                  SizedBox(height: 10.h),
-                  SizedBox(height: 40.h, child: buildStatusButton("Other Reasons")),
-                  SizedBox(height: 40.h),
-                  AppText(
-                    text: "Canceling a confirmed booking may negatively impact your reliability rating.",
-                    size: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black,
-                    isCentered: true,
-                  ),
-                  SizedBox(height: 10.h),
-                  AppText(
-                    text: "However, if you accept another response instead, the previous booking will be automatically replaced without affecting your rating.",
-                    size: 13,
-                    fontWeight: FontWeight.w400,
-                    color: appTextColor2,
-                    isCentered: true,
-                  ),
-                  SizedBox(height: 20.h),
-                  AppText(
-                    text: "Accept another response",
-                    size: 15,
-                    fontWeight: FontWeight.w400,
-                    color: appLinkColor2,
-                    isCentered: true,
-                  ),
-                  SizedBox(height: 20.h),
-                  SizedBox(
-                    width: 150,
-                    height: 40,
-                    child: AppButton(
-                      text: "Cancel",
-                      bgColor1: Colors.red,
-                      bgColor2: Colors.red,
-                      size: 15,
-                      borderRadius: 10,
-                      onPressed: () {
-                        setState(() {
-                          isSearchDeletePressed = false;
-                          isDeletePressed = false;
-                          isBookingCanceled = true;
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppText(
+              text: "Are you sure you want to Cancel this Booking?",
+              size: 13,
+              fontWeight: FontWeight.w500,
+              color: Colors.black,
+              isCentered: true,
             ),
-          ),
+
+            SizedBox(height: 25.h),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 80.w,
+                  height: 28.h,
+                  child: AppButton(
+                    text: "Yes",
+                    bgColor1: Color(0xFF73B256),
+                    bgColor2: Color(0xFF73B256),
+                    size: 12,
+                    borderRadius: 6.r,
+                    isShadow: true,
+                    onPressed: () {
+                  setState(() {
+                    isSearchDeletePressed = false;
+                  });
+                
+                  _showBookingCanceledPopup();
+                },
+                  ),
+                ),
+
+                SizedBox(width: 15.w),
+
+                SizedBox(
+                  width: 80.w,
+                  height: 28.h,
+                  child: AppButton(
+                    isShadow: true,
+                    text: "No",
+                    bgColor1: Color(0xFFCE3F3F),
+                    bgColor2: Color(0xFFCE3F3F),
+                    size: 12,
+                    borderRadius: 6.r,
+                    onPressed: () {
+                      setState(() {
+                        isSearchDeletePressed = false;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
-      ],
-    );
-  }
+      ),
+    ),
+  );
+}
 
   Widget _bookingCanceledBox() {
     return Stack(
@@ -538,13 +547,18 @@ class _ReservationState extends State<Reservation> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       GestureDetector(
-                        onTap: () => setState(() => isBookingCanceled = false),
-                        child: Icon(Icons.close, size: 30, color: appTextColor),
+onTap: () {
+  _bookingCancelTimer?.cancel();
+
+  setState(() {
+    isBookingCanceled = false;
+  });
+},                        child: Icon(Icons.close, size: 30, color: appTextColor),
                       ),
                     ],
                   ),
                   Image.asset(
-                    'assets/images/cancel.png',
+                    cancelImageIcon,
                     height: 60.h,
                     width: 60.w,
                     fit: BoxFit.contain,
@@ -553,8 +567,8 @@ class _ReservationState extends State<Reservation> {
                   AppText(
                     text: "Booking Canceled!",
                     size: 20,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.red,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFCE3F3F),
                     isCentered: true,
                   ),
                   SizedBox(height: 20.h),
@@ -613,13 +627,14 @@ class _ReservationState extends State<Reservation> {
                           height: 35.h,
                           child: AppButton(
                             text: "Yes",
-                            onPressed: () {
-                              setState(() {
-                                isDeletePressed = false;
-                                isConfirmedPressed = false;
-                                isBookingCanceled = true;
-                              });
-                            },
+                           onPressed: () {
+  setState(() {
+    isDeletePressed = false;
+    isConfirmedPressed = false;
+  });
+
+  _showBookingCanceledPopup();
+},
                             borderRadius: 5.r,
                             bgColor1: Colors.green,
                             bgColor2: Colors.green,

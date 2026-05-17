@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fudikoclient/components/apptext.dart';
 
 class AppButton extends StatelessWidget {
   final String text;
@@ -13,6 +14,7 @@ class AppButton extends StatelessWidget {
   final double? borderRadius;
   final bool isLoading;
   final double? buttonwidth;
+  final bool? isShadow;
   final double? buttonheight;
 
   const AppButton({
@@ -28,6 +30,7 @@ class AppButton extends StatelessWidget {
     this.borderRadius,
     this.isLoading = false,
     this.buttonwidth,
+    this.isShadow,
     this.buttonheight,
   });
 
@@ -52,13 +55,15 @@ class AppButton extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 10.r,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: isShadow == false
+            ? [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
       child: TextButton(
         onPressed: isLoading ? null : onPressed,
@@ -68,46 +73,45 @@ class AppButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(borderRadius?.r ?? 20.r),
           ),
         ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            if (icon != null && !isLoading)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding:  EdgeInsets.only(left: 16.w),
-                  child: imageIconPath != null
-                      ? Image.asset(imageIconPath!, width: iconSize?.w ?? 24.w, height: iconSize?.h ?? 24.h)
-                      : Icon(icon, color: Colors.white, size: iconSize?.sp ?? 25.sp),
-                ),
-              ),
-            Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (isLoading)
-                    SizedBox(
-                      width: 20.w,
-                      height: 20.h,
-                      child: const CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        strokeWidth: 2,
-                      ),
-                    ),
-                  if (isLoading) SizedBox(width: 12.w),
-                  Text(
-                    isLoading ? 'Please wait...' : text,
-                    style: TextStyle(
-                      fontSize: size?.sp ?? 20.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
+        child:  Row(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    if ((icon != null || imageIconPath != null) && !isLoading) ...[
+      imageIconPath != null
+          ? Image.asset(
+              imageIconPath!,
+              width: (iconSize ?? 24).w,
+              height: (iconSize ?? 24).h,
+            )
+          : Icon(
+              icon,
+              color: Colors.white,
+              size: iconSize?.sp ?? 25.sp,
             ),
-          ],
+
+      // SizedBox(width: 5.w),
+    ],
+
+    if (isLoading)
+      SizedBox(
+        width: 20.w,
+        height: 20.h,
+        child: const CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          strokeWidth: 2,
         ),
+      ),
+
+    if (isLoading) SizedBox(width: 12.w),
+
+    AppText(
+      text: isLoading ? 'Please wait...' : text,
+      size: size?.sp ?? 13.sp,
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
+  ],
+),
       ),
     );
   }

@@ -7,6 +7,8 @@ class AppFilterDropDown extends StatefulWidget {
   final Color? textColor;
   final double? height;
   final VoidCallback? toggleDropdown;
+  final String? imageIconPath;
+  final double? imageIconSize;
 
   const AppFilterDropDown({
     super.key,
@@ -15,7 +17,9 @@ class AppFilterDropDown extends StatefulWidget {
     this.suffixIcon,
     this.textColor,
     this.height,
-    this.toggleDropdown
+    this.toggleDropdown,
+    this.imageIconPath,
+    this.imageIconSize,
   });
 
   @override
@@ -51,10 +55,19 @@ class _AppFilterDropDownState extends State<AppFilterDropDown> {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                if (widget.icon != null)
+                if (widget.imageIconPath != null|| widget.icon != null)
                   Positioned(
                     left: 12,
-                    child: Icon(widget.icon, size: 20, color: Colors.black87),
+                    child: Image.asset(
+                      widget.imageIconPath!,
+                      width: widget.imageIconSize ?? 20,
+                      fit: BoxFit.cover,
+                      height: widget.imageIconSize?? 20,
+                    )?? Icon(
+                      widget.icon,
+                      size: 20,
+                      color: Colors.black87,
+                    ),
                   ),
 
                 Center(

@@ -18,6 +18,7 @@ final Color appLangBg = Color.fromARGB(29, 122, 13, 75);
 final Color menuUploadBoxColor = Color.fromARGB(132, 235, 219, 153);
 final Color sliderColor = Color(0xFFF97A0D);
 
+final Color menuIconColor = Color(0xFFD3690E);
 final Color abtTextColor2 = Color(0xFFC95F05);
 final Color abtNextColor2 = Color(0xFFFE943A).withOpacity(.8);
 
@@ -26,6 +27,7 @@ final String searchOrange = 'assets/icons/common/search_Orange.png';
 final String backOrange = 'assets/icons/common/backarrow_Orange.png';
 final Color locationTextColor = Color(0xFFD3690E);
 
+final String cancelImageIcon = 'assets/images/cancel.png';
 //Homapage icons
 final String filtercalenderIcon = 'assets/images/filter_calendar.png';
 final String filterIcon = 'assets/images/setting_filter.png';
@@ -54,3 +56,12 @@ final String logoutIcon = 'assets/icons/common/logout_icon.png';
 final String lockIcon = 'assets/icons/common/lock_icon.png';
 final String rateAppIcon = 'assets/icons/common/rateApp_icon.png';
 final String rewardsIcon = 'assets/icons/common/rewards_icon.png';
+
+
+
+final String emailIcon = 'assets/icons/common/email_icon.png';
+final String mappingIcon = 'assets/icons/common/mappin_icon.png';
+final String padlockOutlineIcon = 'assets/icons/common/padlock_icon.png';
+final String phoneIcon = 'assets/icons/common/phone_icon.png';
+final String userIcon = 'assets/icons/common/user_icon.png';
+final String couponIcon = 'assets/icons/common/coupon_icon.png';

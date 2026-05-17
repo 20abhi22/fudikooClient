@@ -5,6 +5,7 @@ import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/components/apptextfeild.dart';
 import 'package:fudikoclient/model/auth/registration-model.dart';
+import 'package:fudikoclient/routetransitions.dart';
 import 'package:fudikoclient/screens/auth/info.dart';
 import 'package:fudikoclient/screens/auth/login.dart';
 import 'package:fudikoclient/service/auth/registration-service.dart';
@@ -116,10 +117,7 @@ class _RegisterState extends State<Register> {
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const InfoPage()),
-      );
+      slideRightWidget(newPage: const InfoPage(), context: context);
     } else {
       if (!mounted) return;
       final errors = response.fieldErrors;
@@ -175,19 +173,19 @@ class _RegisterState extends State<Register> {
                 ),
                 AppTextFeild(
                   text: "Username",
-                  icon: Icons.person,
+                  iconImagePath: userIcon,
                   controller: _name,
                 ),
                 SizedBox(height: 20.h),
                 AppTextFeild(
                   text: "Email",
-                  icon: Icons.mail,
+                  iconImagePath: emailIcon,
                   controller: _email,
                 ),
                 SizedBox(height: 20.h),
                 AppTextFeild(
                   text: "Password",
-                  icon: Icons.lock,
+                  iconImagePath: padlockOutlineIcon,
                   controller: _password,
                   isObscure: _obscurePassword,
                   enableInteractiveSelection: false,
@@ -200,7 +198,7 @@ class _RegisterState extends State<Register> {
                 SizedBox(height: 20.h),
                 AppTextFeild(
                   text: "Confirm Password",
-                  icon: Icons.lock,
+                  iconImagePath: padlockOutlineIcon,
                   controller: _confirmPassword,
                   isObscure: _obscureConfirmPassword,
                   enableInteractiveSelection: false,
@@ -251,12 +249,7 @@ class _RegisterState extends State<Register> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const Login(),
-                          ),
-                        );
+                        pushWidgetWhileRemove(newPage: const Login(), context: context);
                       },
                       child: AppText(
                         text: "Sign In",

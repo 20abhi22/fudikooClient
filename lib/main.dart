@@ -6,22 +6,22 @@ import 'package:fudikoclient/screens/splashscreen/splashscreen.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fudikoclient/utils/tokens.dart';
 
-void main() async{
+void main() async {
   debugPaintSizeEnabled = false;
   WidgetsFlutterBinding.ensureInitialized();
 
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    
-  ]);
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   DioClient.addInterceptor();
   runApp(
-    ScreenUtilInit(
-      designSize: const Size(402, 874),
-      minTextAdapt: true,
-      builder: (context, child) => const MyApp(),
+    ProviderScope(
+      child: ScreenUtilInit(
+        designSize: const Size(402, 874),
+        minTextAdapt: true,
+        builder: (context, child) => const MyApp(),
+      ),
     ),
   );
 }
@@ -61,14 +61,10 @@ class _MyAppState extends State<MyApp> {
         fontFamily: 'Inter',
       ),
       home: isFirstUse == null
-          ? const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            )
+          ? const Scaffold(body: Center(child: CircularProgressIndicator()))
           : isFirstUse!
-              ? const AboutLayout()
-              : const SplashScreen(),
+          ? const AboutLayout()
+          : const SplashScreen(),
     );
   }
 }

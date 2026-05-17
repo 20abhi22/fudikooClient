@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/apptextfeild.dart';
 import 'package:fudikoclient/model/auth/complete-registration.dart';
+import 'package:fudikoclient/routetransitions.dart';
 import 'package:fudikoclient/screens/auth/otp.dart';
 import 'package:fudikoclient/service/auth/registration-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
@@ -82,11 +83,12 @@ class _InfoPageState extends State<InfoPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(response.message)),
       );
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => Otp()),
-        (route) => false,
-      );
+     pushWidgetWhileRemove(newPage: const Otp(), context: context);
+      // Navigator.pushAndRemoveUntil(
+      //   context,
+      //   MaterialPageRoute(builder: (context) => const Otp()),
+      //   (route) => false,
+      // );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(response.message)),
@@ -114,7 +116,7 @@ class _InfoPageState extends State<InfoPage> {
             SizedBox(height: 20.h),
             AppTextFeild(
               text: "Contact Number",
-              icon: Icons.phone,
+              iconImagePath: phoneIcon,
               controller: phoneController,
               keyboardType: TextInputType.phone,
             ),
@@ -129,7 +131,7 @@ class _InfoPageState extends State<InfoPage> {
                       ? "Location"
                       : _selectedPlaceName,
                   // text: "Tap to select location",
-                  icon: Icons.location_on,
+                  iconImagePath:mappingIcon,
                   controller: locationController,
                   suffixIcon: Icons.map_outlined,
                 ),

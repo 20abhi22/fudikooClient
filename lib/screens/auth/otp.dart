@@ -109,10 +109,9 @@ class _OtpState extends State<Otp> {
                   return;
                 }
                 print('OTP: $_otp');
-                slideRightWidget(
-                  newPage: HomePage(),
+                pushWidgetWhileRemove(
+                  newPage: const HomePage(),
                   context: context,
-                  clearStack: true,
                 );
               },
             ),
