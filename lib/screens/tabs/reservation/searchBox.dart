@@ -23,6 +23,8 @@ class SearchBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isConfirmed = booking.status == "Confirmed";
+    final bool isCancelled =
+        booking.status == "Cancelled" || booking.status == "Canceled";
 
     final Color statusColor = booking.status == "Confirmed"
         ? const Color(0xFF32BA7C).withOpacity(.9)
@@ -166,29 +168,31 @@ class SearchBox extends StatelessWidget {
 
               SizedBox(height: 16.h),
 
-              // ── Action buttons ────────────────────────
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  GestureDetector(
-                    onTap: onCancelTap,
-                    child: AppText(
-                      text: "Cancel",
-                      size: 14.sp,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFFCE3F3F).withOpacity(.9),
+              if (!isCancelled && booking.status != "Completed") ...[
+                // ── Action buttons ────────────────────────
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    GestureDetector(
+                      onTap: onCancelTap,
+                      child: AppText(
+                        text: "Cancel",
+                        size: 14.sp,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFFCE3F3F).withOpacity(.9),
+                      ),
                     ),
-                  ),
 
-                  SizedBox(width: 10.w),
+                    SizedBox(width: 10.w),
 
-                  SizedBox(
-                    width: 121.w,
-                    height: 42.h,
-                    child: Opacity(
-                      opacity: isConfirmed ? 1 : 0.45,
-                      child: IgnorePointer(
-                        ignoring: !isConfirmed,
+                if (booking.status == "Completed") ...[
+                  SizedBox(height: 16.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      SizedBox(
+                        width: 121.w,
+                        height: 42.h,
                         child: AppButton(
                           bgColor1: const Color(0xFFFE943A),
                           bgColor2: const Color(0xFFFE943A),
@@ -198,17 +202,55 @@ class SearchBox extends StatelessWidget {
                           size: 18,
                           borderRadius: 10.r,
                           onPressed: () {
+                            final offerText =
+                                '${booking.discount.toStringAsFixed(0)}% offer for ${booking.applicableFor ?? 'entire menu'}';
                             slideRightWidget(
-                              newPage: QrCoupon(booking: booking),
+                              newPage: QrCoupon(
+                                booking: booking,
+                                offerText: offerText,
+                              ),
                               context: context,
                             );
                           },
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
-              ),
+
+                    SizedBox(
+                      width: 121.w,
+                      height: 42.h,
+                      child: Opacity(
+                        opacity: isConfirmed ? 1 : 0.45,
+                        child: IgnorePointer(
+                          ignoring: !isConfirmed,
+                          child: AppButton(
+                            bgColor1: const Color(0xFFFE943A),
+                            bgColor2: const Color(0xFFFE943A),
+                            imageIconPath: couponIcon,
+                            iconSize: 32,
+                            text: "Coupon",
+                            size: 18,
+                            borderRadius: 10.r,
+                            onPressed: () {
+                              final offerText =
+                                  '${booking.discount.toStringAsFixed(0)}% offer for ${booking.applicableFor ?? 'entire menu'}';
+                              slideRightWidget(
+                                  newPage: QrCoupon(
+                                    booking: booking,
+                                    offerText: offerText,
+                                  ),
+                                context: context,
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),

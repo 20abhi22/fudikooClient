@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class OfferMarkerWidget extends StatelessWidget {
   const OfferMarkerWidget({
@@ -14,7 +15,7 @@ class OfferMarkerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scale = isSelected ? 1.18 : 1.0;
+    final scale = isSelected ? 1.0 : 0.8;
     final opacity = isDimmed ? 0.54 : 1.0;
 
     return Opacity(
@@ -51,14 +52,14 @@ class OfferMarkerWidget extends StatelessWidget {
                 top: 4,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
+                    horizontal: 5,
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? const Color(0xFFF87B0D)
                         : const Color(0xFF36651F),
-                    borderRadius: BorderRadius.circular(7),
+                    borderRadius: BorderRadius.circular(10.r),
                     // border: Border.all(color: Colors.white, width: 3),
                     // boxShadow: const [
                     //   BoxShadow(

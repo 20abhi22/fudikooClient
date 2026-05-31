@@ -40,7 +40,7 @@ dependencies:
   flutter_riverpod: ^2.6.1
   flutter_animate: ^4.5.2
   modal_bottom_sheet: ^3.0.0
-  shared_preferences: ^2.5.3
+  shared_preferences: ^2.5.5
   dio: 5.7.0
   email_validator: ^3.0.0
   flutter_typeahead: ^5.2.0
@@ -53,6 +53,9 @@ dependencies:
   flutter_svg: ^2.0.10+1
   qr_flutter: ^4.0.0
   url_launcher: ^6.2.0
+  translator: ^1.0.4+1
+  image_picker: ^1.1.2
+  package_info_plus: ^4.0.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.13.1

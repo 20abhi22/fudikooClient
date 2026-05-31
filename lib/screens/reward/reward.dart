@@ -22,10 +22,10 @@ class Reward extends StatelessWidget {
                   padding: EdgeInsets.only(left: 30.w, top: 10.h),
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: Icon(
-                      Icons.arrow_back_ios_new,
-                      color: appTextColor3,
-                      size: 28.r,
+                    child: Image.asset(
+                      backOrange,
+                      height: 30.h,
+                      width: 30.w,
                     ),
                   ),
                 ),

@@ -227,11 +227,7 @@ class _FeedBackState extends State<FeedBack> {
               left: 18.w,
               child: GestureDetector(
                 onTap: () => Navigator.pop(context),
-                child: Icon(
-                  Icons.arrow_back_ios_new,
-                  color: appTextColor3,
-                  size: 24.r,
-                ),
+                child: Image.asset(backOrange, width: 24.w, height: 24.h),
               ),
             ),
 
@@ -263,7 +259,7 @@ class _FeedBackState extends State<FeedBack> {
                   GestureDetector(
                     onTap: () {
                       setState(() => _isSubmitClicked = false);
-                      Navigator.pop(context); // ← go back after dismissing
+                      Navigator.pop(context, true); // return success to RatingPage
                     },
                     child: Align(
                       alignment: Alignment.centerRight,

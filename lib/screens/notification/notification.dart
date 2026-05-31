@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fudikoclient/routetransitions.dart';
 import 'package:fudikoclient/screens/notification/notification_setting.dart';
 
 class NotificationScreen extends StatelessWidget {
@@ -22,12 +23,13 @@ class NotificationScreen extends StatelessWidget {
             child: InkWell(
               borderRadius: BorderRadius.circular(50),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const NotificationSettingsPage(),
-                  ),
-                );
+                slideRightWidget(newPage: const NotificationSettingsPage(), context: context);
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(
+                //     builder: (_) => const NotificationSettingsPage(),
+                //   ),
+                // );
 
                 
               },

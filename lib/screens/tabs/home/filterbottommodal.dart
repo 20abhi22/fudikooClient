@@ -48,6 +48,24 @@ class _FilterBottomModalState extends State<FilterBottomModal> {
     _currentDistance = widget.initialDistance;
   }
 
+  String _discountSummary() {
+    if (selectedDiscountIndex == null ||
+        selectedDiscountIndex! < 0 ||
+        selectedDiscountIndex! >= menuList.length) {
+      return 'Any discount';
+    }
+    return menuList[selectedDiscountIndex!];
+  }
+
+  String _typeSummary() {
+    if (selectedTypeIndex == null ||
+        selectedTypeIndex! < 0 ||
+        selectedTypeIndex! >= typeList.length) {
+      return 'Any type';
+    }
+    return typeList[selectedTypeIndex!];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -88,6 +106,16 @@ class _FilterBottomModalState extends State<FilterBottomModal> {
                         fontWeight: FontWeight.w600,
                         color: Colors.black,
                       ),
+                    ],
+                  ),
+                  SizedBox(height: 10.h),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _selectionChip(_discountSummary()),
+                      _selectionChip(_typeSummary()),
+                      _selectionChip('${_currentDistance.toInt()} km'),
                     ],
                   ),
                   SizedBox(height: 50.h),
@@ -240,6 +268,24 @@ class _FilterBottomModalState extends State<FilterBottomModal> {
                 ? Colors.white
                 : Colors.black,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _selectionChip(String text) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Colors.black87,
+          fontSize: 12.sp,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/api/dio_client.dart';
+import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/model/menu/menu_model.dart';
 import 'package:fudikoclient/screens/tabs/profile/menucard.dart';
 import 'package:fudikoclient/service/menu/menu_service.dart';
@@ -177,12 +178,14 @@ class _MenuState extends State<Menu> {
             ),
           ),
           Center(
-            child: Text(
-              text,
-              style: TextStyle(fontSize: 12.sp),
-              textAlign: TextAlign.center,
+            child: AppText(
+              text: text,
+              size: 12.sp,
+              isCentered: true,
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
+              color: Color(0xFF545450).withOpacity(.9),
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -214,13 +217,11 @@ class _MenuState extends State<Menu> {
               ),
             ],
           ),
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w500,
-              color: isSelected ? Colors.white : appTextColor3,
-            ),
+          child: AppText(
+            text:text,
+            size: 13.sp,
+            fontWeight: FontWeight.w500,
+            color: isSelected ? Colors.white : appTextColor3,
           ),
         ),
       ),

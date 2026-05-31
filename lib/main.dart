@@ -8,10 +8,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fudikoclient/utils/tokens.dart';
+import 'package:fudikoclient/utils/translator_service.dart';
 
 void main() async {
   debugPaintSizeEnabled = false;
   WidgetsFlutterBinding.ensureInitialized();
+   await TranslatorService.loadSavedLanguage(); // ← add this
 
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   DioClient.addInterceptor();

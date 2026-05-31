@@ -59,10 +59,10 @@ class EarnPoints extends StatelessWidget {
                     },
                     child: Align(
                       alignment: Alignment.topLeft,
-                      child: Icon(
-                        Icons.arrow_back_ios_new,
-                        color: appTextColor3,
-                        size: 28,
+                      child: Image.asset(
+                        backOrange,
+                        height: 30.h,
+                        width: 30.w,
                       ),
                     ),
                   ),

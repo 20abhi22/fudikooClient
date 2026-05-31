@@ -85,7 +85,9 @@ final RestaurantModel restaurant;
                               size: 20,
                             ),
                             Text(
-                              "4.8",
+                              restaurant.averageReview != null
+                                  ? restaurant.averageReview!.toStringAsFixed(1)
+                                  : "N/A",
                               style: TextStyle(
                                 fontSize: 13.sp,
                                 fontWeight: FontWeight.w800,
@@ -148,6 +150,8 @@ itemBuilder: (context, index) {
                 takeAwayService: restaurant.takeAwayService,
                 deliveryService: restaurant.deliveryService,
                 deliveryServiceArea: restaurant.deliveryServiceArea,
+                averageReview: restaurant.averageReview,
+                distance: restaurant.distance,
                 restaurantType: restaurant.restaurantType,
                 status: restaurant.status,
                 isFavourite: restaurant.isFavorite,

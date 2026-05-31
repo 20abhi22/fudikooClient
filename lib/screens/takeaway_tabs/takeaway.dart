@@ -18,11 +18,7 @@ class TakeAway extends StatelessWidget {
               },
               child: Padding(
                 padding: const EdgeInsets.only(left: 30, top: 30),
-                child: Icon(
-                  Icons.arrow_back_ios_new,
-                  color: appTextColor3,
-                  size: 28,
-                ),
+                child: Image.asset(backOrange, width: 30, height: 30,fit: BoxFit.cover,),
               ),
             ),
             Expanded(

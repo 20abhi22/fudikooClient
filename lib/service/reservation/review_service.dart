@@ -1,18 +1,33 @@
 import 'package:dio/dio.dart';
 import 'package:fudikoclient/api/dio_client.dart';
 import 'package:fudikoclient/model/restaurant/review_model.dart';
+import 'package:fudikoclient/utils/tokens.dart';
 
 class ReviewService {
-Future<ReviewResponse> submitReview(ReviewRequest request) async {
-  DioClient.addInterceptor();
-  // print('BASE URL: ${DioClient.dio.options.baseUrl}');
-  // print('ENDPOINT: customer/restaurant/review');
-  // print('PAYLOAD: ${request.toMap()}');
-  final formData = FormData.fromMap(request.toMap());
-  final response = await DioClient.dio.post(
-    '/customer/restaurant/review',
-    data: formData,
-  );
-  return ReviewResponse.fromJson(response.data);
-}
+  Future<RestaurantReviewListResponse> getRestaurantReviews(
+    String restaurantId,
+  ) async {
+    final token = await getToken();
+    final response = await DioClient.dio.get(
+      '/customer/restaurant/reviews',
+      queryParameters: {'restaurant_id': restaurantId},
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    return RestaurantReviewListResponse.fromJson(
+      Map<String, dynamic>.from(response.data as Map),
+    );
+  }
+
+  Future<ReviewResponse> submitReview(ReviewRequest request) async {
+    final token = await getToken();
+    final formData = FormData.fromMap(request.toMap());
+    final response = await DioClient.dio.post(
+      '/customer/restaurant/review',
+      data: formData,
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    return ReviewResponse.fromJson(
+      Map<String, dynamic>.from(response.data as Map),
+    );
+  }
 }

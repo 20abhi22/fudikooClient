@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/model/inquery/response_model.dart';
+import 'package:fudikoclient/service/inquery/inquery-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:intl/intl.dart';
 
@@ -18,6 +19,92 @@ class CtResponseBox extends StatelessWidget {
     required this.onAcceptTap,
     required this.viewRequestClick,
   });
+
+  Future<void> _showDeclineDialog(BuildContext context) async {
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 20.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppText(
+                text: 'Are you sure you want to decline this enquiry?',
+                isCentered: true,
+                lineSpacing: 1.5,
+                size: 12,
+                fontWeight: FontWeight.w500,
+                color: appTextColor2,
+              ),
+              SizedBox(height: 20.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 30.h,
+                      child: AppButton(
+                        text: 'Yes',
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop();
+                          _declineResponse(context);
+                        },
+                        size: 11,
+                        bgColor1: const Color(0xFF73B256),
+                        bgColor2: const Color(0xFF73B256),
+                        borderRadius: 10,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: SizedBox(
+                      height: 30.h,
+                      child: AppButton(
+                        text: 'No',
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        size: 11,
+                        bgColor1: const Color(0xFFCE3F3F),
+                        bgColor2: const Color(0xFFCE3F3F),
+                        borderRadius: 10,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+Future<void> _declineResponse(BuildContext context) async {
+  final String responseId = response.uuid;
+
+  final result = await InqueryService().declineCateringEnquiry(responseId);
+
+  if (!context.mounted) return;
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        result['status'] == true
+            ? (result['message']?.toString() ??
+                'Enquiry response declined successfully')
+            : (result['message']?.toString() ?? 'Something went wrong'),
+        style: const TextStyle(color: Colors.white),
+      ),
+      backgroundColor: result['status'] == true ? Colors.green : Colors.red,
+      behavior: SnackBarBehavior.floating,
+    ),
+  );
+
+  if (result['status'] == true) {
+    onCancelTap();
+  }
+}
 
   String _formatDateLabel() {
     if (response.createdAt != null) {
@@ -43,6 +130,8 @@ class CtResponseBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool canAct = response.status.trim().toLowerCase() == 'active';
+
     return Padding(
       padding:  EdgeInsets.only(bottom: 20.h),
       child: GestureDetector(
@@ -83,11 +172,7 @@ class CtResponseBox extends StatelessWidget {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.restaurant,
-                                color: appTextColor5,
-                                size: 18,
-                              ),
+                              Image.asset(shopIcon, width: 18.w, height: 18.h, color: appTextColor5),
                               SizedBox(width: 5.w),
                               Flexible(
                                 child: RichText(
@@ -113,11 +198,7 @@ class CtResponseBox extends StatelessWidget {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.wallet,
-                                color: appTextColor5,
-                                size: 18,
-                              ),
+                              Image.asset(walletIcon, width: 18.w, height: 18.h, color: appTextColor5),
                               SizedBox(width: 5.w),
                               Flexible(
                                 child: RichText(
@@ -149,11 +230,7 @@ class CtResponseBox extends StatelessWidget {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.discount,
-                                color: appTextColor5,
-                                size: 18,
-                              ),
+                              Image.asset(offerIcon, width: 18.w, height: 18.h, color: appTextColor5),
                               SizedBox(width: 5.w),
                               Expanded(
                                 child: RichText(
@@ -179,11 +256,7 @@ class CtResponseBox extends StatelessWidget {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.message,
-                                color: appTextColor5,
-                                size: 18,
-                              ),
+                              Image.asset(commentIcon, width: 18.w, height: 18.h, color: appTextColor5),
                               SizedBox(width: 5.w),
                               Flexible(
                                 child: RichText(
@@ -239,14 +312,14 @@ class CtResponseBox extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.manage_search_sharp,
-                            size: 15.w,
-                            color: appLinkColor2,
+                          Image.asset(
+                            detailsIcon,
+                            width: 20.w,
+                            height: 20.h,
                           ),
                           SizedBox(width: 5.w),
                           AppText(
-                            text: "View Request",
+                            text: 'View Request',
                             size: 12,
                             fontWeight: FontWeight.w400,
                             color: appLinkColor2,
@@ -254,36 +327,37 @@ class CtResponseBox extends StatelessWidget {
                         ],
                       ),
                     ),
-                      SizedBox(width: 20.w),
-                    Column(
-                      children: [
-                        SizedBox(
-                          width: 100.w,
-                          height: 35.h,
-                          child: AppButton(
-                            text: "Decline",
-                            onPressed: onCancelTap,
-                            size: 12,
-                            borderRadius: 5.r,
-                            bgColor1: Colors.red,
-                            bgColor2: Colors.red,
-                          ),
-                        ),
-                        SizedBox(height: 10.h),
-                        SizedBox(
-                          width: 100.w,
-                          height: 35.h,
-                          child: AppButton(
-                            text: "Accept",
-                            onPressed: onAcceptTap,
+                    if (canAct)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          SizedBox(
+                            width: 80.w,
+                            height: 25.h,
+                            child: AppButton(
+                              text: 'Decline',
+                              onPressed: () => _showDeclineDialog(context),
                               size: 12,
-                            borderRadius: 5.r,
-                            bgColor1: Colors.green,
-                            bgColor2: Colors.green,
+                              borderRadius: 5.r,
+                              bgColor1: const Color(0xFFCE3F3F),
+                              bgColor2: const Color(0xFFCE3F3F),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                          SizedBox(width: 12.w),
+                          SizedBox(
+                            width: 80.w,
+                            height: 25.h,
+                            child: AppButton(
+                              text: 'Accept',
+                              onPressed: onAcceptTap,
+                              size: 12,
+                              borderRadius: 5.r,
+                              bgColor1: const Color(0xFFF73B256),
+                              bgColor2: const Color(0xFFF73B256),
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
               ],

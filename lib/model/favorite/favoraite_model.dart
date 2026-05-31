@@ -1,3 +1,5 @@
+import 'package:fudikoclient/model/restaurant/restaurant-model.dart';
+
 class FavouriteRestaurantModel {
   final String uuid;
   final String name;
@@ -13,6 +15,10 @@ class FavouriteRestaurantModel {
   final String deliveryServiceArea;
   final String restaurantType;
   final String status;
+  final double? averageReview;
+  final double? distance;
+  final List<OfferModel> offers;
+  final String? image;
 
   FavouriteRestaurantModel({
     required this.uuid,
@@ -29,6 +35,9 @@ class FavouriteRestaurantModel {
     required this.deliveryServiceArea,
     required this.restaurantType,
     required this.status,
+    this.averageReview,
+    required this.offers,
+    this.image, this.distance,
   });
 
   factory FavouriteRestaurantModel.fromJson(Map<String, dynamic> json) {
@@ -47,6 +56,16 @@ class FavouriteRestaurantModel {
       deliveryServiceArea: json['delivery_service_area'],
       restaurantType: json['restaurant_type'],
       status: json['status'],
+        averageReview: json['average_review'] != null
+          ? double.tryParse(json['average_review'].toString())
+          : null,
+      offers: (json['offers'] as List<dynamic>? ?? [])
+          .map((item) => OfferModel.fromJson(item as Map<String, dynamic>))
+          .toList(),
+        image: json['image']?.toString(),
+        distance: json['distance'] != null
+            ? double.tryParse(json['distance'].toString())
+            : null,
     );
   }
 }

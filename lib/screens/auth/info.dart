@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
@@ -11,6 +13,7 @@ import 'package:fudikoclient/utils/tokens.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 
 class InfoPage extends StatefulWidget {
   const InfoPage({super.key});
@@ -22,9 +25,12 @@ class InfoPage extends StatefulWidget {
 class _InfoPageState extends State<InfoPage> {
   RegistrationAuthService registrationAuthService = RegistrationAuthService();
   bool isLoading = false;
+  final ImagePicker _imagePicker = ImagePicker();
+  File? _profilePhoto;
 
   TextEditingController phoneController = TextEditingController();
-  TextEditingController locationController = TextEditingController(); // shows place name
+  TextEditingController locationController =
+      TextEditingController(); // shows place name
 
   double? _selectedLat;
   double? _selectedLng;
@@ -34,6 +40,66 @@ class _InfoPageState extends State<InfoPage> {
   void initState() {
     super.initState();
     print(getToken());
+  }
+
+  @override
+  void dispose() {
+    phoneController.dispose();
+    locationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickProfilePhoto(ImageSource source) async {
+    final pickedImage = await _imagePicker.pickImage(
+      source: source,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 65,
+    );
+
+    if (pickedImage == null) return;
+
+    setState(() {
+      _profilePhoto = File(pickedImage.path);
+    });
+  }
+
+  void _showProfilePhotoOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: Icon(Icons.photo_camera, color: appButtonColor),
+                  title: const Text('Take photo'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickProfilePhoto(ImageSource.camera);
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.photo_library, color: appButtonColor),
+                  title: const Text('Upload from gallery'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickProfilePhoto(ImageSource.gallery);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _openMapPicker() async {
@@ -71,28 +137,29 @@ class _InfoPageState extends State<InfoPage> {
       phone: phoneController.text,
       lat: _selectedLat.toString(),
       lng: _selectedLng.toString(),
+      profilePicturePath: _profilePhoto?.path,
     );
 
-    CompleteRegistrationModelResponse response =
-        await registrationAuthService.completeRegistration(details);
+    CompleteRegistrationModelResponse response = await registrationAuthService
+        .completeRegistration(details);
 
     if (!mounted) return;
     setState(() => isLoading = false);
 
     if (response.status) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response.message)),
-      );
-     pushWidgetWhileRemove(newPage: const Otp(), context: context);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(response.message)));
+      pushWidgetWhileRemove(newPage: const Otp(), context: context);
       // Navigator.pushAndRemoveUntil(
       //   context,
       //   MaterialPageRoute(builder: (context) => const Otp()),
       //   (route) => false,
       // );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(response.message)));
     }
   }
 
@@ -105,12 +172,45 @@ class _InfoPageState extends State<InfoPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(height: 60.h),
-            ClipOval(
-              child: Image.asset(
-                'assets/images/avatar.png',
-                width: 150.w,
-                height: 150.h,
-                fit: BoxFit.cover,
+            GestureDetector(
+              onTap: _showProfilePhotoOptions,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ClipOval(
+                    child: _profilePhoto == null
+                        ? Image.asset(
+                            'assets/images/avatar.png',
+                            width: 150.w,
+                            height: 150.h,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.file(
+                            _profilePhoto!,
+                            width: 150.w,
+                            height: 150.h,
+                            fit: BoxFit.cover,
+                          ),
+                  ),
+                  Positioned(
+                    right: 4.w,
+                    bottom: 4.h,
+                    child: Container(
+                      width: 36.r,
+                      height: 36.r,
+                      decoration: BoxDecoration(
+                        color: appButtonColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2.r),
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             SizedBox(height: 20.h),
@@ -131,7 +231,7 @@ class _InfoPageState extends State<InfoPage> {
                       ? "Location"
                       : _selectedPlaceName,
                   // text: "Tap to select location",
-                  iconImagePath:mappingIcon,
+                  iconImagePath: mappingIcon,
                   controller: locationController,
                   suffixIcon: Icons.map_outlined,
                 ),
@@ -141,10 +241,7 @@ class _InfoPageState extends State<InfoPage> {
             SizedBox(height: 40.h),
             isLoading
                 ? const CircularProgressIndicator()
-                : AppButton(
-                    text: 'Continue',
-                    onPressed: completeRegistration,
-                  ),
+                : AppButton(text: 'Continue', onPressed: completeRegistration),
             SizedBox(height: 60.h),
           ],
         ),
@@ -178,7 +275,8 @@ class _MapPickerPageState extends State<_MapPickerPage> {
     try {
       LocationPermission permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) return;
+          permission == LocationPermission.deniedForever)
+        return;
 
       Position pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
@@ -289,9 +387,7 @@ class _MapPickerPageState extends State<_MapPickerPage> {
               padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                boxShadow: [
-                  BoxShadow(color: Colors.black26, blurRadius: 8),
-                ],
+                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
               ),
               child: Row(
                 children: [
@@ -321,8 +417,6 @@ class _MapPickerPageState extends State<_MapPickerPage> {
     );
   }
 }
-
-
 
 // import 'package:flutter/material.dart';
 // import 'package:flutter_screenutil/flutter_screenutil.dart';

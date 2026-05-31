@@ -75,27 +75,41 @@ class _OtpState extends State<Otp> {
             ),
             SizedBox(height: 40.h),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(4, (index) {
-                return Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 6.w),
-                    child: RawKeyboardListener(
-                      focusNode: FocusNode(),
-                      onKey: (event) => _onKeyPressed(event, index),
-                      child: AppTextFeild(
-                        controller: _controllers[index],
-                        focusNode: _focusNodes[index],
-                        isTextCenter: true,
-                        keyboardType: TextInputType.number,
-                        maxLength: 1,
-                        onChanged: (value) => _onChanged(value, index),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ),
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: List.generate(4, (index) {
+    return Expanded(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 6.w),
+        child: RawKeyboardListener(
+          focusNode: FocusNode(),
+          onKey: (event) => _onKeyPressed(event, index),
+          child: AppTextFeild(
+            controller: _controllers[index],
+            focusNode: _focusNodes[index],
+            isTextCenter: true,
+            keyboardType: TextInputType.number,
+            maxLength: 1,
+            onChanged: (value) => _onChanged(value, index),
+
+            // ── fixes ──
+            sideIconSlotWidth: 0,   // no icon slot consuming width
+            sideSpacing: 0,         // no spacing either side
+            boxShadow: [            // shadow stays INSIDE bounds
+              BoxShadow(
+                color: Colors.black.withOpacity(0.10),
+                blurRadius: 6,
+                spreadRadius: 0,
+                offset: const Offset(0, 2),
+              ),
+            ],
+            padding: EdgeInsets.zero,
+            inputContentPadding: EdgeInsets.symmetric(vertical: 14.h),
+          ),
+        ),
+      ),
+    );
+  }),
+),
             SizedBox(height: 40.h),
             AppButton(
               text: 'Verify',

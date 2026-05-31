@@ -60,6 +60,7 @@ class PersistentGoogleMap extends ConsumerWidget {
       rotateGesturesEnabled: gesturesEnabled,
       tiltGesturesEnabled: gesturesEnabled,
       minMaxZoomPreference: const MinMaxZoomPreference(10, 19),
+      padding: const EdgeInsets.only(bottom: 200),
       
       onMapCreated: controllerService.attach,
       onTap: (_) => onMapTap(),

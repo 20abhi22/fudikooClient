@@ -26,6 +26,14 @@ class _AppSwitchState extends State<AppSwitch> {
   }
 
   @override
+  void didUpdateWidget(covariant AppSwitch oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialValue != widget.initialValue) {
+      isOn = widget.initialValue;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(

@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -26,11 +25,13 @@ class _ReservationState extends State<Reservation> {
   bool isSearchDeletePressed = false;
   bool isPartyRequestPressed = false;
   bool isCateringRequestPressed = false;
+  bool _isCancellingBooking = false;
   BookingModel? selectedBooking;
   Timer? _bookingCancelTimer;
+  Timer? _searchDebounce;
+  int _searchRequestToken = 0;
 
-  // Controls whether we show coupon input or the "Search Restaurant" button
-  bool isCouponSearchMode = false;
+  bool _isSearchActive = false;
 
   String selectedStatus = "Entered the wrong details";
   String selectedFilter = "All Bookings";
@@ -39,13 +40,53 @@ class _ReservationState extends State<Reservation> {
 
   final ReservationService _reservationService = ReservationService();
   final List<BookingModel> _allBookings = [];
+  final List<BookingModel> _searchBookings = [];
   bool _isLoadingBookings = true;
+  bool _isSearchingBookings = false;
   String? _loadError;
 
   @override
   void initState() {
     super.initState();
+    _couponController.addListener(_onSearchChanged);
     _fetchBookings();
+  }
+
+  void _onSearchChanged() {
+    final String query = _couponController.text.trim();
+
+    _searchDebounce?.cancel();
+
+    if (query.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _searchBookings.clear();
+        _isSearchingBookings = false;
+        _loadError = _allBookings.isEmpty ? 'No reservations found' : null;
+      });
+      return;
+    }
+
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () async {
+      final int token = ++_searchRequestToken;
+
+      if (!mounted) return;
+      setState(() {
+        _isSearchingBookings = true;
+        _loadError = null;
+      });
+
+      final bookings = await _reservationService.searchReservations(query);
+      if (!mounted || token != _searchRequestToken) return;
+
+      setState(() {
+        _searchBookings
+          ..clear()
+          ..addAll(bookings);
+        _isSearchingBookings = false;
+        _loadError = bookings.isEmpty ? 'No matching reservations found' : null;
+      });
+    });
   }
 
   Future<void> _fetchBookings() async {
@@ -64,39 +105,94 @@ class _ReservationState extends State<Reservation> {
       _isLoadingBookings = false;
       _loadError = bookings.isEmpty ? 'No reservations found' : null;
     });
+
+    if (_couponController.text.trim().isNotEmpty) {
+      _onSearchChanged();
+    }
   }
 
-void _showBookingCanceledPopup() {
-  _bookingCancelTimer?.cancel();
+  void _showBookingCanceledPopup() {
+    _bookingCancelTimer?.cancel();
 
-  setState(() {
-    isBookingCanceled = true;
-  });
+    setState(() {
+      isBookingCanceled = true;
+    });
 
-  _bookingCancelTimer = Timer(
-    const Duration(seconds: 3),
-    () {
+    _bookingCancelTimer = Timer(const Duration(seconds: 3), () {
       if (!mounted) return;
 
       setState(() {
         isBookingCanceled = false;
       });
-    },
-  );
-}
+    });
+  }
+
+  Future<void> _declineSelectedBooking() async {
+    final BookingModel? booking = selectedBooking;
+    final String reservationId = booking?.uuid.trim().isNotEmpty == true
+        ? booking!.uuid
+        : booking?.id ?? '';
+
+    if (reservationId.isEmpty || _isCancellingBooking) {
+      return;
+    }
+
+    setState(() {
+      _isCancellingBooking = true;
+    });
+
+    final bool isDeclined = await _reservationService.declineReservation(reservationId);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isCancellingBooking = false;
+    });
+
+    if (!isDeclined) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to cancel this reservation.')),
+      );
+      return;
+    }
+
+    setState(() {
+      isDeletePressed = false;
+      isSearchDeletePressed = false;
+      isConfirmedPressed = false;
+      selectedBooking = null;
+    });
+
+    await _fetchBookings();
+    _showBookingCanceledPopup();
+  }
 
   List<BookingModel> get _filteredBookings {
+    final List<BookingModel> source = _couponController.text.trim().isNotEmpty
+        ? List.from(_searchBookings)
+        : List.from(_allBookings);
+
     List<BookingModel> result = selectedFilter == "All Bookings"
-        ? List.from(_allBookings)
-        : _allBookings.where((b) => b.status == selectedFilter).toList();
+      ? source
+      : selectedFilter == "Canceled"
+        ? source
+          .where(
+            (b) => b.status == "Canceled" || b.status == "Cancelled",
+          )
+          .toList()
+        : source.where((b) => b.status == selectedFilter).toList();
     result.sort((a, b) => b.bookingDate.compareTo(a.bookingDate));
     return result;
   }
 
   @override
   void dispose() {
+    _couponController.removeListener(_onSearchChanged);
     _couponController.dispose();
-     _bookingCancelTimer?.cancel();
+    _searchDebounce?.cancel();
+    _bookingCancelTimer?.cancel();
     super.dispose();
   }
 
@@ -104,47 +200,51 @@ void _showBookingCanceledPopup() {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: appSecondaryBackgroundColor,
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: _buildContent(),
-          ),
-          if (isDeletePressed || isSearchDeletePressed)
-            Positioned.fill(
-              child: Container(
-                color: Colors.black38,
-                child: _deleteSearchBox(),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            RefreshIndicator(
+              color: appTextColor,
+              onRefresh: _fetchBookings,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: _buildContent(),
               ),
             ),
-          if (isPartyRequestPressed)
-            Positioned.fill(
-              child: Container(
-                color: Colors.black38,
-                child: _viewPartyRequestWidget(),
+            if (isDeletePressed || isSearchDeletePressed)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black38,
+                  child: _deleteSearchBox(),
+                ),
               ),
-            ),
-          if (isCateringRequestPressed)
-            Positioned.fill(
-              child: Container(
-                color: Colors.black38,
-                child: _viewCateringRequestWidget(),
+            if (isPartyRequestPressed)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black38,
+                  child: _viewPartyRequestWidget(),
+                ),
               ),
-            ),
-          if (isConfirmedPressed)
-            Positioned.fill(
-              child: Container(
-                color: Colors.black38,
-                child: _confirmedBox(),
+            if (isCateringRequestPressed)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black38,
+                  child: _viewCateringRequestWidget(),
+                ),
               ),
-            ),
-          if (isBookingCanceled)
-            Positioned.fill(
-              child: Container(
-                color: Colors.black38,
-                child: _bookingCanceledBox(),
+            if (isConfirmedPressed)
+              Positioned.fill(
+                child: Container(color: Colors.black38, child: _confirmedBox()),
               ),
-            ),
-        ],
+            if (isBookingCanceled)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black38,
+                  child: _bookingCanceledBox(),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -157,15 +257,14 @@ void _showBookingCanceledPopup() {
         // ── Search bar: toggles between button and coupon input ──
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: isCouponSearchMode
-              ? _couponInputField()   // shows coupon text field with close icon
-              : _searchRestaurantButton(), // shows tappable "Search Restaurant"
+          child: _couponInputField(),
         ),
 
         SizedBox(height: 20.h),
 
         // ── Filter dropdown ──
-        SizedBox(width: 150.w,
+        SizedBox(
+          width: 150.w,
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10.r),
@@ -179,6 +278,8 @@ void _showBookingCanceledPopup() {
               ],
             ),
             child: AppFilterDropDown(
+              
+              height: 30.h,
               hint: selectedFilter,
               imageIconPath: filterIcon,
               imageIconSize: 15.sp,
@@ -188,8 +289,9 @@ void _showBookingCanceledPopup() {
                   context: context,
                   isScrollControlled: true,
                   shape: const RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(25)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(25),
+                    ),
                   ),
                   builder: (context) {
                     return Padding(
@@ -219,6 +321,10 @@ void _showBookingCanceledPopup() {
                                 Divider(color: Colors.grey[200]),
                                 _buildFilterOption("Confirmed"),
                                 Divider(color: Colors.grey[200]),
+                                _buildFilterOption("Completed"),
+                                Divider(color: Colors.grey[200]),
+                                _buildFilterOption("Canceled"),
+                                Divider(color: Colors.grey[200]),
                                 _buildFilterOption("Rejected"),
                               ],
                             ),
@@ -238,7 +344,7 @@ void _showBookingCanceledPopup() {
         // ── Booking list ──
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: _isLoadingBookings
+          child: _isLoadingBookings || _isSearchingBookings
               ? Padding(
                   padding: EdgeInsets.symmetric(vertical: 60.h),
                   child: const Center(child: CircularProgressIndicator()),
@@ -263,24 +369,24 @@ void _showBookingCanceledPopup() {
                   itemBuilder: (context, index) {
                     final booking = _filteredBookings[index];
                     return SearchBox(
-  booking: booking,
-  onCancelTap: () {
-    selectedBooking = booking;
+                      booking: booking,
+                      onCancelTap: () {
+                        selectedBooking = booking;
 
-    if (booking.status == "Confirmed") {
-      setState(() {
-        isConfirmedPressed = true;
-      });
-    } else {
-      setState(() {
-        isSearchDeletePressed = true;
-      });
-    }
-  },
-  onRequestTap: () => setState(
-    () => isPartyRequestPressed = !isPartyRequestPressed,
-  ),
-);
+                        if (booking.status == "Confirmed") {
+                          setState(() {
+                            isConfirmedPressed = true;
+                          });
+                        } else {
+                          setState(() {
+                            isSearchDeletePressed = true;
+                          });
+                        }
+                      },
+                      onRequestTap: () => setState(
+                        () => isPartyRequestPressed = !isPartyRequestPressed,
+                      ),
+                    );
                   },
                 ),
         ),
@@ -288,59 +394,61 @@ void _showBookingCanceledPopup() {
     );
   }
 
-  // ── "Search Restaurant" pill button (default state) ──────
-  Widget _searchRestaurantButton() {
-    return GestureDetector(
-      onTap: () {
-        setState(() => isCouponSearchMode = true);
-      },
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: 18.h, horizontal: 20.w),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Center(
-          child: AppText(
-            text:"Search Restaurant",
-            size: 14,
-            fontWeight: FontWeight.w400,
-            color: menuIconColor.withOpacity(.8),
-          ),
-        ),
-      ),
-    );
-  }
-
   // ── Coupon number input (shown after tapping Search Restaurant) ──
   Widget _couponInputField() {
+    if (!_isSearchActive) {
+      // ── "Search Restaurant" button ──
+      return GestureDetector(
+        onTap: () => setState(() => _isSearchActive = true),
+        child: Container(
+          height: 50.h,
+          padding: EdgeInsets.symmetric(vertical: 19.h, horizontal: 20.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+           boxShadow: [
+  BoxShadow(
+    color: Colors.black.withOpacity(0.05), // #000000 5%
+    offset: const Offset(0, 0),            // X: 0, Y: 0
+    blurRadius: 10,                        // Blur
+    spreadRadius: 5,                       // Spread
+  ),
+],
+          ),
+          child: Center(
+            child: AppText(
+              text:"Search Restaurant",
+              size: 14,
+                fontWeight: FontWeight.w400,
+                color: menuIconColor.withOpacity(.7),
+              
+            ),
+          ),
+        ),
+      );
+    }
+
+    // ── Coupon input (shown after tap) ──
     return Container(
+      height: 50.h,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+  BoxShadow(
+    color: Colors.black.withOpacity(0.05), // #000000 5%
+    offset: const Offset(0, 0),            // X: 0, Y: 0
+    blurRadius: 10,                        // Blur
+    spreadRadius: 5,                       // Spread
+  ),
+],
       ),
       child: Row(
         children: [
-          // Close button — tapping it goes back to "Search Restaurant"
           GestureDetector(
             onTap: () {
-              _couponController.clear();
-              setState(() => isCouponSearchMode = false);
+              _couponController.clear(); // clear search results
+              setState(() => _isSearchActive = false); // go back to button
             },
             child: Padding(
               padding: EdgeInsets.only(left: 14.w),
@@ -348,28 +456,26 @@ void _showBookingCanceledPopup() {
             ),
           ),
           Expanded(
-            child: TextField(
+            child: AppTextFeild(
+              boxShadow: [
+                BoxShadow(
+    color: Colors.black.withOpacity(0.00), // #000000 5%
+    offset: const Offset(0, 0),            // X: 0, Y: 0
+    blurRadius: 0,                        // Blur
+    spreadRadius: 0,                       // Spread
+  ),
+              ],
               controller: _couponController,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: appTextColor3,
-              ),
-              decoration: InputDecoration(
-                hintText: "Enter the Coupon Number",
-                hintStyle: TextStyle(
-                  fontSize: 13.sp,
-                  color: appTextColor3,
-                ),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
-                  vertical: 18.h,
-                  horizontal: 20.w,
-                ),
-              ),
+              text: 'Enter the Coupon Number',
+              isTextCenter: true,
+              onChanged: (_) {},
+              size: 13,
+              textColor: menuIconColor.withOpacity(.7),
+              inputContentPadding:
+                  EdgeInsets.symmetric(vertical: 19.h, horizontal: 20.w),
+              backgroundColor: Colors.transparent,
             ),
           ),
-          
         ],
       ),
     );
@@ -443,82 +549,74 @@ void _showBookingCanceledPopup() {
 
   // ── Overlays ──────────────────────────────────────────────
   Widget _deleteSearchBox() {
-  return Center(
-    child: Padding(
-      padding: EdgeInsets.symmetric(horizontal: 30.w),
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(
-          horizontal: 25.w,
-          vertical: 30.h,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20.r),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppText(
-              text: "Are you sure you want to Cancel this Booking?",
-              size: 13,
-              fontWeight: FontWeight.w500,
-              color: Colors.black,
-              isCentered: true,
-            ),
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 30.w),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(horizontal: 25.w, vertical: 30.h),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppText(
+                text: "Are you sure you want to Cancel this Booking?",
+                size: 13,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
+                isCentered: true,
+              ),
 
-            SizedBox(height: 25.h),
+              SizedBox(height: 25.h),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 80.w,
-                  height: 28.h,
-                  child: AppButton(
-                    text: "Yes",
-                    bgColor1: Color(0xFF73B256),
-                    bgColor2: Color(0xFF73B256),
-                    size: 12,
-                    borderRadius: 6.r,
-                    isShadow: true,
-                    onPressed: () {
-                  setState(() {
-                    isSearchDeletePressed = false;
-                  });
-                
-                  _showBookingCanceledPopup();
-                },
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 80.w,
+                    height: 28.h,
+                    child: AppButton(
+                      text: "Yes",
+                      bgColor1: Color(0xFF73B256),
+                      bgColor2: Color(0xFF73B256),
+                      size: 12,
+                      borderRadius: 6.r,
+                      isShadow: true,
+                      // isLoading: _isCancellingBooking,
+                      onPressed: _declineSelectedBooking,
+                    ),
                   ),
-                ),
 
-                SizedBox(width: 15.w),
+                  SizedBox(width: 15.w),
 
-                SizedBox(
-                  width: 80.w,
-                  height: 28.h,
-                  child: AppButton(
-                    isShadow: true,
-                    text: "No",
-                    bgColor1: Color(0xFFCE3F3F),
-                    bgColor2: Color(0xFFCE3F3F),
-                    size: 12,
-                    borderRadius: 6.r,
-                    onPressed: () {
-                      setState(() {
-                        isSearchDeletePressed = false;
-                      });
-                    },
+                  SizedBox(
+                    width: 80.w,
+                    height: 28.h,
+                    child: AppButton(
+                      isShadow: true,
+                      text: "No",
+                      bgColor1: Color(0xFFCE3F3F),
+                      bgColor2: Color(0xFFCE3F3F),
+                      size: 12,
+                      borderRadius: 6.r,
+                      onPressed: () {
+                        setState(() {
+                          isSearchDeletePressed = false;
+                        });
+                      },
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _bookingCanceledBox() {
     return Stack(
@@ -534,7 +632,10 @@ void _showBookingCanceledPopup() {
             child: Container(
               width: double.infinity,
               padding: EdgeInsets.only(
-                left: 40.w, right: 40.w, top: 30.h, bottom: 30.h,
+                left: 40.w,
+                right: 40.w,
+                top: 30.h,
+                bottom: 30.h,
               ),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -547,13 +648,14 @@ void _showBookingCanceledPopup() {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       GestureDetector(
-onTap: () {
-  _bookingCancelTimer?.cancel();
+                        onTap: () {
+                          _bookingCancelTimer?.cancel();
 
-  setState(() {
-    isBookingCanceled = false;
-  });
-},                        child: Icon(Icons.close, size: 30, color: appTextColor),
+                          setState(() {
+                            isBookingCanceled = false;
+                          });
+                        },
+                        child: Icon(Icons.close, size: 30, color: appTextColor),
                       ),
                     ],
                   ),
@@ -595,7 +697,10 @@ onTap: () {
             child: Container(
               width: double.infinity,
               padding: EdgeInsets.only(
-                left: 40.w, right: 40.w, top: 30.h, bottom: 30.h,
+                left: 40.w,
+                right: 40.w,
+                top: 30.h,
+                bottom: 30.h,
               ),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -613,7 +718,8 @@ onTap: () {
                   ),
                   SizedBox(height: 10.h),
                   AppText(
-                    text: "Cancelling a confirmed order may negatively impact your reliability rating",
+                    text:
+                        "Cancelling a confirmed order may negatively impact your reliability rating",
                     size: 15,
                     fontWeight: FontWeight.w400,
                     color: Colors.black,
@@ -627,18 +733,12 @@ onTap: () {
                           height: 35.h,
                           child: AppButton(
                             text: "Yes",
-                           onPressed: () {
-  setState(() {
-    isDeletePressed = false;
-    isConfirmedPressed = false;
-  });
-
-  _showBookingCanceledPopup();
-},
+                              onPressed: _declineSelectedBooking,
                             borderRadius: 5.r,
                             bgColor1: Colors.green,
                             bgColor2: Colors.green,
                             size: 12,
+                              isLoading: _isCancellingBooking,
                           ),
                         ),
                       ),
@@ -648,7 +748,8 @@ onTap: () {
                           height: 35.h,
                           child: AppButton(
                             text: "No",
-                            onPressed: () => setState(() => isConfirmedPressed = false),
+                            onPressed: () =>
+                                setState(() => isConfirmedPressed = false),
                             size: 12,
                             borderRadius: 5.r,
                             bgColor1: Colors.red,
@@ -687,20 +788,40 @@ onTap: () {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      AppText(text: "Requested party", size: 15, fontWeight: FontWeight.w500, color: appTextColor2),
+                      AppText(
+                        text: "Requested party",
+                        size: 15,
+                        fontWeight: FontWeight.w500,
+                        color: appTextColor2,
+                      ),
                       GestureDetector(
-                        onTap: () => setState(() => isCateringRequestPressed = false),
-                        child: Icon(Icons.close, color: appTextColor3, size: 25),
+                        onTap: () =>
+                            setState(() => isCateringRequestPressed = false),
+                        child: Icon(
+                          Icons.close,
+                          color: appTextColor3,
+                          size: 25,
+                        ),
                       ),
                     ],
                   ),
                   SizedBox(height: 20.h),
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: AppText(text: "P17854", size: 20, fontWeight: FontWeight.w700, color: appTextColor3),
+                    child: AppText(
+                      text: "P17854",
+                      size: 20,
+                      fontWeight: FontWeight.w700,
+                      color: appTextColor3,
+                    ),
                   ),
                   SizedBox(height: 20.h),
-                  AppText(text: "Catering request details here", size: 15, fontWeight: FontWeight.w400, color: appTextColor2),
+                  AppText(
+                    text: "Catering request details here",
+                    size: 15,
+                    fontWeight: FontWeight.w400,
+                    color: appTextColor2,
+                  ),
                 ],
               ),
             ),
@@ -730,20 +851,40 @@ onTap: () {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      AppText(text: "Requested party", size: 15, fontWeight: FontWeight.w500, color: appTextColor2),
+                      AppText(
+                        text: "Requested party",
+                        size: 15,
+                        fontWeight: FontWeight.w500,
+                        color: appTextColor2,
+                      ),
                       GestureDetector(
-                        onTap: () => setState(() => isPartyRequestPressed = false),
-                        child: Icon(Icons.close, color: appTextColor3, size: 25),
+                        onTap: () =>
+                            setState(() => isPartyRequestPressed = false),
+                        child: Icon(
+                          Icons.close,
+                          color: appTextColor3,
+                          size: 25,
+                        ),
                       ),
                     ],
                   ),
                   SizedBox(height: 20.h),
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: AppText(text: "P17854", size: 20, fontWeight: FontWeight.w700, color: appTextColor3),
+                    child: AppText(
+                      text: "P17854",
+                      size: 20,
+                      fontWeight: FontWeight.w700,
+                      color: appTextColor3,
+                    ),
                   ),
                   SizedBox(height: 20.h),
-                  AppText(text: "Party request details here", size: 15, fontWeight: FontWeight.w400, color: appTextColor2),
+                  AppText(
+                    text: "Party request details here",
+                    size: 15,
+                    fontWeight: FontWeight.w400,
+                    color: appTextColor2,
+                  ),
                 ],
               ),
             ),
@@ -753,1621 +894,3 @@ onTap: () {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import 'package:flutter/material.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
-// import 'package:fudikoclient/components/appbutton.dart';
-// import 'package:fudikoclient/components/appfilterdropdown.dart';
-// import 'package:fudikoclient/components/apptext.dart';
-// import 'package:fudikoclient/components/apptextfeild.dart';
-// import 'package:fudikoclient/model/banquet/banquet_booking_modal.dart';
-// import 'package:fudikoclient/screens/tabs/reservation/reservationBox.dart';
-// import 'package:fudikoclient/screens/tabs/reservation/searchBox.dart';
-// import 'package:fudikoclient/utils/constants.dart';
-
-// class Reservation extends StatefulWidget {
-//   const Reservation({super.key});
-
-//   @override
-//   State<Reservation> createState() => _ReservationState();
-// }
-
-// class _ReservationState extends State<Reservation> {
-//   bool isDeletePressed = false;
-//   bool isConfirmedPressed = false;
-//   bool isBookingCanceled = false;
-//   bool isPartySearchPressed = false;
-//   bool isCateringSearchPressed = false;
-//   bool isSearchDeletePressed = false;
-//   bool isPartyRequestPressed = false;
-//   bool isCateringRequestPressed = false;
-//   String selectedStatus = "Entered the wrong details";
-//   String mainSelectedStatus = "Party";
-
-
-
-//   String selectedFilter = "All Bookings";
-
-//   //----------------temp data------------------
-//   // ── Sample data ──────────────────────────────────────────
-//   final List<BookingModel> _allBookings = [
-//     BookingModel(
-//       couponId: "P17854",
-//       restaurantName: "Bollywood Restaurant",
-//       pricePerPerson: 950,
-//       discount: 5,
-//       message: "If you have more than 50 people, we can offer 850 per head.",
-//       eventDate: DateTime(2025, 4, 12, 14, 30),
-//       bookingDate: DateTime(2025, 4, 11, 12, 30),
-//       persons: 12,
-//       status: "Confirmed",
-//     ),
-//     BookingModel(
-//       couponId: "P17855",
-//       restaurantName: "Spice Garden",
-//       pricePerPerson: 800,
-//       discount: 10,
-//       message: "Complimentary welcome drinks for groups above 30.",
-//       eventDate: DateTime(2025, 4, 20, 19, 0),
-//       bookingDate: DateTime(2025, 4, 15, 10, 0),
-//       persons: 40,
-//       status: "Rejected",
-//     ),
-//     BookingModel(
-//       couponId: "P17856",
-//       restaurantName: "The Grand Feast",
-//       pricePerPerson: 1200,
-//       discount: 3,
-//       message: "Special dessert platter for groups above 20.",
-//       eventDate: DateTime(2025, 5, 1, 13, 0),
-//       bookingDate: DateTime(2025, 4, 18, 9, 0),
-//       persons: 25,
-//       status: "Confirmed",
-//     ),
-//   ];
-
-//   // ── Filtered + sorted list getter ────────────────────────
-//   List<BookingModel> get _filteredBookings {
-//     List<BookingModel> result = selectedFilter == "All Bookings"
-//         ? List.from(_allBookings)
-//         : _allBookings.where((b) => b.status == selectedFilter).toList();
-
-//     // Sort latest bookingDate first
-//     result.sort((a, b) => b.bookingDate.compareTo(a.bookingDate));
-//     return result;
-//   }
-
-//   //----------------temp data------------------
-
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: appSecondaryBackgroundColor,
-//       body: Stack(
-//         children: [
-//           SingleChildScrollView(
-//             // child: mainSelectedStatus == "Party" ? isPartySearchPressed ? _viewSearchWidget() : _buildMain()
-//             //       : isCateringSearchPressed ? _viewCateringSearchWidget() : _buildCateringMain(),
-//             child: isPartySearchPressed ? _viewSearchWidget() : _buildMain(),
-//           ),
-//           // Padding(
-//           //   padding:  EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
-//           //   child:
-//           //   Row(
-//           //     children: [
-//           //       Expanded(child: buildMainStatusButton("Party")),
-//           //       SizedBox(width: 10.w),
-//           //       Expanded(child: buildMainStatusButton("Catering")),
-//           //     ],
-//           //   ),
-//           // ),
-//           if (isDeletePressed)
-//             Positioned.fill(
-//               child: Container(color: Colors.black38, child: _deleteBox()),
-//             ),
-//           if (isPartyRequestPressed)
-//             Positioned.fill(
-//               child: Container(
-//                 color: Colors.black38,
-//                 child: _viewPartyRequestWidget(),
-//               ),
-//             ),
-//           if (isCateringRequestPressed)
-//             Positioned.fill(
-//               child: Container(
-//                 color: Colors.black38,
-//                 child: _viewCateringRequestWidget(),
-//               ),
-//             ),
-//           if (isSearchDeletePressed)
-//             Positioned.fill(
-//               child: Container(
-//                 color: Colors.black38,
-//                 child: _deleteSearchBox(),
-//               ),
-//             ),
-//           if (isConfirmedPressed)
-//             Positioned.fill(
-//               child: Container(color: Colors.black38, child: _confirmedBox()),
-//             ),
-//           if (isBookingCanceled)
-//             Positioned.fill(
-//               child: Container(
-//                 color: Colors.black38,
-//                 child: _bookingCanceledBox(),
-//               ),
-//             ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   // Widget _viewCateringSearchWidget(){
-//   //   return Column(
-//   //     children: [
-//   //       GestureDetector(
-//   //         onTap: () {
-//   //           setState(() {
-//   //             isCateringSearchPressed = !isCateringSearchPressed;
-//   //           });
-//   //         },
-//   //         child: Padding(
-//   //           padding:  EdgeInsets.only(left: 20.w, right: 20.w, top: 80.h),
-//   //           child: AppTextFeild(
-//   //             text: "Enter the Coupon Number",
-//   //             textColor: appTextColor3,
-//   //             isTextCenter: true,
-//   //             icon: Icons.close,
-//   //             iconColor: appTextColor3,
-//   //             size: 13.sp,
-//   //           ),
-//   //         ),
-//   //       ),
-//   //       SizedBox(height: 20.h),
-//   //       SizedBox(
-//   //         width: 200,
-//   //         child: AppFilterDropDown(
-//   //           hint: "filter",
-//   //           icon: Icons.tune_outlined,
-//   //           toggleDropdown: () {
-//   //             showModalBottomSheet(
-//   //               backgroundColor: Colors.white,
-//   //               context: context,
-//   //               isScrollControlled: true,
-//   //               shape: const RoundedRectangleBorder(
-//   //                 borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-//   //               ),
-//   //               builder: (context) {
-//   //                 return Padding(
-//   //                   padding:  EdgeInsets.all(30.w),
-//   //                   child: Column(
-//   //                     mainAxisSize: MainAxisSize.min,
-//   //                     children: [
-//   //                       Container(
-//   //                         width: 40,
-//   //                         height: 5,
-//   //                         decoration: BoxDecoration(
-//   //                           color: Colors.grey[300],
-//   //                           borderRadius: BorderRadius.circular(10),
-//   //                         ),
-//   //                       ),
-//   //                       SizedBox(height: 16.h),
-//   //                       Container(
-//   //                         width: MediaQuery.of(context).size.width,
-//   //                         decoration: BoxDecoration(
-//   //                           color: Colors.white,
-//   //                           borderRadius: BorderRadius.circular(20),
-//   //                         ),
-//   //                         padding:  EdgeInsets.all(16.w),
-//   //                         child: Column(
-//   //                           children: [
-//   //                             Divider(color: Colors.grey[200]),
-//   //                             SizedBox(height: 10.h),
-//   //                             AppText(
-//   //                               text: "item1",
-//   //                               size: 15,
-//   //                               fontWeight: FontWeight.w500,
-//   //                               color: Colors.black,
-//   //                             ),
-//   //                             SizedBox(height: 10.h),
-//   //                             Divider(color: Colors.grey[200]),
-//   //                             SizedBox(height: 10.h),
-//   //                             AppText(
-//   //                               text: "item2",
-//   //                               size: 15,
-//   //                               fontWeight: FontWeight.w500,
-//   //                               color: Colors.black,
-//   //                             ),
-//   //                             SizedBox(height: 10.h),
-//   //                             Divider(color: Colors.grey[200]),
-//   //                             SizedBox(height: 10.h),
-//   //                             AppText(
-//   //                               text: "item3",
-//   //                               size: 15,
-//   //                               fontWeight: FontWeight.w500,
-//   //                               color: Colors.black,
-//   //                             ),
-//   //                             SizedBox(height: 10.h),
-//   //                             Divider(color: Colors.grey[200]),
-//   //                           ],
-//   //                         ),
-//   //                       ),
-//   //                     ],
-//   //                   ),
-//   //                 );
-//   //               },
-//   //             );
-//   //           },
-//   //         ),
-//   //       ),
-//   //       SizedBox(height: 20.h),
-//   //       Padding(
-//   //         padding:  EdgeInsets.symmetric(horizontal: 20.w),
-//   //         child: ListView.builder(
-//   //           itemCount: 3,
-//   //           shrinkWrap: true,
-//   //           physics: const NeverScrollableScrollPhysics(),
-//   //           itemBuilder: (context, index) {
-//   //             return SearchBox(
-//   //               onCancelTap: () {
-//   //                 setState(() {
-//   //                   isSearchDeletePressed = !isSearchDeletePressed;
-//   //                 });
-//   //               },
-//   //               onRequestTap: () {
-//   //                 setState(() {
-//   //                   isCateringRequestPressed = !isCateringRequestPressed;
-//   //                 });
-//   //               },
-//   //             );
-//   //           },
-//   //         ),
-//   //       ),
-//   //     ],
-//   //   );
-//   // }
-
-//   // Widget _buildCateringMain(){
-//   //   return Column(
-//   //     children: [
-//   //       GestureDetector(
-//   //         onTap: () {
-//   //           setState(() {
-//   //             isCateringSearchPressed = !isCateringSearchPressed;
-//   //           });
-//   //         },
-//   //         child: Padding(
-//   //           padding:  EdgeInsets.only(left: 30.w, right: 30.w, top: 80.h),
-//   //           child: Container(
-//   //             padding:  EdgeInsets.symmetric(vertical: 20.h, horizontal: 20.w),
-//   //             decoration: BoxDecoration(
-//   //               color: Colors.white,
-//   //               borderRadius: BorderRadius.circular(20),
-//   //               boxShadow: [
-//   //                 BoxShadow(
-//   //                   color: Colors.black.withOpacity(0.2),
-//   //                   blurRadius: 10,
-//   //                   offset: const Offset(0, 4),
-//   //                 ),
-//   //               ],
-//   //             ),
-//   //             child: Center(
-//   //               child: Text(
-//   //                 "Search Restaurant",
-//   //                 style: TextStyle(
-//   //                   fontSize: 16,
-//   //                   fontWeight: FontWeight.w400,
-//   //                   color: appTextColor3,
-//   //                 ),
-//   //               ),
-//   //             ),
-//   //           ),
-//   //         ),
-//   //       ),
-//   //       SizedBox(height: 20.h),
-//   //       SizedBox(
-//   //         width: 200,
-//   //         child: AppFilterDropDown(
-//   //           hint: "filter",
-//   //           icon: Icons.tune_outlined,
-//   //           toggleDropdown: () {
-//   //             showModalBottomSheet(
-//   //               backgroundColor: Colors.white,
-//   //               context: context,
-//   //               isScrollControlled: true,
-//   //               shape: const RoundedRectangleBorder(
-//   //                 borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-//   //               ),
-//   //               builder: (context) {
-//   //                 return Padding(
-//   //                   padding:  EdgeInsets.all(30.w),
-//   //                   child: Column(
-//   //                     mainAxisSize: MainAxisSize.min,
-//   //                     children: [
-//   //                       Container(
-//   //                         width: 40,
-//   //                         height: 5,
-//   //                         decoration: BoxDecoration(
-//   //                           color: Colors.grey[300],
-//   //                           borderRadius: BorderRadius.circular(10),
-//   //                         ),
-//   //                       ),
-//   //                       SizedBox(height: 16.h),
-//   //                       Container(
-//   //                         width: MediaQuery.of(context).size.width,
-//   //                         decoration: BoxDecoration(
-//   //                           color: Colors.white,
-//   //                           borderRadius: BorderRadius.circular(20),
-//   //                         ),
-//   //                         padding:  EdgeInsets.all(16.w),
-//   //                         child: Column(
-//   //                           children: [
-//   //                             Divider(color: Colors.grey[200]),
-//   //                             SizedBox(height: 10.h),
-//   //                             AppText(
-//   //                               text: "item1",
-//   //                               size: 15,
-//   //                               fontWeight: FontWeight.w500,
-//   //                               color: Colors.black,
-//   //                             ),
-//   //                             SizedBox(height: 10.h),
-//   //                             Divider(color: Colors.grey[200]),
-//   //                             SizedBox(height: 10.h),
-//   //                             AppText(
-//   //                               text: "item2",
-//   //                               size: 15,
-//   //                               fontWeight: FontWeight.w500,
-//   //                               color: Colors.black,
-//   //                             ),
-//   //                             SizedBox(height: 10.h),
-//   //                             Divider(color: Colors.grey[200]),
-//   //                             SizedBox(height: 10.h),
-//   //                             AppText(
-//   //                               text: "item3",
-//   //                               size: 15,
-//   //                               fontWeight: FontWeight.w500,
-//   //                               color: Colors.black,
-//   //                             ),
-//   //                             SizedBox(height: 10.h),
-//   //                             Divider(color: Colors.grey[200]),
-//   //                           ],
-//   //                         ),
-//   //                       ),
-//   //                     ],
-//   //                   ),
-//   //                 );
-//   //               },
-//   //             );
-//   //           },
-//   //         ),
-//   //       ),
-//   //       SizedBox(height: 20.h),
-//   //       Padding(
-//   //         padding:  EdgeInsets.symmetric(horizontal: 20.w),
-//   //         child: ListView.builder(
-//   //           itemCount: 1,
-//   //           shrinkWrap: true,
-//   //           physics: const NeverScrollableScrollPhysics(),
-//   //           itemBuilder: (context, index) {
-//   //             return ReservationBox(
-//   //               onCancelTap: () {
-//   //                 setState(() {
-//   //                   isDeletePressed = !isDeletePressed;
-//   //                 });
-//   //               },
-//   //             );
-//   //           },
-//   //         ),
-//   //       ),
-//   //     ],
-//   //   );
-//   // }
-
-//   Widget _buildMain() {
-//     return Column(
-//       children: [
-//         GestureDetector(
-//           onTap: () {
-//             setState(() {
-//               isPartySearchPressed = !isPartySearchPressed;
-//             });
-//           },
-//           child: Padding(
-//             padding:  EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h),
-//             child: Container(
-//               padding:  EdgeInsets.symmetric(vertical: 20.h, horizontal: 20.w),
-//               decoration: BoxDecoration(
-//                 color: Colors.white,
-//                 borderRadius: BorderRadius.circular(20),
-//                 boxShadow: [
-//                   BoxShadow(
-//                     color: Colors.black.withOpacity(0.2),
-//                     blurRadius: 10,
-//                     offset: const Offset(0, 4),
-//                   ),
-//                 ],
-//               ),
-//               child: Center(
-//                 child: Text(
-//                   "Search Restaurant",
-//                   style: TextStyle(
-//                     fontSize: 13.sp,
-//                     fontWeight: FontWeight.w400,
-//                     color: appTextColor3,
-//                   ),
-//                 ),
-//               ),
-//             ),
-//           ),
-//         ),
-//         SizedBox(height: 20.h),
-//         SizedBox(
-//           width: 200,
-//           child: AppFilterDropDown(
-//             hint: "filter",
-//             icon: Icons.tune_outlined,
-//             toggleDropdown: () {
-//               showModalBottomSheet(
-//                 backgroundColor: Colors.white,
-//                 context: context,
-//                 isScrollControlled: true,
-//                 shape: const RoundedRectangleBorder(
-//                   borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-//                 ),
-//                 builder: (context) {
-//                   return Padding(
-//                     padding:  EdgeInsets.all(30.w),
-//                     child: Column(
-//                       mainAxisSize: MainAxisSize.min,
-//                       children: [
-//                         Container(
-//                           width: 40,
-//                           height: 5,
-//                           decoration: BoxDecoration(
-//                             color: Colors.grey[300],
-//                             borderRadius: BorderRadius.circular(10),
-//                           ),
-//                         ),
-//                         SizedBox(height: 16.h),
-//                         Container(
-//                           width: MediaQuery.of(context).size.width,
-//                           decoration: BoxDecoration(
-//                             color: Colors.white,
-//                             borderRadius: BorderRadius.circular(20),
-//                           ),
-//                           padding:  EdgeInsets.all(16.w),
-//                           child: Column(
-//                             children: [
-//                               Divider(color: Colors.grey[200]),
-//                               SizedBox(height: 10.h),
-//                               AppText(
-//                                 text: "item1",
-//                                 size: 15,
-//                                 fontWeight: FontWeight.w500,
-//                                 color: Colors.black,
-//                               ),
-//                               SizedBox(height: 10.h),
-//                               Divider(color: Colors.grey[200]),
-//                               SizedBox(height: 10.h),
-//                               AppText(
-//                                 text: "item2",
-//                                 size: 15,
-//                                 fontWeight: FontWeight.w500,
-//                                 color: Colors.black,
-//                               ),
-//                               SizedBox(height: 10.h),
-//                               Divider(color: Colors.grey[200]),
-//                               SizedBox(height: 10.h),
-//                               AppText(
-//                                 text: "item3",
-//                                 size: 15,
-//                                 fontWeight: FontWeight.w500,
-//                                 color: Colors.black,
-//                               ),
-//                               SizedBox(height: 10.h),
-//                               Divider(color: Colors.grey[200]),
-//                             ],
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                   );
-//                 },
-//               );
-//             },
-//           ),
-//         ),
-//         SizedBox(height: 20.h),
-//         Padding(
-//           padding:  EdgeInsets.symmetric(horizontal: 20.w),
-//           child: ListView.builder(
-//             itemCount: 3,
-//             shrinkWrap: true,
-//             physics: const NeverScrollableScrollPhysics(),
-//             itemBuilder: (context, index) {
-//               return ReservationBox(
-//                 onCancelTap: () {
-//                   setState(() {
-//                     isDeletePressed = !isDeletePressed;
-//                   });
-//                 },
-//               );
-//             },
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-
-//   Widget _viewSearchWidget() {
-//     return Column(
-//       children: [
-//         GestureDetector(
-//           onTap: () {
-//             setState(() {
-//               isPartySearchPressed = !isPartySearchPressed;
-//             });
-//           },
-//           child: Padding(
-//             padding:  EdgeInsets.only(left: 20.w, right: 20.w, top: 80.h),
-//             child: AppTextFeild(
-//               text: "Enter the Coupon Number",
-//               textColor: appTextColor3,
-//               isTextCenter: true,
-//               icon: Icons.close,
-//               iconColor: appTextColor3,
-//               size: 13.sp,
-//             ),
-//           ),
-//         ),
-//         SizedBox(height: 20.h),
-//         SizedBox(
-//           width: 200,
-//           child: AppFilterDropDown(
-//             hint: "filter",
-//             icon: Icons.tune_outlined,
-//             toggleDropdown: () {
-//               showModalBottomSheet(
-//                 backgroundColor: Colors.white,
-//                 context: context,
-//                 isScrollControlled: true,
-//                 shape: const RoundedRectangleBorder(
-//                   borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-//                 ),
-//                 builder: (context) {
-//                   return Padding(
-//                     padding:  EdgeInsets.all(30.w),
-//                     child: Column(
-//                       mainAxisSize: MainAxisSize.min,
-//                       children: [
-//                         Container(
-//                           width: 40,
-//                           height: 5,
-//                           decoration: BoxDecoration(
-//                             color: Colors.grey[300],
-//                             borderRadius: BorderRadius.circular(10),
-//                           ),
-//                         ),
-//                         SizedBox(height: 16.h),
-//                         Container(
-//                           width: MediaQuery.of(context).size.width,
-//                           decoration: BoxDecoration(
-//                             color: Colors.white,
-//                             borderRadius: BorderRadius.circular(20),
-//                           ),
-//                           padding:  EdgeInsets.all(16.w),
-//                           child: Column(
-//                             children: [
-//                               Divider(color: Colors.grey[200]),
-//                               SizedBox(height: 10.h),
-//                               AppText(
-//                                 text: "item1",
-//                                 size: 15,
-//                                 fontWeight: FontWeight.w500,
-//                                 color: Colors.black,
-//                               ),
-//                               SizedBox(height: 10.h),
-//                               Divider(color: Colors.grey[200]),
-//                               SizedBox(height: 10.h),
-//                               AppText(
-//                                 text: "item2",
-//                                 size: 15,
-//                                 fontWeight: FontWeight.w500,
-//                                 color: Colors.black,
-//                               ),
-//                               SizedBox(height: 10.h),
-//                               Divider(color: Colors.grey[200]),
-//                               SizedBox(height: 10.h),
-//                               AppText(
-//                                 text: "item3",
-//                                 size: 15,
-//                                 fontWeight: FontWeight.w500,
-//                                 color: Colors.black,
-//                               ),
-//                               SizedBox(height: 10.h),
-//                               Divider(color: Colors.grey[200]),
-//                             ],
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                   );
-//                 },
-//               );
-//             },
-//           ),
-//         ),
-//         SizedBox(height: 20.h),
-//         Padding(
-//               padding:  EdgeInsets.symmetric(horizontal: 20.w),
-//           child: ListView.builder(
-//             itemCount: 3,
-//             shrinkWrap: true,
-//             physics: const NeverScrollableScrollPhysics(),
-//             itemBuilder: (context, index) {
-//               final booking = _filteredBookings[index];
-//               return SearchBox(
-//                 onCancelTap: () {
-//                   setState(() {
-//                     isSearchDeletePressed = !isSearchDeletePressed;
-//                   });
-//                 },
-//                 onRequestTap: () {
-//                   setState(() {
-//                     isPartyRequestPressed = !isPartyRequestPressed;
-//                   });
-//                 }, booking: booking,
-//               );
-//             },
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-
-//   Widget _deleteSearchBox() {
-//     return Stack(
-//       children: [
-//         Container(
-//           height: MediaQuery.of(context).size.height,
-//           width: MediaQuery.of(context).size.width,
-//           decoration: BoxDecoration(color: Colors.black.withOpacity(0.5)),
-//         ),
-//         Center(
-//           child: Padding(
-//             padding:  EdgeInsets.symmetric(horizontal: 30.w),
-//             child: Container(
-//               width: double.infinity,
-//               padding:  EdgeInsets.only(
-//                 left: 40.w,
-//                 right: 40.w,
-//                 top: 30.h,
-//                 bottom: 30.h,
-//               ),
-//               decoration: BoxDecoration(
-//                 color: Colors.white,
-//                 borderRadius: BorderRadius.circular(15.r),
-//                 boxShadow: [
-//                   BoxShadow(
-//                     color: Colors.black.withOpacity(0.1),
-//                     blurRadius: 10.r,
-//                     offset: Offset(0, 4.r),
-//                   ),
-//                 ],
-//               ),
-//               child: Column(
-//                 mainAxisSize: MainAxisSize.min,
-//                 children: [
-//                   Row(
-//                     children: [
-//                       AppText(
-//                         text: "Reason for Cancel",
-//                         size: 13,
-//                         fontWeight: FontWeight.w500,
-//                         color: appTextColor3,
-//                         isCentered: true,
-//                       ),
-//                       Spacer(),
-//                       Icon(Icons.close, size: 25, color: appTextColor3),
-//                     ],
-//                   ),
-
-//                   SizedBox(height: 20.h),
-//                   SizedBox(
-//                     height: 40.h,
-//                     child: buildStatusButton("I changed my mind"),
-//                   ),
-//                   SizedBox(height: 10.h),
-//                   SizedBox(
-//                     height: 40.h,
-//                     child: buildStatusButton("I need to reschedule the event"),
-//                   ),
-//                   SizedBox(height: 10.h),
-//                   SizedBox(
-//                     height: 40.h,
-//                     child: buildStatusButton("Entered the wrong details"),
-//                   ),
-//                   SizedBox(height: 10.h),
-//                   SizedBox(
-//                     height: 40.h,
-//                     child: buildStatusButton("I booked by mistake"),
-//                   ),
-//                   SizedBox(height: 10.h),
-//                   SizedBox(
-//                     height: 40.h,
-//                     child: buildStatusButton("Other Reasons"),
-//                   ),
-//                   SizedBox(height: 40.h),
-//                   AppText(
-//                     text:
-//                         "Canceling a confirmed booking may negatively impact your reliability rating.",
-//                     size: 13,
-//                     fontWeight: FontWeight.w500,
-//                     color: Colors.black,
-//                     isCentered: true,
-//                   ),
-//                   SizedBox(height: 10.h),
-//                   AppText(
-//                     text:
-//                         "However, if you accept another response instead, the previous booking will be automatically replaced without affecting your rating.",
-//                     size: 13,
-//                     fontWeight: FontWeight.w400,
-//                     color: appTextColor2,
-//                     isCentered: true,
-//                   ),
-//                   SizedBox(height: 20.h),
-//                   AppText(
-//                     text: "Accept another response",
-//                     size: 15,
-//                     fontWeight: FontWeight.w400,
-//                     color: appLinkColor2,
-//                     isCentered: true,
-//                   ),
-//                   SizedBox(height: 20.h ),
-//                   SizedBox(
-//                     width: 150,
-//                     height: 40,
-//                     child: AppButton(
-//                       text: "Cancel",
-//                       bgColor1: Colors.red,
-//                       bgColor2: Colors.red,
-//                       size: 15,
-//                       borderRadius: 10,
-//                       onPressed: () {
-//                         setState(() {
-//                           isSearchDeletePressed = !isSearchDeletePressed;
-//                           isBookingCanceled = !isBookingCanceled;
-//                         });
-//                       },
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             ),
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-
-//   Widget buildStatusButton(String text) {
-//     final bool isSelected = selectedStatus == text;
-
-//     return GestureDetector(
-//       onTap: () {
-//         setState(() {
-//           selectedStatus = text;
-//         });
-//       },
-//       child: Container(
-//         height: 35.h,
-//         alignment: Alignment.center,
-//         decoration: BoxDecoration(
-//           gradient: isSelected
-//               ? const LinearGradient(
-//                   colors: [Color(0xFFEC7B2D), Color(0xFFF7A440)],
-//                 )
-//               : null,
-//           color: isSelected ? null : Colors.grey[200],
-//           borderRadius: BorderRadius.circular(10),
-//           boxShadow: [
-//             BoxShadow(
-//               color: Colors.black.withOpacity(0.1),
-//               offset: const Offset(2, 2),
-//             ),
-//           ],
-//         ),
-//         child: Text(
-//           text,
-//           style: TextStyle(
-//             fontSize: 13.sp,
-//             fontWeight: FontWeight.w500,
-//             color: isSelected ? Colors.white : Colors.black,
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget buildMainStatusButton(String text) {
-//     final bool isSelected = mainSelectedStatus == text;
-
-//     return GestureDetector(
-//       onTap: () {
-//         setState(() {
-//           mainSelectedStatus = text;
-//         });
-//       },
-//       child: Container(
-//         height: 35.h,
-//         alignment: Alignment.center,
-//         decoration: BoxDecoration(
-//           gradient: isSelected
-//               ? const LinearGradient(
-//                   colors: [Color(0xFFEC7B2D), Color(0xFFF7A440)],
-//                 )
-//               : null,
-//           color: isSelected ? null : Colors.white,
-//           borderRadius: BorderRadius.circular(10),
-//           boxShadow: [
-//             BoxShadow(
-//               color: Colors.black.withOpacity(0.2),
-//               blurRadius: 5,
-//               offset: const Offset(2, 2),
-//             ),
-//           ],
-//         ),
-//         child: Text(
-//           text,
-//           style: TextStyle(
-//             fontSize: 13.sp,
-//             fontWeight: FontWeight.w500,
-//             color: isSelected ? Colors.white : appTextColor3,
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _bookingCanceledBox() {
-//     return Stack(
-//       children: [
-//         Container(
-//           height: MediaQuery.of(context).size.height,
-//           width: MediaQuery.of(context).size.width,
-//           decoration: BoxDecoration(color: Colors.black.withOpacity(0.5)),
-//           ),
-//         Center(
-//           child: Padding(
-//             padding:  EdgeInsets.symmetric(horizontal: 30.w),
-//             child: Container(
-//               width: double.infinity,
-//               padding:  EdgeInsets.only(
-//                 left: 40.w,
-//                 right: 40.w,
-//                 top: 30.h,
-//                 bottom: 30.h,
-//               ),
-//               decoration: BoxDecoration(
-//                 color: Colors.white,
-//                 borderRadius: BorderRadius.circular(15.r),
-//                 boxShadow: [
-//                   BoxShadow(
-//                     color: Colors.black.withOpacity(0.1),
-//                     blurRadius: 10.r,
-//                     offset: Offset(0, 4.r),
-//                   ),
-//                 ],
-//               ),
-//               child: Column(
-//                 mainAxisSize: MainAxisSize.min,
-//                 children: [
-//                   Row(
-//                     mainAxisAlignment: MainAxisAlignment.end,
-//                     children: [
-//                       GestureDetector(
-//                         onTap: () {
-//                           setState(() {
-//                             if (isDeletePressed) {
-//                               isDeletePressed = !isDeletePressed;
-//                             }
-//                             isBookingCanceled = !isBookingCanceled;
-//                           });
-//                         },
-//                         child: Icon(Icons.close, size: 30, color: appTextColor),
-//                       ),
-//                     ],
-//                   ),
-//                   Image.asset(
-//                     'assets/images/cancel.png',
-//                     height: 60.h,
-//                     width: 60.w,
-//                     fit: BoxFit.contain,
-//                   ),
-//                   SizedBox(height: 20.h),
-//                   AppText(
-//                     text: "Booking Canceled!",
-//                     size: 20,
-//                     fontWeight: FontWeight.w500,
-//                     color: Colors.red,
-//                     isCentered: true,
-//                   ),
-//                   SizedBox(height: 20.h),
-//                 ],
-//               ),
-//             ),
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-
-//   Widget _confirmedBox() {
-//     return Stack(
-//       children: [
-//         Container(
-//           height: MediaQuery.of(context).size.height,
-//           width: MediaQuery.of(context).size.width,
-//           decoration: BoxDecoration(color: Colors.black.withOpacity(0.5)),
-//         ),
-//         Center(
-//           child: Padding(
-//             padding:  EdgeInsets.symmetric(horizontal: 30.w),
-//             child: Container(
-//               width: double.infinity,
-//               padding:  EdgeInsets.only(
-//                 left: 40.w,
-//                 right: 40.w,
-//                 top: 30.h,
-//                 bottom: 30.h,
-//               ),
-//               decoration: BoxDecoration(
-//                 color: Colors.white,
-//                 borderRadius: BorderRadius.circular(15.r),
-//                 boxShadow: [
-//                   BoxShadow(
-//                     color: Colors.black.withOpacity(0.1),
-//                     blurRadius: 10.r,
-//                     offset: Offset(0, 4.r),
-//                   ),
-//                 ],
-//               ),
-//               child: Column(
-//                 mainAxisSize: MainAxisSize.min,
-//                 children: [
-//                   AppText(
-//                     text: "Are you sure you want to Cancel this Booking?",
-//                     size: 15,
-//                     fontWeight: FontWeight.w500,
-//                     color: Colors.black,
-//                     isCentered: true,
-//                   ),
-//                   SizedBox(height: 10.h),
-//                   AppText(
-//                     text:
-//                         "Cancelling a confirmed order may negatively impact your reliability rating",
-//                     size: 15,
-//                     fontWeight: FontWeight.w400,
-//                     color: Colors.black,
-//                     isCentered: true,
-//                   ),
-//                   SizedBox(height: 20.h),
-//                   Row(
-//                     children: [
-//                       Expanded(
-//                         child: SizedBox(
-//                           height: 35.h,
-//                           child: AppButton(
-//                             text: "Yes",
-//                             onPressed: () {
-//                               setState(() {
-//                                 isDeletePressed = !isDeletePressed;
-//                                 isConfirmedPressed = !isConfirmedPressed;
-//                                 isBookingCanceled = !isBookingCanceled;
-//                               });
-//                             },
-//                               borderRadius: 5.r,
-//                             bgColor1: Colors.green,
-//                             bgColor2: Colors.green,
-//                             size: 12,
-//                           ),
-//                         ),
-//                       ),
-//                       SizedBox(width: 20.w),
-//                       Expanded(
-//                         child: SizedBox(
-//                           height: 35.h,
-//                           child: AppButton(
-//                             text: "No",
-//                             onPressed: () {
-//                               setState(() {
-//                                 isDeletePressed = !isDeletePressed;
-//                               });
-//                             },
-//                                 size: 12,
-//                             borderRadius: 5.r,
-//                             bgColor1: Colors.red,
-//                             bgColor2: Colors.red,
-//                           ),
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                 ],
-//               ),
-//             ),
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-
-//   Widget _deleteBox() {
-//     return Stack(
-//       children: [
-//         Container(
-//           height: MediaQuery.of(context).size.height,
-//           width: MediaQuery.of(context).size.width,
-//           decoration: BoxDecoration(color: Colors.black.withOpacity(0.5)),
-//         ),
-//         Center(
-//           child: Padding(
-//             padding:  EdgeInsets.symmetric(horizontal: 30.w),
-//             child: Container(
-//               width: double.infinity,
-//               padding:  EdgeInsets.only(
-//                 left: 40.w,
-//                 right: 40.w,
-//                 top: 30.h,
-//                 bottom: 30.h,
-//               ),
-//               decoration: BoxDecoration(
-//                 color: Colors.white,
-//                 borderRadius: BorderRadius.circular(15.r),
-//                 boxShadow: [
-//                   BoxShadow(
-//                     color: Colors.black.withOpacity(0.1),
-//                     blurRadius: 10.r,
-//                     offset: Offset(0, 4.r),
-//                   ),
-//                 ],
-//               ),
-//               child: Column(
-//                 mainAxisSize: MainAxisSize.min,
-//                 children: [
-//                   AppText(
-//                     text: "Are you sure you want to Cancel this Booking?",
-//                     size: 13,
-//                     fontWeight: FontWeight.w500,
-//                     color: Colors.black,
-//                     isCentered: true,
-//                     lineSpacing: 1.2,
-//                   ),
-//                   SizedBox(height: 10.h ),
-//                   Row(
-//                     children: [
-//                       Expanded(
-//                         child: SizedBox(
-//                           height: 35.h,
-//                           child: AppButton(
-//                             text: "Yes",
-//                             onPressed: () {
-//                               setState(() {
-//                                 isDeletePressed = !isDeletePressed;
-//                                 isConfirmedPressed = !isConfirmedPressed;
-//                               });
-//                             },
-//                             borderRadius: 5.r,
-//                             bgColor1: Colors.green,
-//                             bgColor2: Colors.green,
-//                             size: 12,
-//                           ),
-//                         ),
-//                       ),
-//                       SizedBox(width: 20.w),
-//                       Expanded(
-//                         child: SizedBox(
-//                           height: 35.h,
-//                           child: AppButton(
-//                             text: "No",
-//                             onPressed: () {
-//                               setState(() {
-//                                 isDeletePressed = !isDeletePressed;
-//                               });
-//                             },
-//                               size: 12,
-//                             borderRadius: 5.r,
-//                             bgColor1: Colors.red,
-//                             bgColor2: Colors.red,
-//                           ),
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                 ],
-//               ),
-//             ),
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-
-//   Widget _viewCateringRequestWidget(){
-//     return Positioned.fill(
-//       child: Container(
-//         color: Colors.black54,
-//         child: Center(
-//           child: Padding(
-//             padding:  EdgeInsets.symmetric(horizontal: 30.w),
-//             child: Container(
-//               width: double.infinity,
-//               padding:  EdgeInsets.symmetric(horizontal: 30.w, vertical: 30.h),
-//               decoration: BoxDecoration(
-//                 color: Colors.white,
-//                 borderRadius: BorderRadius.circular(20),
-//               ),
-//               child: Column(
-//                 mainAxisSize: MainAxisSize.min,
-//                 children: [
-//                   Row(
-//                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                     children: [
-//                       AppText(
-//                         text: "Requested party",
-//                         size: 15,
-//                         fontWeight: FontWeight.w500,
-//                         color: appTextColor2,
-//                       ),
-//                       GestureDetector(
-//                         onTap: () {
-//                           setState(() {
-//                             isCateringRequestPressed = !isCateringRequestPressed;
-//                           });
-//                         },
-//                         child: Icon(
-//                           Icons.close,
-//                           color: appTextColor3,
-//                           size: 25,
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   SizedBox(height: 20.h),
-//                   Align(
-//                     alignment: Alignment.centerLeft,
-//                     child: AppText(
-//                       text: "P17854",
-//                       size: 20,
-//                       fontWeight: FontWeight.w700,
-//                       color: appTextColor3,
-//                     ),
-//                   ),
-//                   SizedBox(height: 20.h),
-//                   Row(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Icon(Icons.dashboard, size: 20, color: appTextColor2),
-//                       SizedBox(width: 10.w),
-//                       Expanded(
-//                         child: Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             AppText(
-//                               text: "Your Menu",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: Colors.grey,
-//                             ),
-//                             SizedBox(height: 5.h),
-//                             AppText(
-//                               text:
-//                                   "Chicken Biriyani , Porotta, Rotti ,Salad, Payasam, Butter Chicken , Ice cream. ",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: appTextColor2,
-//                               lineSpacing: 1.5,
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   SizedBox(height: 20.h),
-//                   Row(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Icon(Icons.handshake, size: 20, color: appTextColor2),
-//                       SizedBox(width: 10.w),
-//                       Expanded(
-//                         child: Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             AppText(
-//                               text: "Other Services",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: Colors.grey,
-//                             ),
-//                             SizedBox(height: 5.h),
-//                             AppText(
-//                               text: "7 Service boys needed.",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: appTextColor2,
-//                               lineSpacing: 1.5,
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   SizedBox(height: 20.h),
-//                   Row(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Icon(Icons.people, size: 20, color: appTextColor2),
-//                       SizedBox(width: 10.w  ),
-//                       Expanded(
-//                         child: Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             AppText(
-//                               text: "Number of Persons",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: Colors.grey,
-//                             ),
-//                             SizedBox(height: 5.h),
-//                             AppText(
-//                               text: "12 Person ",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: appTextColor2,
-//                               lineSpacing: 1.5,
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   SizedBox(height: 20.h),
-//                   Row(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Icon(
-//                         Icons.calendar_today_sharp,
-//                         size: 20,
-//                         color: appTextColor2,
-//                       ),
-//                       SizedBox(width: 10.w),
-//                       Expanded(
-//                         child: Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             AppText(
-//                               text: "Date and Time ",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: Colors.grey,
-//                             ),
-//                             SizedBox(height: 5.h),
-//                             AppText(
-//                               text: "April 12 - 2:30 pm",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: appTextColor2,
-//                               lineSpacing: 1.5,
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   SizedBox(height: 20.h),
-//                   Row(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Icon(Icons.wallet, size: 20, color: appTextColor2),
-//                       SizedBox(width: 10.w),
-//                       Expanded(
-//                         child: Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             AppText(
-//                               text: "Expected amount per person",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: Colors.grey,
-//                             ),
-//                             SizedBox(height: 5.h),
-//                             AppText(
-//                               text: "1000 Per person",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: appTextColor2,
-//                               lineSpacing: 1.5,
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   SizedBox(height: 20.h),
-//                   Row(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Icon(Icons.analytics, size: 20, color: appTextColor2),
-//                       SizedBox(width: 10.w),
-//                       Expanded(
-//                         child: Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             AppText(
-//                               text: "Enquiry Radius ",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: Colors.grey,
-//                             ),
-//                             SizedBox(height: 5.h),
-//                             AppText(
-//                               text: "Moscow City - 20km Radius",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: appTextColor2,
-//                               lineSpacing: 1.5,
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   SizedBox(height: 20.h ),
-//                 ],
-//               ),
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-
-
-//   Widget _viewPartyRequestWidget() {
-//     return Positioned.fill(
-//       child: Container(
-//         color: Colors.black54,
-//         child: Center(
-//           child: Padding(
-//             padding:  EdgeInsets.symmetric(horizontal: 30.w),
-//             child: Container(
-//               width: double.infinity,
-//               padding:  EdgeInsets.symmetric(horizontal: 30.w, vertical: 30.h),
-//               decoration: BoxDecoration(
-//                 color: Colors.white,
-//                 borderRadius: BorderRadius.circular(20.r),
-//               ),
-//               child: Column(
-//                 mainAxisSize: MainAxisSize.min,
-//                 children: [
-//                   Row(
-//                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                     children: [
-//                       AppText(
-//                         text: "Requested party",
-//                         size: 15,
-//                         fontWeight: FontWeight.w500,
-//                         color: appTextColor2,
-//                       ),
-//                       GestureDetector(
-//                         onTap: () {
-//                           setState(() {
-//                             isPartyRequestPressed = !isPartyRequestPressed;
-//                           });
-//                         },
-//                         child: Icon(
-//                           Icons.close,
-//                           color: appTextColor3,
-//                           size: 25,
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   SizedBox(height: 20.h),
-//                   Align(
-//                     alignment: Alignment.centerLeft,
-//                     child: AppText(
-//                       text: "P17854",
-//                       size: 20,
-//                       fontWeight: FontWeight.w700,
-//                       color: appTextColor3,
-//                     ),
-//                   ),
-//                   SizedBox(height: 20.h),
-//                   Row(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Icon(Icons.dashboard, size: 20, color: appTextColor2),
-//                       SizedBox(width: 10.w),
-//                       Expanded(
-//                         child: Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             AppText(
-//                               text: "Your Menu",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: Colors.grey,
-//                             ),
-//                             SizedBox(height: 5.h),
-//                             AppText(
-//                               text:
-//                                   "Chicken Biriyani , Porotta, Rotti ,Salad, Payasam, Butter Chicken , Ice cream. ",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: appTextColor2,
-//                               lineSpacing: 1.5,
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   SizedBox(height: 20.h),
-//                   Row(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Icon(Icons.people, size: 20, color: appTextColor2),
-//                       SizedBox(width: 10.w),
-//                       Expanded(
-//                         child: Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             AppText(
-//                               text: "Number of Persons",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: Colors.grey,
-//                             ),
-//                             SizedBox(height: 5.h),
-//                             AppText(
-//                               text: "12 Person ",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: appTextColor2,
-//                               lineSpacing: 1.5,
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   SizedBox(height: 20.h),
-//                   Row(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Icon(
-//                         Icons.calendar_today_sharp,
-//                         size: 20,
-//                         color: appTextColor2,
-//                       ),
-//                       SizedBox(width: 10.w),
-//                       Expanded(
-//                         child: Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             AppText(
-//                               text: "Date and Time ",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: Colors.grey,
-//                             ),
-//                             SizedBox(height: 5.h  ),
-//                             AppText(
-//                               text: "April 12 - 2:30 pm",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: appTextColor2,
-//                               lineSpacing: 1.5,
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   SizedBox(height: 20.h),
-//                   Row(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Icon(Icons.wallet, size: 20, color: appTextColor2),
-//                       SizedBox(width: 10.w),
-//                       Expanded(
-//                         child: Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             AppText(
-//                               text: "Expected amount per person",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: Colors.grey,
-//                             ),
-//                             SizedBox(height: 5.h),
-//                             AppText(
-//                               text: "1000 Per person",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: appTextColor2,
-//                               lineSpacing: 1.5,
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   SizedBox(height: 20.h),
-//                   Row(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Icon(Icons.analytics, size: 20, color: appTextColor2),
-//                       SizedBox(width: 10.w),
-//                       Expanded(
-//                         child: Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             AppText(
-//                               text: "Enquiry Radius ",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: Colors.grey,
-//                             ),
-//                             SizedBox(height: 5.h),
-//                             AppText(
-//                               text: "Moscow City - 20km Radius",
-//                               size: 15,
-//                               fontWeight: FontWeight.w500,
-//                               color: appTextColor2,
-//                               lineSpacing: 1.5,
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   SizedBox(height: 20.h),
-//                 ],
-//               ),
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }

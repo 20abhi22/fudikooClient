@@ -1,15 +1,19 @@
 class MapPlacesResponse{
   String? placeId;
   String? mainText;
+  final String? secondaryText; // 👈 add this
   MapPlacesResponse({
      this.placeId,
-     this.mainText,
+     this.mainText, 
+     this.secondaryText,
   });
 
   factory MapPlacesResponse.fromJson(Map<String, dynamic> json) {
     return MapPlacesResponse(
       placeId: json['place_id'] ?? '',
       mainText: json['main_text'] ?? '',
+      secondaryText: json['secondary_text'], // 👈 add this
+
     );
   }
   @override

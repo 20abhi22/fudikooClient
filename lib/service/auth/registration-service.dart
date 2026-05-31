@@ -34,7 +34,7 @@ class RegistrationAuthService {
     CompleteRegistrationModel details,
   ) async {
     try {
-      final formData = details.toFormData();
+      final formData = await details.toFormData();
       final token = await getToken();
       final response = await DioClient.dio.post(
         '/customer/complete-registration',
@@ -55,6 +55,13 @@ class RegistrationAuthService {
       }
     } catch (e) {
       print(e);
+      if (e is DioException && e.response?.statusCode == 413) {
+        return CompleteRegistrationModelResponse(
+          status: false,
+          message: "Profile photo is too large. Please choose a smaller image.",
+        );
+      }
+
       return CompleteRegistrationModelResponse(
         status: false,
         message: "Something went wrong : $e",

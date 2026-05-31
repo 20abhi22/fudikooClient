@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/apptext.dart';
+import 'package:fudikoclient/model/restaurant/restaurant-model.dart';
 import 'package:fudikoclient/model/reservation/new-reservation-model.dart';
 import 'package:fudikoclient/service/reservation/reservation-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
@@ -12,6 +13,7 @@ enum ModalStep { selectPeople, selectDateTime, confirmation }
 class NumberOfPeopleModal extends StatefulWidget {
   final String uuid;
   final String? offerId; // ← add
+  final OfferModel? offer;
   final int initialPeopleCount;
   final int minPeople;
   final int maxPeople;
@@ -20,7 +22,8 @@ class NumberOfPeopleModal extends StatefulWidget {
   const NumberOfPeopleModal({
     super.key,
     required this.uuid,
-     this.offerId, // ← add
+    this.offerId, // ← add
+    this.offer,
     this.initialPeopleCount = 2,
     this.minPeople = 1,
     this.maxPeople = 20,
@@ -196,7 +199,12 @@ class _NumberOfPeopleModalState extends State<NumberOfPeopleModal>
         ),
         child: SingleChildScrollView(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+            padding: EdgeInsets.only(
+              left: 20.w,
+              right: 20.w,
+              top: 16.h,
+              bottom: 40.h,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [_buildProgressIndicator(), _buildContent()],
@@ -435,10 +443,30 @@ class _NumberOfPeopleModalState extends State<NumberOfPeopleModal>
   }
 
   Widget _buildConfirmation() {
+    final discountText = _offerDiscountText();
+    final applicableFor = _offerApplicableForText();
+    final dateText = _selectedDateText();
+    final timeText = _selectedTime ?? '';
+
     return Column(
       key: const ValueKey('confirmation'),
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: GestureDetector(
+            onTap: _closeModal,
+            child: Container(
+              padding: EdgeInsets.all(8.w),
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Icon(Icons.close, color: appTextColor, size: 25.w),
+            ),
+          ),
+        ),
+        SizedBox(height: 12.h),
         Container(
           width: 80.w,
           height: 80.h,
@@ -446,10 +474,16 @@ class _NumberOfPeopleModalState extends State<NumberOfPeopleModal>
             color: Colors.green[50],
             shape: BoxShape.circle,
           ),
-          child: Icon(
-            Icons.check_circle,
-            size: 50.sp,
-            color: Colors.green[600],
+          // child: Icon(
+          //   Icons.check_circle,
+          //   size: 50.sp,
+          //   color: Colors.green[600],
+          // ),
+          child: Image.asset(
+            "assets/images/checked.png",
+            width: 50.sp,
+            height: 50.sp,
+            // color: Colors.green[600],
           ),
         ),
         SizedBox(height: 24.h),
@@ -460,28 +494,65 @@ class _NumberOfPeopleModalState extends State<NumberOfPeopleModal>
           color: appTextColor3,
         ),
         SizedBox(height: 16.h),
-        AppText(
-          text:
-              "Your table for $_peopleCount people has been reserved successfully.",
-          size: 14,
-          fontWeight: FontWeight.w400,
-          color: appTextColor2,
-          isCentered: true,
-          lineSpacing: 1.3,
-        ),
-        SizedBox(height: 32.h),
-        SizedBox(
-          width: double.infinity,
-          height: 50.h,
-          child: AppButton(
-            text: "Done",
-            onPressed: _closeModal,
-            borderRadius: 12.r,
-            size: 16,
+        RichText(
+          textAlign: TextAlign.center,
+          text: TextSpan(
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w400,
+              color: appTextColor2,
+              height: 1.3,
+            ),
+            children: [
+              const TextSpan(text: 'You have received a coupon for a '),
+              TextSpan(
+                text: discountText,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              TextSpan(
+                text: ' on the $applicableFor for $dateText at $timeText',
+              ),
+            ],
           ),
         ),
       ],
     );
+  }
+
+  String _offerDiscountText() {
+    final discount = widget.offer?.discountPercentage;
+    if (discount == null || discount <= 0) return 'discount';
+    final label = discount % 1 == 0
+        ? discount.toStringAsFixed(0)
+        : discount.toStringAsFixed(1);
+    return '$label% discount';
+  }
+
+  String _offerApplicableForText() {
+    final value = widget.offer?.applicableFor.trim();
+    if (value == null || value.isEmpty) return 'selected offer';
+    return value;
+  }
+
+  String _selectedDateText() {
+    if (_selectedDate == null) return 'today';
+
+    final selectedDate = DateTime.tryParse(_selectedDate!);
+    if (selectedDate == null) return _selectedDate!;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final selectedDay = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+    );
+
+    if (selectedDay == today) {
+      return 'today';
+    }
+
+    return '${selectedDate.day.toString().padLeft(2, '0')}/${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.year}';
   }
 
   Widget _buildActionButtons() {

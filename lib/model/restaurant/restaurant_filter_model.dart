@@ -5,12 +5,14 @@ class RestaurantFilterRequest {
   final double lng;
   final double searchRadiusKm;
   final String? type;
+  final int? offerPercentage;
 
   const RestaurantFilterRequest({
     required this.lat,
     required this.lng,
-    required this.searchRadiusKm,
+    this.searchRadiusKm = 10,
     this.type,
+    this.offerPercentage,
   });
 
   FormData toFormData() {
@@ -22,6 +24,7 @@ class RestaurantFilterRequest {
       'lng': lng.toString(),
       'search_radius': radiusInMeters.toString(),
       if (type != null && type!.trim().isNotEmpty) 'type': type!.trim(),
+      if (offerPercentage != null) 'offer_percentage': offerPercentage.toString(),
     });
   }
 }

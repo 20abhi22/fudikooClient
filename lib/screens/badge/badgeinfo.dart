@@ -11,83 +11,85 @@ class BadgeInfo extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
-          children: [
-            GestureDetector(
-              onTap: () {
-                Navigator.pop(context);
-              },
-              child: Padding(
-                padding:  EdgeInsets.only(left: 30.w, top: 30.h),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Icon(
-                    Icons.arrow_back_ios_new,
-                    color: appTextColor3,
-                    size: 28.r,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
+                },
+                child: Padding(
+                  padding:  EdgeInsets.only(left: 30.w, top: 30.h),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Image.asset(
+                      backOrange,
+                      height: 30.h,
+                      width: 30.w,
+                    ),
                   ),
                 ),
               ),
-            ),
-            SizedBox(height: 30.h),
-            AppText(
-              text: "Climber",
-              size: 20,
-              fontWeight: FontWeight.w600,
-              isCentered: true,
-              color: Colors.amber,
-            ),
-            SizedBox(height: 10.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  'assets/images/badge1.png',
-                  width: 150.w,
-                  height: 150.h,
-                  fit: BoxFit.contain,
-                ),
-              ],
-            ),
-            SizedBox(height: 30.h),
-            AppText(
-              text: "Your next badge is on its way!",
-              size: 10,
-              fontWeight: FontWeight.w400,
-              isCentered: true,
-              color: Colors.black,
-            ),
-            SizedBox(height: 20.h),
-            Padding(
-              padding:  EdgeInsets.only(left: 50.w, right: 50.w),
-              child: gradientProgressBar(70),
-            ),
-            SizedBox(height: 20.h),
-            AppText(
-              text: "87/100",
-              size: 15,
-              fontWeight: FontWeight.w500,
-              isCentered: true,
-              color: Colors.black,
-            ),
-            SizedBox(height: 60.h),
-            Padding(
-              padding:  EdgeInsets.symmetric(horizontal: 50.w),
-              child: Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: List.generate(
-                  25,
-                  (index) => Image.asset(
-                    'assets/images/badge2.png',
-                      width: 50.w,
-                    height: 50.h,
+              SizedBox(height: 30.h),
+              AppText(
+                text: "Climber",
+                size: 20,
+                fontWeight: FontWeight.w600,
+                isCentered: true,
+                color: Colors.amber,
+              ),
+              SizedBox(height: 10.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/images/badge1.png',
+                    width: 150.w,
+                    height: 150.h,
                     fit: BoxFit.contain,
                   ),
+                ],
+              ),
+              SizedBox(height: 30.h),
+              AppText(
+                text: "Your next badge is on its way!",
+                size: 10,
+                fontWeight: FontWeight.w400,
+                isCentered: true,
+                color: Colors.black,
+              ),
+              SizedBox(height: 20.h),
+              Padding(
+                padding:  EdgeInsets.only(left: 50.w, right: 50.w),
+                child: gradientProgressBar(70),
+              ),
+              SizedBox(height: 20.h),
+              AppText(
+                text: "87/100",
+                size: 15,
+                fontWeight: FontWeight.w500,
+                isCentered: true,
+                color: Colors.black,
+              ),
+              SizedBox(height: 60.h),
+              Padding(
+                padding:  EdgeInsets.symmetric(horizontal: 50.w),
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: List.generate(
+                    25,
+                    (index) => Image.asset(
+                      'assets/images/badge2.png',
+                        width: 50.w,
+                      height: 50.h,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fudikoclient/components/apptext.dart';
 
 class Bottomnav extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onTabSelected;
+    // final int _reservationUnseenCount = 0;
+
 
   const Bottomnav({
     super.key,
     required this.selectedIndex,
     required this.onTabSelected,
+    this.reservationBadgeCount = 0, // 👈 add this
+
   });
 
   static const _activeColor = Color(0xFFE8820C);
-  static const _inactiveColor = Color(0xFF9E9E9E);
+  static const _inactiveColor = Color(0xFF545450);
+  
+  final dynamic reservationBadgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +39,7 @@ class Bottomnav extends StatelessWidget {
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: items.asMap().entries.map((entry) {
           final index = entry.key;
           final item = entry.value;
@@ -56,7 +63,7 @@ class Bottomnav extends StatelessWidget {
                         item['icon'] as String,
                         width: 25.w,
                         height: 25.w,
-                        fit: BoxFit.contain,
+                        // fit: BoxFit.contain,
                       ),
                     ),
                     if (badge > 0)
@@ -88,13 +95,12 @@ class Bottomnav extends StatelessWidget {
                   ],
                 ),
                 SizedBox(height: 4.h),
-                Text(
-                  item['label'] as String,
-                  style: TextStyle(
-                    color: isSelected ? _activeColor : Colors.grey[700],
+                AppText(
+                 text: item['label'] as String,
+color: isSelected ? _activeColor : Colors.grey[700],
                     fontWeight:
                         isSelected ? FontWeight.bold : FontWeight.normal,
-                  ),
+                        size:11
                 ),
               ],
             ),

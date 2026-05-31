@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fudikoclient/components/apptext.dart';
 
 class AppFilterDropDown extends StatefulWidget {
   final String hint;
@@ -9,6 +11,7 @@ class AppFilterDropDown extends StatefulWidget {
   final VoidCallback? toggleDropdown;
   final String? imageIconPath;
   final double? imageIconSize;
+  final double? textSize;
 
   const AppFilterDropDown({
     super.key,
@@ -20,6 +23,7 @@ class AppFilterDropDown extends StatefulWidget {
     this.toggleDropdown,
     this.imageIconPath,
     this.imageIconSize,
+    this.textSize,
   });
 
   @override
@@ -43,14 +47,15 @@ class _AppFilterDropDownState extends State<AppFilterDropDown> {
             height: widget.height ?? 45,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(10.r),
+               boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.10),
+        offset: const Offset(0, 0),
+        blurRadius: 10,
+        spreadRadius: 2,
+      ),
+    ],
             ),
             child: Stack(
               alignment: Alignment.center,
@@ -71,14 +76,12 @@ class _AppFilterDropDownState extends State<AppFilterDropDown> {
                   ),
 
                 Center(
-                  child: Text(
-                    selectedValue ?? widget.hint,
-                    style: TextStyle(
-                      fontSize: 14,
+                  child: AppText(
+                    text:selectedValue ?? widget.hint,
+                     size: widget.textSize ?? 14,
                       color: widget.textColor ?? Colors.black87,
                       fontWeight: FontWeight.w500,
                     ),
-                  ),
                 ),
 
                 Positioned(

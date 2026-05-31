@@ -6,6 +6,8 @@ class CustomerProfileModel {
   final String place;
   final String contactInfo;
   final String profilePicture;
+  final String lat;
+  final String lng;
 
   CustomerProfileModel({
     required this.badge,
@@ -15,6 +17,8 @@ class CustomerProfileModel {
     required this.place,
     required this.contactInfo,
     required this.profilePicture,
+    required this.lat,
+    required this.lng,
   });
 
   factory CustomerProfileModel.fromJson(Map<String, dynamic> json) {
@@ -26,6 +30,8 @@ class CustomerProfileModel {
       place: json['place'] ?? '-',
       contactInfo: json['contact_info'] ?? '-',
       profilePicture: json['profile_picture'] ?? '-',
+      lat: (json['lat'] ?? '').toString(),
+      lng: (json['lng'] ?? '').toString(),
     );
   }
 }

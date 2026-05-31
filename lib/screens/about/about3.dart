@@ -18,59 +18,89 @@ class About3 extends StatelessWidget {
           children: [
             Stack(
               children: [
-                Positioned(
-                  top: screenSize.height * 0.092,
-                  left: -screenSize.width * 0.088,
-                  child: Image.asset(
-                    'assets/images/pizza3r.png',
-                    width: screenSize.width * 0.65,
-                    height: screenSize.height * 0.28,
+                Transform.translate(
+  offset: Offset(
+    -screenSize.width * 0.452, // responsive left overflow
+    screenSize.height * 0.05, // responsive top overflow
+  ),
+  child: Align(
+    alignment: Alignment.topRight,
+    child: Image.asset(
+      pizzaUp2,
+      width: screenSize.width *0.7,
+      height: screenSize.width *0.7,
+      fit: BoxFit.contain,
+    ),
+  ),
+),
+Transform.translate(
+  offset: Offset(
+    -screenSize.width * 0.388, // responsive left overflow
+    screenSize.height * 0.024, // responsive downward position
+  ),
+  child: Align(
+    alignment: Alignment.topRight,
+    child: Container(
+  width: screenSize.width *0.82,
+  height: screenSize.width *0.82,
+  decoration: BoxDecoration(
+    shape: BoxShape.circle,
+    border: Border.all(
+      color: const Color(0xFFD9D9D9).withOpacity(.58),
+      width: screenSize.width *0.8 * 0.05,
+    ),
+  ),
+)
+  ),
+),
+
+ Positioned(
+              top: 40.h,
+              right: 20.w,
+              child: GestureDetector(
+                onTap: onPress,
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 12.h,
+                  ),
+                  child: AppText(
+                    text: "Next",
+                    size: 15,
+                    fontWeight: FontWeight.w400,
+                    color: abtNextColor2,
                   ),
                 ),
-                Positioned(
-                  top: screenSize.height * 0.05,
-                  left: -screenSize.width * 0.197,
-                  child: Container(
-                    width: 310.w,
-                    height: 310.w,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Color(0xFFD9D9D9).withOpacity(.58),
-                        width: 20.w,
-                      ),
-                    ),
-                    clipBehavior: Clip.hardEdge,
-                  ),
-                ),
+              ),
+            ),
               ],
             ),
             
-            Positioned(
-                  bottom: -screenSize.height*0.17,
-                  left: -screenSize.width*0.88,
-                  child: Image.asset(
-                    'assets/images/pizza2.png',
-                    width: 495.w,
-                    height: 495.h,
-                  ),
-                ),
-                Positioned(
-                  bottom: -screenSize.height*.1,
-                  left: -screenSize.width*0.73,
-                  child: Container(
-                    width: 375.w,
-                    height: 375.h,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Color(0xFF545450).withOpacity(0.22),
-                        width: 20.w,
-                      ),
-                    ),
-                    clipBehavior: Clip.hardEdge,
-                  ),
-                ),
+            // Positioned(
+            //       bottom: -screenSize.height*0.17,
+            //       left: -screenSize.width*0.88,
+            //       child: Image.asset(
+            //         'assets/images/pizza2.png',
+            //         width: 495.w,
+            //         height: 495.h,
+            //       ),
+            //     ),
+                // Positioned(
+                //   bottom: -screenSize.height*.1,
+                //   left: -screenSize.width*0.73,
+                //   child: Container(
+                //     width: 375.w,
+                //     height: 375.h,
+                //     decoration: BoxDecoration(
+                //       shape: BoxShape.circle,
+                //       border: Border.all(
+                //         color: Color(0xFF545450).withOpacity(0.22),
+                //         width: 20.w,
+                //       ),
+                //     ),
+                //     clipBehavior: Clip.hardEdge,
+                //   ),
+                // ),
             Positioned(
               top: 400.h,
               left: 50.w,
@@ -112,57 +142,122 @@ class About3 extends StatelessWidget {
                 ],
               ),
             ),
-            Positioned(
-              top: -screenSize.height*0.095,
-              right: -screenSize.width*0.48,
-              child: Container(
-                width: 259.w,
-                height: 259.h,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Color(0xFFF97A0D).withOpacity(0.58),
-                    width: 5.w,
-                  ),
-                ),
-                clipBehavior: Clip.hardEdge,
-              ),
+            // Positioned(
+            //   top: -screenSize.height*0.095,
+            //   right: -screenSize.width*0.48,
+            //   child: Container(
+            //     width: 259.w,
+            //     height: 259.h,
+            //     decoration: BoxDecoration(
+            //       shape: BoxShape.circle,
+            //       border: Border.all(
+            //         color: Color(0xFFF97A0D).withOpacity(0.58),
+            //         width: 5.w,
+            //       ),
+            //     ),
+            //     clipBehavior: Clip.hardEdge,
+            //   ),
+            // ),
+            // Positioned(
+            //   bottom: -screenSize.height*0.071,
+            //   right: -screenSize.width*0.48,
+            //   child: Container(
+            //     width: 322.w,
+            //     height: 322.h,
+            //     decoration: BoxDecoration(
+            //       shape: BoxShape.circle,
+            //       border: Border.all(
+            //         color: Color(0xFFF97A0D).withOpacity(0.58),
+            //         width: 10.w,
+            //       ),
+            //     ),
+            //     clipBehavior: Clip.hardEdge,
+            //   ),
+            // ),
+           
+            // 🔶 Top circle
+    Transform.translate(
+      offset: Offset(
+        screenSize.width * 0.32,
+        -screenSize.height * 0.095,
+      ),
+      child: Align(
+        alignment: Alignment.topRight,
+        child: Container(
+          width: screenSize.width * 0.55,
+          height: screenSize.width * 0.55,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: const Color(0xFFF97A0D).withOpacity(0.58),
+              width: screenSize.width * 0.55 * 0.02,
             ),
-            Positioned(
-              bottom: -screenSize.height*0.071,
-              right: -screenSize.width*0.48,
-              child: Container(
-                width: 322.w,
-                height: 322.h,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Color(0xFFF97A0D).withOpacity(0.58),
-                    width: 10.w,
-                  ),
-                ),
-                clipBehavior: Clip.hardEdge,
-              ),
+          ),
+        ),
+      ),
+    ),
+
+    // 🔶 Bottom circle
+    Transform.translate(
+      offset: Offset(
+        screenSize.width * 0.58,
+        screenSize.height * 0.071,
+      ),
+      child: Align(
+        alignment: Alignment.bottomRight,
+        child: Container(
+          width: screenSize.width * 0.7,
+          height: screenSize.width * 0.7,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: const Color(0xFFF97A0D).withOpacity(0.58),
+              width: screenSize.width * 0.7 * 0.02,
             ),
-            Positioned(
-              top: 40.h,
-              right: 20.w,
-              child: GestureDetector(
-                onTap: onPress,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 12.h,
-                  ),
-                  child: AppText(
-                    text: "Next",
-                    size: 15,
-                    fontWeight: FontWeight.w400,
-                    color: abtNextColor2,
-                  ),
-                ),
-              ),
+          ),
+        ),
+      ),
+    ),
+
+                // 🍕 Image
+    Transform.translate(
+      offset: Offset(
+       - screenSize.width * 0.8, // responsive right overflow
+        screenSize.height * 0.15, // responsive downward shift
+      ),
+      child: Align(
+        alignment: Alignment.bottomRight,
+        child: Image.asset(
+          pizzaDn2,
+          width: screenSize.width * 1.2,
+          height: screenSize.width * 1.2,
+          fit: BoxFit.contain,
+        ),
+      ),
+    ),
+
+    // ⚪ Circle border
+    Transform.translate(
+      offset: Offset(
+        -screenSize.width * 0.8, // responsive right overflow
+        screenSize.height * 0.149, // responsive downward shift
+      ),
+      child: Align(
+        alignment: Alignment.bottomRight,
+        child: Container(
+          width: screenSize.width * 1.2,
+          height: screenSize.width * 1.2,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: const Color(0xFF545450).withOpacity(0.22),
+              width: screenSize.width * 0.035,
             ),
+          ),
+        ),
+      ),
+    ),
+
           ],
         ),
       ),

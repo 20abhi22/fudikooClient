@@ -52,6 +52,23 @@ class _PlanAPartyState extends State<PlanAParty> {
     super.dispose();
   }
 
+  // Clear all input fields and reset state (used by parent after successful send)
+  void clearFields() {
+    setState(() {
+      menuController.clear();
+      otherServicesController.clear();
+      peopleController.clear();
+      amountController.clear();
+      selectedDateTime = null;
+      expirationDate = null;
+      expirationTime = null;
+      lat = '';
+      lng = '';
+      searchRadius = '20';
+      locationLabel = 'Select Location';
+    });
+  }
+
   // ── helpers ──────────────────────────────────────────
   String _formatDate(DateTime dt) =>
       "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
@@ -130,59 +147,390 @@ class _PlanAPartyState extends State<PlanAParty> {
     });
   }
 
-  // ── date & time picker ───────────────────────────────
   Future<void> _selectDateTime(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
+    DateTime tempDate = selectedDateTime ?? DateTime.now();
+    TimeOfDay tempTime = selectedDateTime != null
+        ? TimeOfDay(
+            hour: selectedDateTime!.hour,
+            minute: selectedDateTime!.minute,
+          )
+        : TimeOfDay.now();
+
+    await showDialog(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2101),
-      builder: (context, child) => Theme(
-        data: ThemeData.light().copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: Color(0xfff87b0d),
-            onPrimary: Colors.white,
-            onSurface: Colors.black,
-          ),
-          dialogBackgroundColor: Colors.white,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              backgroundColor: const Color(0xFFF5F5F5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildCustomCalendar(
+                      tempDate: tempDate,
+                      onDateChanged: (date) =>
+                          setDialogState(() => tempDate = date),
+                    ),
+
+                    SizedBox(height: 12.h),
+
+                    Container(
+                      padding: EdgeInsets.only(left: 5.r, right: 0.r),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.black26),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // ── Hour ──
+                          _timeScroller(
+                            value: tempTime.hour % 12 == 0
+                                ? 12
+                                : tempTime.hour % 12,
+                            min: 1,
+                            max: 12,
+                            onChanged: (val) {
+                              setDialogState(() {
+                                final isPm = tempTime.period == DayPeriod.pm;
+                                tempTime = TimeOfDay(
+                                  hour: isPm ? (val % 12) + 12 : val % 12,
+                                  minute: tempTime.minute,
+                                );
+                              });
+                            },
+                          ),
+                          Text(
+                            ' : ',
+                            style: TextStyle(
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          // ── Minute ──
+                          _timeScroller(
+                            value: tempTime.minute,
+                            min: 0,
+                            max: 59,
+                            onChanged: (val) {
+                              setDialogState(() {
+                                tempTime = TimeOfDay(
+                                  hour: tempTime.hour,
+                                  minute: val,
+                                );
+                              });
+                            },
+                          ),
+                          SizedBox(width: 6.w),
+                          // ── AM/PM grey pill ──
+                          GestureDetector(
+                            onTap: () {
+                              setDialogState(() {
+                                final newHour = tempTime.period == DayPeriod.am
+                                    ? tempTime.hour + 12
+                                    : tempTime.hour - 12;
+                                tempTime = TimeOfDay(
+                                  hour: newHour,
+                                  minute: tempTime.minute,
+                                );
+                              });
+                            },
+                            child: Container(
+                              width: 38.w,
+                              height: 30.h,
+                              decoration: BoxDecoration(
+                                color: tempTime.period == DayPeriod.am
+                                    ? Colors.transparent
+                                    : Color(0XFFD9D9D9),
+                                borderRadius: BorderRadius.only(
+                                  topRight: Radius.circular(10.r),
+                                  bottomRight: Radius.circular(10.r),
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  tempTime.period == DayPeriod.am ? 'AM' : 'PM',
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: 16.h),
+
+                    // ── Cancel / Apply ──
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: Colors.black54,
+                                fontSize: 14.sp,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                selectedDateTime = DateTime(
+                                  tempDate.year,
+                                  tempDate.month,
+                                  tempDate.day,
+                                  tempTime.hour,
+                                  tempTime.minute,
+                                );
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text(
+                              'Apply',
+                              style: TextStyle(
+                                color: const Color(0xFF3954DB),
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _selectExpirationDateTime(BuildContext context) async {
+    // seed tempDate/tempTime from existing expiration values
+    DateTime tempDate = expirationDate ?? DateTime.now();
+    TimeOfDay tempTime = expirationTime ?? TimeOfDay.now();
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              backgroundColor: const Color(0xFFF5F5F5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // ── same custom calendar ──
+                    _buildCustomCalendar(
+                      tempDate: tempDate,
+                      onDateChanged: (date) =>
+                          setDialogState(() => tempDate = date),
+                    ),
+
+                    SizedBox(height: 12.h),
+
+                    // ── same time row ──
+                    Container(
+                      padding: EdgeInsets.only(left: 5.r, right: 0.r),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.black26),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _timeScroller(
+                            value: tempTime.hour % 12 == 0
+                                ? 12
+                                : tempTime.hour % 12,
+                            min: 1,
+                            max: 12,
+                            onChanged: (val) {
+                              setDialogState(() {
+                                final isPm = tempTime.period == DayPeriod.pm;
+                                tempTime = TimeOfDay(
+                                  hour: isPm ? (val % 12) + 12 : val % 12,
+                                  minute: tempTime.minute,
+                                );
+                              });
+                            },
+                          ),
+                          Text(
+                            ' : ',
+                            style: TextStyle(
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          _timeScroller(
+                            value: tempTime.minute,
+                            min: 0,
+                            max: 59,
+                            onChanged: (val) {
+                              setDialogState(() {
+                                tempTime = TimeOfDay(
+                                  hour: tempTime.hour,
+                                  minute: val,
+                                );
+                              });
+                            },
+                          ),
+                          SizedBox(width: 6.w),
+                          // ── AM/PM grey pill ──
+                          GestureDetector(
+                            onTap: () {
+                              setDialogState(() {
+                                final newHour = tempTime.period == DayPeriod.am
+                                    ? tempTime.hour + 12
+                                    : tempTime.hour - 12;
+                                tempTime = TimeOfDay(
+                                  hour: newHour,
+                                  minute: tempTime.minute,
+                                );
+                              });
+                            },
+                            child: Container(
+                              width: 38.w,
+                              height: 30.h,
+                              decoration: BoxDecoration(
+                                color: tempTime.period == DayPeriod.am
+                                    ? const Color(0xFFD9D9D9)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.only(
+                                  topRight: Radius.circular(10.r),
+                                  bottomRight: Radius.circular(10.r),
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  tempTime.period == DayPeriod.am ? 'AM' : 'PM',
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: 16.h),
+
+                    // ── Cancel / Apply — saves to expirationDate & expirationTime ──
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: Colors.black54,
+                                fontSize: 14.sp,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                expirationDate = DateTime(
+                                  tempDate.year,
+                                  tempDate.month,
+                                  tempDate.day,
+                                );
+                                expirationTime = tempTime;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text(
+                              'Apply',
+                              style: TextStyle(
+                                color: const Color(0xFF3954DB),
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ── Scroll-wheel helper ──────────────────────────────
+  Widget _timeScroller({
+    required int value,
+    required int min,
+    required int max,
+    required ValueChanged<int> onChanged,
+  }) {
+    final controller = FixedExtentScrollController(initialItem: value - min);
+    return SizedBox(
+      width: 30.w,
+      height: 30.h,
+      child: ListWheelScrollView.useDelegate(
+        controller: controller,
+        itemExtent: 32.h,
+        perspective: 0.003,
+        physics: const FixedExtentScrollPhysics(),
+        onSelectedItemChanged: (index) => onChanged(index + min),
+        childDelegate: ListWheelChildBuilderDelegate(
+          childCount: max - min + 1,
+          builder: (context, index) {
+            final val = index + min;
+            return Center(
+              child: Text(
+                val.toString().padLeft(2, '0'),
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+              ),
+            );
+          },
         ),
-        child: child!,
       ),
     );
-    if (pickedDate != null) {
-      final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.now(),
-        builder: (context, child) => Theme(
-          data: ThemeData.light().copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xfff87b0d),
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-            dialogBackgroundColor: Colors.white,
-          ),
-          child: child!,
-        ),
-      );
-      if (pickedTime != null) {
-        setState(() {
-          selectedDateTime = DateTime(
-            pickedDate.year,
-            pickedDate.month,
-            pickedDate.day,
-            pickedTime.hour,
-            pickedTime.minute,
-          );
-        });
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+      padding: EdgeInsets.symmetric(horizontal: 35.w, vertical: 10.h),
       child: Column(
         children: [
           // ── view enquiries link ──
@@ -190,17 +538,19 @@ class _PlanAPartyState extends State<PlanAParty> {
             onTap: widget.viewEnquiryOnTap,
             child: Row(
               children: [
-                Icon(
-                  Icons.content_paste_search_sharp,
-                  size: 20.w,
-                  color: appLinkColor2,
+                Image.asset(
+                  fit: BoxFit.cover,
+                  inqueryIcon,
+                  width: 18.w,
+                  height: 18.w,
+                  color: appLinkColor3.withOpacity(.9),
                 ),
                 SizedBox(width: 5.w),
                 AppText(
                   text: "View Enquiries",
                   size: 15,
                   fontWeight: FontWeight.w400,
-                  color: appLinkColor2,
+                  color: appLinkColor3.withOpacity(.9),
                 ),
               ],
             ),
@@ -212,8 +562,9 @@ class _PlanAPartyState extends State<PlanAParty> {
             hintText:
                 "Example: Chicken Biriyani , Porotta ,Rotti  , Payasam, Butter Chicken , Ice cream, Salad",
             topHintText: "Your Menu",
-            iconColor: appTextColor2,
-            icon: Icons.dashboard,
+            iconColor: Color.fromARGB(255, 8, 8, 8),
+            imageIconPath: menuIcon,
+
             maxLength: 300,
             controller: menuController,
           ),
@@ -231,8 +582,18 @@ class _PlanAPartyState extends State<PlanAParty> {
           // ── people ──
           AppTextFeild(
             text: "Number of People",
-            icon: Icons.people,
-            iconColor: appTextColor2,
+            iconImagePath: peopleIcon,
+            iconImagecolor: Color.fromARGB(255, 8, 8, 8),
+            sideIconSlotWidth: 17.w,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.18),
+                blurRadius: 10,
+                spreadRadius: 1,
+                offset: const Offset(0, 0),
+              ),
+            ],
+
             controller: peopleController,
           ),
           SizedBox(height: 20.h),
@@ -240,12 +601,53 @@ class _PlanAPartyState extends State<PlanAParty> {
           // ── date & time ──
           GestureDetector(
             onTap: () => _selectDateTime(context),
+
             child: AppTextFeild(
+              // DATE
               text: selectedDateTime != null
-                  ? "${_formatDate(selectedDateTime!)} ${_formatTime(selectedDateTime!.hour, selectedDateTime!.minute)}"
-                  : "Date & Time",
-              icon: Icons.calendar_today_sharp,
-              iconColor: appTextColor2,
+                  ? _formatDate(selectedDateTime!)
+                  : "Date",
+
+              // TIME
+              secondText: selectedDateTime != null
+                  ? _formatTime(
+                      selectedDateTime!.hour,
+                      selectedDateTime!.minute,
+                    )
+                  : "Time",
+
+              // ICONS
+              iconImagePath: calenderIcon,
+              secondIconImagePath: timeIcon,
+
+              // ICON COLORS
+              iconImagecolor: Color.fromARGB(255, 8, 8, 8),
+              secondIconImageColor: Color.fromARGB(255, 8, 8, 8),
+
+              // ENABLE DATE TIME UI
+              isDateTimeField: true,
+
+              // FIGMA VALUES
+              height: 55.h,
+              fieldBorderRadius: 10.r,
+
+              backgroundColor: const Color(0xFFFFFFFF),
+
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.18),
+                  offset: const Offset(0, 0),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                ),
+              ],
+
+              // TEXT
+              textColor: Colors.grey,
+              size: 12.sp,
+
               isreadonly: true,
             ),
           ),
@@ -254,8 +656,9 @@ class _PlanAPartyState extends State<PlanAParty> {
           // ── expected amount ──
           AppTextFeild(
             text: "Expected amount per person",
-            icon: Icons.wallet,
-            iconColor: appTextColor2,
+            iconImagePath: walletIcon,
+            sideIconSlotWidth: 17.w,
+            iconImagecolor: Color.fromARGB(255, 8, 8, 8),
             controller: amountController,
           ),
           SizedBox(height: 20.h),
@@ -319,7 +722,8 @@ class _PlanAPartyState extends State<PlanAParty> {
               ),
             ),
             child: Container(
-              padding: EdgeInsets.all(16.w),
+              constraints: BoxConstraints(maxWidth: double.infinity),
+              padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 9.h),
               decoration: BoxDecoration(
                 color: const Color(0xFF798FFF),
                 borderRadius: BorderRadius.circular(10.r),
@@ -334,9 +738,12 @@ class _PlanAPartyState extends State<PlanAParty> {
               child: Center(
                 child: AppText(
                   text: locationLabel,
-                  size: 15,
+                  size: 15.sp,
                   fontWeight: FontWeight.w400,
                   color: Colors.white,
+                  isCentered: true,
+                  maxLines: null,
+                  overflow: TextOverflow.visible,
                 ),
               ),
             ),
@@ -344,89 +751,69 @@ class _PlanAPartyState extends State<PlanAParty> {
           SizedBox(height: 40.h),
 
           // ── enquiry valid for ──
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.only(left: 4.0, bottom: 4.h),
-                child: Text(
-                  'Enquiry valid for',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w500,
+          // ── enquiry valid for ──
+          Padding(
+            padding: EdgeInsets.only(top: 10.h), // room for the floating label
+            child: Stack(
+              clipBehavior: Clip.none, // ← this is the key fix
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 12.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: appSecondaryBackgroundColor,
+                    borderRadius: BorderRadius.circular(15.r),
+                    border: Border.all(color: Colors.black54),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 15.0,
+                      vertical: 4.0,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _IconTextButton(
+                          imageIcon: calenderIcon,
+                          label: expirationDate != null
+                              ? _formatDate(expirationDate!)
+                              : 'Date',
+                          onTap: () => _selectExpirationDateTime(context),
+                        ),
+                        _IconTextButton(
+                          imageIcon: timeIcon,
+                          label: expirationTime != null
+                              ? _formatTime(
+                                  expirationTime!.hour,
+                                  expirationTime!.minute,
+                                )
+                              : 'Time',
+                          onTap: () => _selectExpirationDateTime(context),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                decoration: BoxDecoration(
-                  color: appSecondaryBackgroundColor,
-                  borderRadius: BorderRadius.circular(15.r),
-                  border: Border.all(color: Colors.black54),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _IconTextButton(
-                      icon: Icons.calendar_today,
-                      label: expirationDate != null
-                          ? _formatDate(expirationDate!)
-                          : 'Date',
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime(2101),
-                          builder: (context, child) => Theme(
-                            data: ThemeData.light().copyWith(
-                              colorScheme: const ColorScheme.light(
-                                primary: Color(0xfff87b0d),
-                                onPrimary: Colors.white,
-                                onSurface: Colors.black,
-                              ),
-                              dialogBackgroundColor: Colors.white,
-                            ),
-                            child: child!,
-                          ),
-                        );
-                        if (picked != null)
-                          setState(() => expirationDate = picked);
-                      },
+                Positioned(
+                  top: -10.h,
+                  left: 25.w,
+                  child: Container(
+                    color: appSecondaryBackgroundColor,
+                    padding: EdgeInsets.symmetric(horizontal: 4.w),
+                    child: Text(
+                      'Enquiry valid for',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                    _IconTextButton(
-                      icon: Icons.access_time,
-                      label: expirationTime != null
-                          ? _formatTime(
-                              expirationTime!.hour,
-                              expirationTime!.minute,
-                            )
-                          : 'Time',
-                      onTap: () async {
-                        final picked = await showTimePicker(
-                          context: context,
-                          initialTime: TimeOfDay.now(),
-                          builder: (context, child) => Theme(
-                            data: ThemeData.light().copyWith(
-                              colorScheme: const ColorScheme.light(
-                                primary: Color(0xfff87b0d),
-                                onPrimary: Colors.white,
-                                onSurface: Colors.black,
-                              ),
-                              dialogBackgroundColor: Colors.white,
-                            ),
-                            child: child!,
-                          ),
-                        );
-                        if (picked != null)
-                          setState(() => expirationTime = picked);
-                      },
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           SizedBox(height: 30.h),
 
@@ -439,8 +826,8 @@ class _PlanAPartyState extends State<PlanAParty> {
               onPressed: isLoading ? () {} : _submitEnquiry,
               size: 15,
               borderRadius: 10,
-              bgColor1: Colors.green,
-              bgColor2: Colors.green,
+              bgColor1: Color(0xFF73B256),
+              bgColor2: Color(0xFF73B256),
             ),
           ),
           SizedBox(height: 30.h),
@@ -452,12 +839,12 @@ class _PlanAPartyState extends State<PlanAParty> {
 
 // ── shared helper widget ─────────────────────────────
 class _IconTextButton extends StatelessWidget {
-  final IconData icon;
+  final String imageIcon;
   final String label;
   final VoidCallback onTap;
 
   const _IconTextButton({
-    required this.icon,
+    required this.imageIcon,
     required this.label,
     required this.onTap,
   });
@@ -469,15 +856,18 @@ class _IconTextButton extends StatelessWidget {
       onTap: onTap,
       child: Row(
         children: [
-          Icon(icon, size: 20.w, color: Colors.black),
+          Image.asset(
+            imageIcon,
+            width: 20.w,
+            height: 20.h,
+            color: Color.fromARGB(255, 8, 8, 8),
+          ),
           SizedBox(width: 8.w),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: appTextColor2,
-              fontWeight: FontWeight.w500,
-            ),
+          AppText(
+            text: label,
+            size: 14,
+            color: appTextColor2.withOpacity(.8),
+            fontWeight: FontWeight.w500,
           ),
         ],
       ),
@@ -485,637 +875,386 @@ class _IconTextButton extends StatelessWidget {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import 'package:flutter/material.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
-// import 'package:fudikoclient/components/appbutton.dart';
-// import 'package:fudikoclient/components/apptext.dart';
-// import 'package:fudikoclient/components/apptextfeild.dart';
-// import 'package:fudikoclient/components/descriptionBox.dart';
-// import 'package:fudikoclient/model/inquery/create-inquery-model.dart';
-// import 'package:fudikoclient/screens/tabs/inquery/common/locationselect.dart';
-// import 'package:fudikoclient/service/auth/map-service.dart';
-// import 'package:fudikoclient/service/inquery/inquery-service.dart';
-// import 'package:fudikoclient/utils/constants.dart';
-// import 'package:fudikoclient/utils/tokens.dart';
-// import 'package:intl/intl.dart';
-
-// class PlanAParty extends StatefulWidget {
-//   final Function(bool) onEnquiryTap;
-//   final Function(bool) onReviewTap; 
-//   const PlanAParty({
-//     super.key,
-//     required this.onEnquiryTap,
-//     required this.onReviewTap,
-//   });
-
-//   @override
-//   State<PlanAParty> createState() => _PlanAPartyState();
-// }
-
-// class _PlanAPartyState extends State<PlanAParty> {
-//   String? radius;
-//   String? longitude;
-//   String? latitude;
-//   String? date;
-//   String? time;
-//   String? place;
-
-//   final TextEditingController nofopeoplecontroller = TextEditingController();
-//   final TextEditingController descriptioncontoller = TextEditingController();
-//   final TextEditingController estimatedamountcontoller =
-//       TextEditingController();
-//   final TextEditingController datetimecontroller = TextEditingController();
-//   final TextEditingController validdatetimecontroller = TextEditingController();
-
-//   MapService mapService = MapService();
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return SingleChildScrollView(
-//       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-//       child: Column(
-//         children: [
-//           GestureDetector(
-//             onTap: () {
-//               widget.onEnquiryTap(true);
-//             },
-//             child: Row(
-//               children: [
-//                 Icon(
-//                   Icons.content_paste_search_sharp,
-//                   size: 20.w,
-//                   color: appLinkColor2,
-//                 ),
-//                 SizedBox(width: 5.w),
-//                 AppText(
-//                   text: "View Enquiries",
-//                   size: 15,
-//                   fontWeight: FontWeight.w400,
-//                   color: appLinkColor2,
-//                 ),
-//               ],
-//             ),
-//           ),
-//           SizedBox(height: 10.h),
-//           DescriptionTextArea(
-//             hintText:
-//                 "Example: Chicken Biriyani , Porotta ,Rotti  , Payasam, Butter Chicken , Ice cream,.Salad",
-//             topHintText: "Your Menu",
-//             iconColor: appTextColor2,
-//             icon: Icons.dashboard,
-//             maxLength: 300,
-//             controller: descriptioncontoller,
-//           ),
-//           SizedBox(height: 10.h),
-//           AppTextFeild(
-//             text: "Number of  People",
-//             icon: Icons.people,
-//             iconColor: appTextColor2,
-//             controller: nofopeoplecontroller,
-//           ),
-//           SizedBox(height: 10.h),
-//           AppTextFeild(
-//             text: "Date & Time",
-//             icon: Icons.calendar_today_sharp,
-//             iconColor: appTextColor2,
-//             isreadonly: true,
-//             onboxTap: () => _selectDateTime(context, datetimecontroller),
-//             controller: datetimecontroller,
-//           ),
-//           SizedBox(height: 10.h),
-//           AppTextFeild(
-//             text: "Expected amount per person",
-//             icon: Icons.wallet,
-//             iconColor: appTextColor2,
-//             controller: estimatedamountcontoller,
-//           ),
-//           SizedBox(height: 10.h),
-//           GestureDetector(
-//             onTap: () => Navigator.push(
-//               context,
-//               MaterialPageRoute(
-//                 builder: (context) => LocationSelect(
-//                   returndata: (lat, lng, distance) async {
-//                     setState(() {
-//                       latitude = lat;
-//                       longitude = lng;
-//                       radius = distance;
-//                     });
-//                     print('from main');
-//                     print(latitude);
-//                     print(longitude);
-//                     print(radius);
-
-//                     final placename = await mapService.getPlaceName(lat, lng);
-//                     setState(() {
-//                       place = placename!.split(',')[1];
-//                     });
-//                   },
-//                 ),
-//               ),
-//             ),
-//             child: Container(
-//               padding: EdgeInsets.all(16.w),
-//               decoration: BoxDecoration(
-//                 color: Color(0xFF798FFF),
-//                 borderRadius: BorderRadius.circular(10.r),
-//                 boxShadow: [
-//                   BoxShadow(
-//                     color: Colors.black.withOpacity(0.1),
-//                     blurRadius: 10.r,
-//                     offset: Offset(0, 4),
-//                   ),
-//                 ],
-//               ),
-//               child: Center(
-//                 child: AppText(
-//                   text:
-//                       "${place ?? "Select Location"} - ${radius ?? "0"} km Radius",
-//                   size: 15,
-//                   fontWeight: FontWeight.w400,
-//                   color: Colors.white,
-//                 ),
-//               ),
-//             ),
-//           ),
-//           SizedBox(height: 30.h),
-//           Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               Padding(
-//                 padding: EdgeInsets.only(left: 4.0, bottom: 4.h),
-//                 child: Text(
-//                   'Enquiry valid for',
-//                   style: TextStyle(
-//                     color: Colors.red,
-//                     fontSize: 12.sp,
-//                     fontWeight: FontWeight.w500,
-//                   ),
-//                 ),
-//               ),
-//               GestureDetector(
-//                 onTap: () => _selectDateTime(context, validdatetimecontroller),
-//                 child: Container(
-//                   padding: EdgeInsets.symmetric(
-//                     horizontal: 16.w,
-//                     vertical: 12.h,
-//                   ),
-//                   decoration: BoxDecoration(
-//                     color: appSecondaryBackgroundColor,
-//                     borderRadius: BorderRadius.circular(15.r),
-//                     border: Border.all(color: Colors.black54),
-//                   ),
-//                   child: Row(
-//                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                     children: [
-//                       _IconTextButton(
-//                         icon: Icons.calendar_today,
-//                         label: 'Date',
-//                         onTap: () {},
-//                       ),
-//                       AppText(
-//                         text: validdatetimecontroller.text,
-//                         size: 12,
-//                         fontWeight: FontWeight.w400,
-//                         color: Colors.black,
-//                       ),
-//                       _IconTextButton(
-//                         icon: Icons.access_time,
-//                         label: 'Time',
-//                         onTap: () {},
-//                       ),
-//                     ],
-//                   ),
-//                 ),
-//               ),
-//             ],
-//           ),
-//           SizedBox(height: 20.h),
-//           SizedBox(
-//             width: 150.w,
-//             height: 50.h,
-//             child: AppButton(
-//               text: "Review Party",
-//               onPressed: () {
-//                 // widget.onReviewTap(true);
-//                 if (descriptioncontoller.text.isEmpty ||
-//                     nofopeoplecontroller.text.isEmpty ||
-//                     datetimecontroller.text.isEmpty ||
-//                     estimatedamountcontoller.text.isEmpty ||
-//                     place == null ||
-//                     radius == null ||
-//                     latitude == null ||
-//                     longitude == null) {
-//                   // Show snackbar if fields are missing
-//                   ScaffoldMessenger.of(context).showSnackBar(
-//                     SnackBar(
-//                       content: Text(
-//                         "Please fill all the fields before proceeding!",
-//                         style: TextStyle(color: Colors.white),
-//                       ),
-//                       backgroundColor: Colors.red,
-//                       behavior: SnackBarBehavior.floating,
-//                     ),
-//                   );
-//                   return;
-//                 }
-//                 showDialog(
-//                   context: context,
-//                   barrierDismissible: true,
-//                   builder: (context) => ReviewBox(
-//                     menu: descriptioncontoller.text,
-//                     noOfPersons: nofopeoplecontroller.text,
-//                     datetime: datetimecontroller.text,
-//                     expectedAmount: estimatedamountcontoller.text,
-//                     place: place!,
-//                     radius: radius!,
-//                     latitiude: latitude!,
-//                     longitude: longitude!,
-//                     expiredatetime: validdatetimecontroller.text,
-//                   ),
-//                 );
-//               },
-//               size: 15,
-//               borderRadius: 10,
-//               bgColor1: Colors.green,
-//               bgColor2: Colors.green,
-//             ),
-//           ),
-//           SizedBox(height: 30.h),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Future<void> _selectDateTime(
-//     BuildContext context,
-//     TextEditingController controller,
-//   ) async {
-//     final DateTime? pickedDate = await showDatePicker(
-//       context: context,
-//       initialDate: DateTime.now(),
-//       firstDate: DateTime(2020),
-//       lastDate: DateTime(2101),
-//       builder: (BuildContext context, Widget? child) {
-//         return Theme(
-//           data: ThemeData.light().copyWith(
-//             colorScheme: ColorScheme.light(
-//               primary: Color(0xfff87b0d),
-//               onPrimary: Colors.white,
-//               onSurface: Colors.black,
-//             ),
-//             dialogBackgroundColor: Colors.white,
-//           ),
-//           child: child!,
-//         );
-//       },
-//     );
-
-//     if (pickedDate != null) {
-//       final TimeOfDay? pickedTime = await showTimePicker(
-//         context: context,
-//         initialTime: TimeOfDay.now(),
-//         builder: (BuildContext context, Widget? child) {
-//           return Theme(
-//             data: ThemeData.light().copyWith(
-//               colorScheme: ColorScheme.light(
-//                 primary: Color(0xfff87b0d),
-//                 onPrimary: Colors.white,
-//                 onSurface: Colors.black,
-//               ),
-//               dialogBackgroundColor: Colors.white,
-//             ),
-//             child: child!,
-//           );
-//         },
-//       );
-
-//       if (pickedTime != null) {
-//         DateTime fullDateTime = DateTime(
-//           pickedDate.year,
-//           pickedDate.month,
-//           pickedDate.day,
-//           pickedTime.hour,
-//           pickedTime.minute,
-//         );
-
-//         String formattedDate = DateFormat('yyyy-MM-dd').format(fullDateTime);
-//         String formattedTime = DateFormat('hh:mm a').format(fullDateTime);
-
-//         setState(() {
-//           date = formattedDate;
-//           time = formattedTime;
-//           controller.text = '$formattedDate & $formattedTime';
-//         });
-//       }
-//     }
-//   }
-
-// }
-
-// class _IconTextButton extends StatelessWidget {
-//   final IconData icon;
-//   final String label;
-//   final VoidCallback onTap;
-
-//   const _IconTextButton({
-//     required this.icon,
-//     required this.label,
-//     required this.onTap,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return InkWell(
-//       borderRadius: BorderRadius.circular(16.r),
-//       onTap: onTap,
-//       child: Row(
-//         children: [
-//           Icon(icon, size: 20.w, color: Colors.black),
-//           SizedBox(width: 8.w),
-//           Text(
-//             label,
-//             style: TextStyle(
-//               fontSize: 12.sp,
-//               color: appTextColor2,
-//               fontWeight: FontWeight.w500,
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
-// class ReviewBox extends StatefulWidget {
-//   final String menu;
-//   final String noOfPersons;
-//   final String datetime;
-//   final String expectedAmount;
-//   final String place;
-//   final String radius;
-//   final String latitiude;
-//   final String longitude;
-//   final String expiredatetime;
-//   const ReviewBox({
-//     super.key,
-//     required this.menu,
-//     required this.noOfPersons,
-//     required this.datetime,
-//     required this.expectedAmount,
-//     required this.place,
-//     required this.radius,
-//     required this.latitiude,
-//     required this.longitude,
-//     required this.expiredatetime,
-//   });
-
-//   @override
-//   State<ReviewBox> createState() => _ReviewBoxState();
-// }
-
-// class _ReviewBoxState extends State<ReviewBox> {
-//   InqueryService inqueryService = InqueryService();
-
-//   Future<void> createInquery() async {
-//       debugPrint(await getToken());
-//     try {
-//       CreateInqueryModel inquerydata = CreateInqueryModel(
-//         lat: widget.latitiude,
-//         lng: widget.longitude,
-//         menuItems: widget.menu,
-//         people: widget.noOfPersons,
-//         time: widget.datetime.split(" & ")[1].trim(),
-//         date: widget.datetime.split(" & ")[0].trim(),
-//         estimatedAmount: widget.expectedAmount,
-//         searchRadius: widget.radius,
-//         expirationDate: widget.expiredatetime.split(" & ")[0].trim(),
-//         expirationTime: widget.expiredatetime.split(" & ")[1].trim(),
-//       );
-
-
-//       CreateInqueryModelResponse response = await inqueryService.createInquery(
-//         inquerydata,
-//       );
-
-//       if (response.status) {
-//         SnackBar(
-//           content: Text(
-//             "Inquery created successfully",
-//             style: TextStyle(color: Colors.white),
-//           ),
-//           backgroundColor: Colors.green,
-//           behavior: SnackBarBehavior.floating,
-//         );
-//         Navigator.pop(context);
-//         debugPrint("Inquery created successfully");
-//       }else{
-//         SnackBar(
-//           content: Text(
-//             "Error in creating inquery",
-//             style: TextStyle(color: Colors.white),
-//           ),
-//           backgroundColor: Colors.red,
-//           behavior: SnackBarBehavior.floating,
-//         );
-//         debugPrint("Error successfully");
-//         Navigator.pop(context);
-//       }
-//     } catch (e) {
-//       print(e);
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Dialog(
-//       backgroundColor: Colors.white,
-//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
-//       child: Padding(
-//         padding: EdgeInsets.symmetric(horizontal: 30, vertical: 50),
-//         child: SingleChildScrollView(
-//           child: Column(
-//             mainAxisSize: MainAxisSize.min,
-//             children: [
-//               Row(
-//                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                 children: [
-//                   AppText(
-//                     text: "C17854",
-//                     size: 20,
-//                     fontWeight: FontWeight.w700,
-//                     color: appTextColor3,
-//                   ),
-//                   GestureDetector(
-//                     onTap: () => Navigator.pop(context),
-//                     child: AppText(
-//                       text: "Edit",
-//                       size: 15,
-//                       fontWeight: FontWeight.w700,
-//                       color: appLinkColor,
-//                     ),
-//                   ),
-//                 ],
-//               ),
-
-//               SizedBox(height: 20.h),
-
-//               _buildRow(
-//                 icon: Icons.dashboard,
-//                 title: "Your Menu",
-//                 value: widget.menu,
-//               ),
-
-//               SizedBox(height: 20.h),
-
-//               _buildRow(
-//                 icon: Icons.people,
-//                 title: "Number of Persons",
-//                 value: "${widget.noOfPersons} Person",
-//               ),
-
-//               SizedBox(height: 20.h),
-
-//               _buildRow(
-//                 icon: Icons.calendar_today_sharp,
-//                 title: "Date and Time",
-//                 value: widget.datetime,
-//               ),
-
-//               SizedBox(height: 20.h),
-
-//               _buildRow(
-//                 icon: Icons.wallet,
-//                 title: "Expected amount per person",
-//                 value: "${widget.expectedAmount} Per person",
-//               ),
-
-//               SizedBox(height: 20.h),
-
-//               _buildRow(
-//                 icon: Icons.analytics,
-//                 title: "Enquiry Radius",
-//                 value: "${widget.place} - ${widget.radius} km Radius",
-//               ),
-
-//               SizedBox(height: 30.h),
-
-//               Row(
-//                 mainAxisAlignment: MainAxisAlignment.center,
-//                 children: [
-//                   Icon(Icons.timer, size: 20.w, color: Colors.red),
-//                   SizedBox(width: 5.w),
-//                   AppText(
-//                     text: "03:00:00",
-//                     size: 15,
-//                     fontWeight: FontWeight.w500,
-//                     color: Colors.red,
-//                   ),
-//                 ],
-//               ),
-
-//               SizedBox(height: 15.h),
-
-//               SizedBox(
-//                 width: 150.w,
-//                 height: 50.h,
-//                 child: AppButton(
-//                   text: "Send",
-//                   onPressed: () {
-//                     createInquery();
-//                   },
-//                   size: 15,
-//                   bgColor1: Colors.green,
-//                   bgColor2: Colors.green,
-//                   borderRadius: 10,
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildRow({
-//     required IconData icon,
-//     required String title,
-//     required String value,
-//   }) {
-//     return Row(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         Icon(icon, size: 20.w, color: appTextColor2),
-//         SizedBox(width: 10.w),
-//         Expanded(
-//           child: Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               AppText(
-//                 text: title,
-//                 size: 15,
-//                 fontWeight: FontWeight.w500,
-//                 color: Colors.grey,
-//               ),
-//               SizedBox(height: 5.h),
-//               AppText(
-//                 text: value,
-//                 size: 15,
-//                 fontWeight: FontWeight.w500,
-//                 color: appTextColor2,
-//                 lineSpacing: 1.5,
-//               ),
-//             ],
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-// }
+Widget _buildCustomCalendar({
+  required DateTime tempDate,
+  required void Function(DateTime) onDateChanged,
+}) {
+  return _CustomCalendar(selectedDate: tempDate, onDateChanged: onDateChanged);
+}
+
+class _CustomCalendar extends StatefulWidget {
+  final DateTime selectedDate;
+  final void Function(DateTime) onDateChanged;
+
+  const _CustomCalendar({
+    required this.selectedDate,
+    required this.onDateChanged,
+  });
+
+  @override
+  State<_CustomCalendar> createState() => _CustomCalendarState();
+}
+
+class _CustomCalendarState extends State<_CustomCalendar> {
+  late DateTime _displayMonth;
+  bool _showMonthYearPicker = false;
+  late int _pickerYear; // year shown in the month picker
+
+  @override
+  void initState() {
+    super.initState();
+    _displayMonth = DateTime(
+      widget.selectedDate.year,
+      widget.selectedDate.month,
+    );
+    _pickerYear = _displayMonth.year;
+  }
+
+  void _prevMonth() => setState(
+    () => _displayMonth = DateTime(_displayMonth.year, _displayMonth.month - 1),
+  );
+
+  void _nextMonth() => setState(
+    () => _displayMonth = DateTime(_displayMonth.year, _displayMonth.month + 1),
+  );
+
+  void _togglePicker() => setState(() {
+    _showMonthYearPicker = !_showMonthYearPicker;
+    _pickerYear = _displayMonth.year;
+  });
+
+  void _selectMonthYear(int month, int year) {
+    setState(() {
+      _displayMonth = DateTime(year, month);
+      _showMonthYearPicker = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final today = DateTime.now();
+    final monthName = _monthName(_displayMonth.month);
+
+    return Column(
+      children: [
+        // ── Header ──────────────────────────────────────
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chevron_left),
+              onPressed: _showMonthYearPicker ? null : _prevMonth,
+            ),
+            GestureDetector(
+              onTap: _togglePicker,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '$monthName  ${_displayMonth.year}',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
+                  SizedBox(width: 4.w),
+                  Icon(
+                    _showMonthYearPicker
+                        ? Icons.arrow_drop_up
+                        : Icons.arrow_drop_down,
+                    color: Colors.black54,
+                    size: 20.sp,
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.chevron_right),
+              onPressed: _showMonthYearPicker ? null : _nextMonth,
+            ),
+          ],
+        ),
+
+        // ── Month/Year Picker ────────────────────────────
+        if (_showMonthYearPicker) ...[
+          SizedBox(height: 6.h),
+          _buildMonthYearPicker(),
+        ] else ...[
+          SizedBox(height: 6.h),
+          _buildWeekdayLabels(),
+          SizedBox(height: 6.h),
+          _buildDayGrid(today),
+        ],
+      ],
+    );
+  }
+
+  // ── Month + Year picker panel ──────────────────────────
+  Widget _buildMonthYearPicker() {
+    final currentYear = DateTime.now().year;
+
+    return Column(
+      children: [
+        // year row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chevron_left, size: 20),
+              onPressed: () => setState(() => _pickerYear--),
+            ),
+            GestureDetector(
+              onTap: () => _showYearScrollPicker(context),
+              child: Text(
+                '$_pickerYear',
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFFf87b0d),
+                ),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.chevron_right, size: 20),
+              onPressed: () => setState(() => _pickerYear++),
+            ),
+          ],
+        ),
+        SizedBox(height: 8.h),
+        // month grid
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: 12,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 2.2,
+          ),
+          itemBuilder: (context, index) {
+            final month = index + 1;
+            final isSelected =
+                month == _displayMonth.month &&
+                _pickerYear == _displayMonth.year;
+            final isPast = DateTime(
+              _pickerYear,
+              month,
+            ).isBefore(DateTime(DateTime.now().year, DateTime.now().month));
+
+            return GestureDetector(
+              onTap: isPast ? null : () => _selectMonthYear(month, _pickerYear),
+              child: Container(
+                height: 50.h,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? const Color(0xFFFE943A)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(
+                    color: isSelected
+                        ? const Color(0xFFFE943A)
+                        : Colors.black12,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    _shortMonth(month),
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w500,
+                      color: isSelected
+                          ? Colors.white
+                          : isPast
+                          ? Colors.black26
+                          : Colors.black87,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        SizedBox(height: 8.h),
+      ],
+    );
+  }
+
+  // ── Year scroll bottom sheet ───────────────────────────
+  void _showYearScrollPicker(BuildContext context) {
+    final currentYear = DateTime.now().year;
+    final years = List.generate(20, (i) => currentYear + i);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+      ),
+      builder: (_) => SizedBox(
+        height: 250.h,
+        child: ListView.builder(
+          itemCount: years.length,
+          itemBuilder: (context, index) {
+            final year = years[index];
+            final isSelected = year == _pickerYear;
+            return ListTile(
+              onTap: () {
+                setState(() => _pickerYear = year);
+                Navigator.pop(context);
+              },
+              title: Center(
+                child: Text(
+                  '$year',
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                    color: isSelected
+                        ? const Color(0xFFf87b0d)
+                        : Colors.black87,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // ── Weekday labels ─────────────────────────────────────
+  Widget _buildWeekdayLabels() {
+    return Container(
+      color: Color(0xFFF5F7FA),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+            .map(
+              (d) => SizedBox(
+                width: 36.w,
+                child: Center(
+                  child: Text(
+                    d,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.black54,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+
+  // ── Day grid ───────────────────────────────────────────
+  Widget _buildDayGrid(DateTime today) {
+    final daysInMonth = DateUtils.getDaysInMonth(
+      _displayMonth.year,
+      _displayMonth.month,
+    );
+    final firstWeekday =
+        DateTime(_displayMonth.year, _displayMonth.month, 1).weekday % 7;
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: firstWeekday + daysInMonth,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 7,
+        mainAxisSpacing: 4,
+        crossAxisSpacing: 0,
+        childAspectRatio: 1,
+      ),
+      itemBuilder: (context, index) {
+        if (index < firstWeekday) return const SizedBox();
+
+        final day = index - firstWeekday + 1;
+        final date = DateTime(_displayMonth.year, _displayMonth.month, day);
+        final isSelected = DateUtils.isSameDay(date, widget.selectedDate);
+        final isToday = DateUtils.isSameDay(date, today);
+        final isPast = date.isBefore(
+          DateTime(today.year, today.month, today.day),
+        );
+
+        return GestureDetector(
+          onTap: isPast ? null : () => widget.onDateChanged(date),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 32.w,
+                height: 32.w,
+                decoration: isSelected
+                    ? BoxDecoration(
+                        color: const Color(0xFFf87b0d),
+                        borderRadius: BorderRadius.circular(10.r),
+                      )
+                    : null,
+                child: Center(
+                  child: Text(
+                    '$day',
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: isSelected || isToday
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                      color: isSelected
+                          ? Colors.white
+                          : isPast
+                          ? Colors.black26
+                          : Colors.black87,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 2.h),
+              isToday
+                  ? Container(
+                      width: 5.w,
+                      height: 5.w,
+                      decoration: const BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                      ),
+                    )
+                  : SizedBox(height: 5.w),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _monthName(int month) => const [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ][month - 1];
+
+  String _shortMonth(int month) => const [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ][month - 1];
+}

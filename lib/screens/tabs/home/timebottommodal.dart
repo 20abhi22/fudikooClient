@@ -48,11 +48,17 @@ class _TimeBottomModalState extends State<TimeBottomModal> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // Icon(Icons.tune, size: 20.w, color: Colors.black),
-                      Icon(
-                        Icons.event_available,
-                        size: 20.w,
-                        color: Colors.black,
-                      ),
+                        // Icon(
+                        //   Icons.event_available,
+                        //   size: 20.w,
+                        //   color: Colors.black,
+                        // ),
+                        Image.asset(
+                          "assets/images/filter_calendar.png",
+                          width: 20.w,
+                          height: 20.w,
+                          color: Colors.black,
+                        ),
                       SizedBox(width: 10.w),
                       AppText(
                         // text: "Filter",

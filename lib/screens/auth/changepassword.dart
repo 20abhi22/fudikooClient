@@ -4,6 +4,7 @@ import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/components/apptextfeild.dart';
 import 'package:fudikoclient/model/auth/changepassword_model.dart';
+import 'package:fudikoclient/screens/auth/otp.dart';
 import 'package:fudikoclient/service/auth/changepassword_service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 
@@ -15,6 +16,10 @@ class ChangePassword extends StatefulWidget {
   }
 
 class _ChangePasswordState extends State<ChangePassword> {
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  bool _obscureOldPassword = true;
+
   bool isLoading=false;
   final TextEditingController currentPasswordController=TextEditingController();
   
@@ -126,11 +131,22 @@ if (response.status) {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.arrow_back_ios_outlined,
-                      size: 30.r,
-                      color: appTextColor3,
+                    Image.asset(
+                      backOrange,
+                      height: 30.h,
+                      width: 30.w,
                     ),
+                     SizedBox(width: 10.w),
+                    //  AppText(
+                    //   text: "Change Password",
+                    //   size: 18,
+                    //   fontWeight: FontWeight.w500,
+                    // ),
+                    // Icon(
+                    //   Icons.arrow_back_ios_outlined,
+                    //   size: 30.r,
+                    //   color: appTextColor3,
+                    // ),
                   ],
                 ),
               ),
@@ -147,11 +163,26 @@ if (response.status) {
                 ),
 
                 SizedBox(height: 40.h),
-                AppTextFeild(controller:currentPasswordController,text: "Current Password", icon: Icons.lock),
+                AppTextFeild(controller:currentPasswordController,text: "Current Password", iconImagePath: padlockOutlineIcon, isObscure: _obscureOldPassword, enableInteractiveSelection: false,
+                  suffixIcon: _obscureOldPassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  onSuffixTap: () =>
+                      setState(() => _obscureOldPassword = !_obscureOldPassword),),
                 SizedBox(height: 20.h),
-                AppTextFeild(controller:newPasswordController,text: "New Password", icon: Icons.lock),
+                AppTextFeild(controller:newPasswordController,text: "New Password", iconImagePath: padlockOutlineIcon,isObscure: _obscurePassword, enableInteractiveSelection: false,
+                  suffixIcon: _obscurePassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  onSuffixTap: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),),
                 SizedBox(height: 20.h),
-                AppTextFeild(controller:confirmPasswordController,text: "Confirm Password", icon: Icons.lock),
+                AppTextFeild(controller:confirmPasswordController,text: "Confirm Password", iconImagePath: padlockOutlineIcon,isObscure: _obscureConfirmPassword, enableInteractiveSelection: false,
+                  suffixIcon: _obscureConfirmPassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  onSuffixTap: () =>
+                      setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),),
                 SizedBox(height: 60.h),
                 AppButton(
   text: isLoading ? 'Updating...' : 'Update',
@@ -160,10 +191,15 @@ if (response.status) {
   },
 ),
 SizedBox(height: 20.h),
-                AppText(
-                  text: "Forgot Password?",
-                  size: 14,
-                  fontWeight: FontWeight.w400,
+                InkWell(
+                  onTap: (){
+                     Navigator.push(context, MaterialPageRoute(builder: (context)=>Otp()));
+                  },
+                  child: AppText(
+                    text: "Forgot Password?",
+                    size: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ],
             ),

@@ -1,0 +1,493 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fudikoclient/components/apptext.dart';
+import 'package:fudikoclient/model/restaurant/restaurant_liked.dart';
+import 'package:fudikoclient/service/restaurant/restaurant-service.dart';
+import 'package:fudikoclient/utils/constants.dart';
+import 'package:fudikoclient/model/restaurant/restaurant-model.dart';
+
+class RestaurantMapCard extends StatefulWidget {
+  final VoidCallback? onRatingOnClick;
+// Change callback type to carry an optional offerId
+final void Function(String? offerId)? onBoxClicked;  final String uuid;
+  final String name;
+  final String type;
+  final String address;
+  final String phone;
+  final String lat;
+  final String lng;
+  final String description;
+  final String availableDishes;
+  final int takeAwayService;
+  final int deliveryService;
+  final String deliveryServiceArea;
+  final String restaurantType;
+  final String status;
+  final bool? isFavourite;
+  final bool isFavoriteBox;
+  final double? averageReview;
+  final double? distance;
+  final List<OfferModel> offers; 
+  final String? image;
+  
+
+
+  const RestaurantMapCard({
+    super.key,
+    this.onRatingOnClick,
+    this.onBoxClicked,
+    required this.uuid,
+    required this.name,
+    required this.type,
+    required this.address,
+    required this.phone,
+    required this.lat,
+    required this.lng,
+    required this.description,
+    required this.availableDishes,
+    required this.takeAwayService,
+    required this.deliveryService,
+    required this.deliveryServiceArea,
+    required this.restaurantType,
+    required this.status,
+    this.isFavourite,
+    this.isFavoriteBox = false,
+    this.averageReview,
+    this.distance,
+    required this.offers, // ← add
+    this.image,
+    
+
+  });
+
+  @override
+  State<RestaurantMapCard> createState() => _RestaurantMapCardState();
+}
+
+class _RestaurantMapCardState extends State<RestaurantMapCard> {
+  bool isLiked = false;
+  RestaurantService restaurantService = RestaurantService();
+  @override
+  void initState() {
+    super.initState();
+    isLiked = widget.isFavourite ?? false;
+  }
+  String _todayShortName() {
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  // DateTime.weekday: 1=Mon … 7=Sun
+  return days[DateTime.now().weekday - 1];
+}
+
+  Future<void> onLikeOnTap() async {
+    RestaurantLikedDislikedModel data = RestaurantLikedDislikedModel(
+      uuid: widget.uuid,
+    );
+    RestaurantLikedDislikedResponseModel response = await restaurantService
+        .changeStatus(data);
+    if (response.status) {
+      setState(() {
+        isLiked = !isLiked;
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: isLiked ? Colors.green : Colors.red,
+          content: AppText(
+            text: isLiked ? 'Add to favourites' : 'Removed from favourites',size: 13,fontWeight: FontWeight.w400,
+          ),
+        ),
+      );
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+          content: AppText(
+            text: 'Something went wrong',
+            size: 13,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String distanceLabel = widget.distance != null
+        ? '${widget.distance!.toStringAsFixed(widget.distance! % 1 == 0 ? 0 : 1)} km'
+        : '${widget.deliveryServiceArea} km';
+
+    return Card(
+      color: Colors.white,
+      margin: EdgeInsets.all(20.w),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+      elevation: 4,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+                      ClipRRect(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          child: Stack(
+            children: [
+              widget.image != null                        // ← NEW CODE STARTS HERE
+                  ? Image.network(
+                      widget.image!,
+                      height: 180.h,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Image.asset(
+                        'assets/images/restaurantBanner.png',
+                        height: 180.h,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Image.asset(
+                      'assets/images/restaurantBanner.png',
+                      height: 180.h,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),                             // ← NEW CODE ENDS HERE
+              Container(                           // ← this stays untouched
+                height: 180.h,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.4),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+              Positioned(
+                top: 20,
+                left: 20,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: Color(0xfff87b0d),
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.asset(
+                        pin_to_pinIcon,
+                        width: 18.w,
+                        height: 18.h,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: 4.w),
+                      AppText(
+                        text: distanceLabel,
+                        size: 12,
+                                                  color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              widget.isFavoriteBox
+                  ? SizedBox.shrink()
+                  : Positioned(
+                      top: 20,
+                      right: 20,
+                      child: InkWell(
+                        onTap: onLikeOnTap,
+                        child: Icon(
+                          Icons.favorite,
+                          color: isLiked ? Color(0XFFf87b0d) : Colors.grey[200],
+                          size: 25.w,
+                        ),
+                      ),
+                    ),
+              Positioned(
+                bottom: 10,
+                left: 20,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppText(
+                      text: "${widget.name} ",
+                      size: 30,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                    AppText(
+                      text: "${widget.type} ",
+                      size: 20,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          GestureDetector(
+            onTap: () => widget.onBoxClicked?.call(null),
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(15.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            flex: 4,
+                            child: Row(
+                              children: [
+                                Image.asset(
+                                  locationpinIcon,
+                                  width: 18.w,
+                                  height: 18.h,
+                                  color: appTextColor3,
+                                ),
+                                SizedBox(width: 5.w),
+                                Expanded(
+                                  child: AppText(
+                                    text: widget.address,
+                                    color: appTextColor3,
+                                    size: 14,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(width: 8.w), // Add some spacing
+                          Flexible(
+                            flex: 1,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 10.w,
+                                vertical: 4.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Color(0XFFf87b0d),
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                              child: GestureDetector(
+                                onTap: widget.onRatingOnClick,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Image.asset(
+                                      reviewStarIcon,
+                                      width: 18.w,
+                                      height: 18.h,
+                                      color: Colors.white,
+                                    ),
+                                    SizedBox(width: 4.w),
+                                    Text(
+                                      widget.averageReview != null
+                                          ? widget.averageReview!.toStringAsFixed(1)
+                                          : 'N/A',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14.sp,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 5.h),
+                      Row(
+                        children: [
+                          Image.asset(
+                            dishIcon,
+                            width: 18.w,
+                            height: 18.h,
+                            color: appTextColor3,
+                          ),
+                          SizedBox(width: 5.w),
+                          Expanded(
+                            child: AppText(
+                              text: widget.availableDishes
+                                  .split(',')
+                                  .map((e) => e.trim())
+                                  .join(' - '),
+
+                                  color: appTextColor3,
+                                size: 14,
+                                fontWeight: FontWeight.w400,
+                              
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(
+  height: 135.h,
+  child: widget.offers.isEmpty
+      ? Padding(
+          padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 10.h),
+          child: Center(
+            child: AppText(
+             text: 'No offers available',
+             color: Colors.grey, size: 13,fontWeight: FontWeight.w400,
+            ),
+          ),
+        )
+      : ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.only(left: 15.w, right: 15.w, bottom: 15.h),
+          itemCount: widget.offers.length,
+          itemBuilder: (context, index) {
+            final offer = widget.offers[index];
+            final discountStr =
+                '-${offer.discountPercentage.toStringAsFixed(0)}%';
+            final forText = 'for ${offer.applicableFor}';
+            final timeStr = offer.startTime;
+            final today = _todayShortName();
+            final days = offer.activeDays
+                .split(',')
+                .map((d) => d.trim())
+                .toList();
+            final dateLabel =
+                days.contains(today) ? 'TODAY' : days.first.toUpperCase();
+      
+            return GestureDetector(
+               onTap: () => widget.onBoxClicked?.call(offer.uuid), // Pass offer ID on tap
+              child: Padding(
+                padding: EdgeInsets.only(right: 5.w),
+                child: Container(
+                  width: 85.w,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF417629),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(5.r),
+                      topRight: Radius.circular(5.r),
+                      bottomLeft: Radius.circular(10.r),
+                      bottomRight: Radius.circular(10.r),
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(8.w),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              children: [
+                                AppText(
+                                  text:discountStr,
+                                  size: 16.sp,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                ),
+                                SizedBox(height: 4.h),
+                                AppText(
+                                  text: forText,
+                                  size: 10.sp,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w400,
+                                  isCentered: true,
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: List.generate(
+                                15,
+                                (i) => Expanded(
+                                  child: Container(
+                                    height: 1.h,
+                                    color: i % 2 == 0
+                                        ? Colors.white
+                                        : Colors.transparent,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Column(
+                              children: [
+                                SizedBox(height: 2.h),
+                                AppText(
+                                  text: dateLabel,
+                                  size: 6.sp,
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                SizedBox(height: 6.h),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8.w,
+                                    vertical: 4.h,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(6.r),
+                                  ),
+                                  child: Text(
+                                    timeStr,
+                                    style: TextStyle(
+                                      fontSize: 11.sp,
+                                      color: Colors.green.shade700,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Positioned(
+                        left: -8.w, top: 20, bottom: 0,
+                        child: Center(
+                          child: Container(
+                            width: 16.w, height: 16.w,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: -8.w, top: 20, bottom: 0,
+                        child: Center(
+                          child: Container(
+                            width: 16.w, height: 16.w,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -4,6 +4,8 @@ import 'package:fudikoclient/screens/tabs/bottomnav.dart';
 import 'package:fudikoclient/screens/tabs/favorite/favorite.dart';
 import 'package:fudikoclient/screens/tabs/home/home.dart';
 import 'package:fudikoclient/screens/tabs/reservation/reservation.dart';
+import 'package:fudikoclient/screens/home/homepage.dart';
+import 'package:fudikoclient/routetransitions.dart';
 import 'package:fudikoclient/utils/constants.dart';
 
 class MainRestaurantNavPage extends StatefulWidget {
@@ -28,6 +30,11 @@ class _MainRestaurantNavPageState extends State<MainRestaurantNavPage> {
   }
 
   void onTabChanged(int index) {
+    // if (index == 0) {
+    //   pushWidgetWhileRemove(newPage: const HomePage(), context: context);
+    //   return;
+    // }
+
     setState(() {
       currentIndex = index;
     });
@@ -44,17 +51,22 @@ class _MainRestaurantNavPageState extends State<MainRestaurantNavPage> {
 
       // Inquery(),
       Reservation(),
-      Favorite(),
+      Favorite(currentLat: widget.lat, currentLng: widget.lng),
       CustomerProfile(),
     ];
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: appSecondaryBackgroundColor,
-        bottomNavigationBar: Bottomnav(
+    return Scaffold(
+      backgroundColor: appSecondaryBackgroundColor,
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Bottomnav(
           selectedIndex: currentIndex,
           onTabSelected: onTabChanged,
         ),
-        body: Stack(children: [screens[currentIndex]]),
+      ),
+      body: SafeArea(
+        top: false,
+        maintainBottomViewPadding: true,
+        child: Stack(children: [screens[currentIndex]]),
       ),
     );
   }

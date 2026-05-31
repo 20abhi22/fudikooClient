@@ -6,6 +6,7 @@ import 'package:fudikoclient/screens/banquet_tabs/banquet_bottomnav.dart';
 import 'package:fudikoclient/screens/banquet_tabs/reservartion/banquet_reservation.dart';
 import 'package:fudikoclient/screens/customerProfile/customerProfile.dart';
 import 'package:fudikoclient/screens/home/homepage.dart';
+import 'package:fudikoclient/routetransitions.dart';
 import 'package:fudikoclient/screens/tabs/bottomnav.dart';
 import 'package:fudikoclient/screens/tabs/favorite/favorite.dart';
 import 'package:fudikoclient/screens/banquet_tabs/home/homepage.dart';
@@ -37,6 +38,11 @@ class _MainCateringNavPageState extends State<MainCateringNavPage> {
   }
 
   void onTabChanged(int index) {
+    if (index == 0) {
+      pushWidgetWhileRemove(newPage: const HomePage(), context: context);
+      return;
+    }
+
     setState(() {
       currentIndex = index;
     });

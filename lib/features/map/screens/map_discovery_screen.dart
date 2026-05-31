@@ -35,7 +35,7 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen> {
   final MarkerBitmapService _markerBitmapService = const MarkerBitmapService();
   var _lastMarkerSignature = '';
   // map_providers.dart
-// final selectedRestaurantProvider = StateProvider<RestaurantModel?>((ref) => null);
+  // final selectedRestaurantProvider = StateProvider<RestaurantModel?>((ref) => null);
 
   CameraPosition get _initialCameraPosition {
     return CameraPosition(
@@ -73,7 +73,12 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen> {
         if (restaurants.isNotEmpty && previous?.valueOrNull == null) {
           unawaited(
             _controllerService.fitRestaurants(
-             restaurants.map((r) => LatLng(double.tryParse(r.lat) ?? 0, double.tryParse(r.lng) ?? 0)),
+              restaurants.map(
+                (r) => LatLng(
+                  double.tryParse(r.lat) ?? 0,
+                  double.tryParse(r.lng) ?? 0,
+                ),
+              ),
             ),
           );
         }
@@ -217,115 +222,161 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen> {
               ),
             ),
           // Replace the old RestaurantBottomSheet reconstruction block:
-if (isExpanded && selectedRestaurant != null)
-  Positioned(
-    left: 0, right: 0, bottom: 0,
-    child: Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        boxShadow: [BoxShadow(color: Color(0x26000000), blurRadius: 20, offset: Offset(0, -4))],
-      ),
-      child: SingleChildScrollView(
-        child: RestaurantCard(
-          uuid: selectedRestaurant.uuid,
-          name: selectedRestaurant.name,
-          type: selectedRestaurant.type,
-          address: selectedRestaurant.address,
-          phone: selectedRestaurant.phone,
-          lat: selectedRestaurant.lat,
-          lng: selectedRestaurant.lng,
-          description: selectedRestaurant.description,
-          availableDishes: selectedRestaurant.availableDishes,
-          takeAwayService: selectedRestaurant.takeAwayService,
-          deliveryService: selectedRestaurant.deliveryService,
-          deliveryServiceArea: selectedRestaurant.deliveryServiceArea,
-          restaurantType: selectedRestaurant.restaurantType,
-          status: selectedRestaurant.status,
-          isFavourite: selectedRestaurant.isFavorite,
-          image: selectedRestaurant.image,
-          offers: selectedRestaurant.offers,
-          isFavoriteBox: false,
-          onRatingOnClick: () {},
-          onBoxClicked: (String? offerId) {
-            showModalBottomSheet(
-              backgroundColor: Colors.white,
-              context: context,
-              isScrollControlled: true,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-              ),
-              builder: (_) => NumberOfPeopleModal(
-                uuid: selectedRestaurant.uuid,
-                offerId: offerId,
-              ),
-            );
-          },
-        ),
-      ),
-    ),
-  ),
-
-// Replace the preview carousel (no longer uses map_feature.Restaurant):
-if (isExpanded && selectedRestaurant == null)
-  Positioned(
-    left: 0, right: 0, bottom: 20.h,
-    child: restaurants.maybeWhen(
-      data: (items) => SizedBox(
-        height: 82.h,
-        child: ListView.builder(
-          padding: EdgeInsets.symmetric(horizontal: 18.w),
-          scrollDirection: Axis.horizontal,
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            final r = items[index];
-            return GestureDetector(
-              onTap: () => _selectRestaurant(r),
+          if (isExpanded && selectedRestaurant != null)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
               child: Container(
-                margin: EdgeInsets.only(right: 10.w),
-                padding: EdgeInsets.all(10.w),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(14.r),
-                  boxShadow: const [BoxShadow(color: Color(0x18000000), blurRadius: 12)],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8.r),
-                      child: r.image != null
-                          ? Image.network(r.image!, width: 44.w, height: 44.w, fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Image.asset(
-                                'assets/images/restaurantBanner.png',
-                                width: 44.w, height: 44.w, fit: BoxFit.cover))
-                          : Image.asset('assets/images/restaurantBanner.png',
-                              width: 44.w, height: 44.w, fit: BoxFit.cover),
-                    ),
-                    SizedBox(width: 8.w),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(r.name,
-                            style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w800)),
-                        if (r.offers.isNotEmpty)
-                          Text(
-                            '-${r.offers.reduce((a, b) => a.discountPercentage >= b.discountPercentage ? a : b).discountPercentage.toStringAsFixed(0)}%',
-                            style: TextStyle(color: const Color(0xFFF87B0D), fontSize: 12.sp, fontWeight: FontWeight.w700),
-                          ),
-                      ],
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x26000000),
+                      blurRadius: 20,
+                      offset: Offset(0, -4),
                     ),
                   ],
                 ),
+                child: SingleChildScrollView(
+                  child: RestaurantCard(
+                    uuid: selectedRestaurant.uuid,
+                    name: selectedRestaurant.name,
+                    type: selectedRestaurant.type,
+                    address: selectedRestaurant.address,
+                    phone: selectedRestaurant.phone,
+                    lat: selectedRestaurant.lat,
+                    lng: selectedRestaurant.lng,
+                    description: selectedRestaurant.description,
+                    availableDishes: selectedRestaurant.availableDishes,
+                    takeAwayService: selectedRestaurant.takeAwayService,
+                    deliveryService: selectedRestaurant.deliveryService,
+                    deliveryServiceArea: selectedRestaurant.deliveryServiceArea,
+                    averageReview: selectedRestaurant.averageReview,
+                    distance: selectedRestaurant.distance,
+                    restaurantType: selectedRestaurant.restaurantType,
+                    status: selectedRestaurant.status,
+                    isFavourite: selectedRestaurant.isFavorite,
+                    image: selectedRestaurant.image,
+                    offers: selectedRestaurant.offers,
+                    isFavoriteBox: false,
+                    onRatingOnClick: () {},
+                    onBoxClicked: (String? offerId) {
+                      final selectedOffers = selectedRestaurant.offers
+                          .where((offer) => offer.uuid == offerId)
+                          .toList();
+                      showModalBottomSheet(
+                        backgroundColor: Colors.white,
+                        context: context,
+                        isScrollControlled: true,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(25),
+                          ),
+                        ),
+                        builder: (_) => NumberOfPeopleModal(
+                          uuid: selectedRestaurant.uuid,
+                          offerId: offerId,
+                          offer: selectedOffers.isEmpty
+                              ? null
+                              : selectedOffers.first,
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
-            );
-          },
-        ),
-      ),
-      orElse: SizedBox.shrink,
-    ),
-  ),
+            ),
+
+          // Replace the preview carousel (no longer uses map_feature.Restaurant):
+          if (isExpanded && selectedRestaurant == null)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 20.h,
+              child: restaurants.maybeWhen(
+                data: (items) => SizedBox(
+                  height: 82.h,
+                  child: ListView.builder(
+                    padding: EdgeInsets.symmetric(horizontal: 18.w),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final r = items[index];
+                      return GestureDetector(
+                        onTap: () => _selectRestaurant(r),
+                        child: Container(
+                          margin: EdgeInsets.only(right: 10.w),
+                          padding: EdgeInsets.all(10.w),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14.r),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x18000000),
+                                blurRadius: 12,
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8.r),
+                                child: r.image != null
+                                    ? Image.network(
+                                        r.image!,
+                                        width: 44.w,
+                                        height: 44.w,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Image.asset(
+                                          'assets/images/restaurantBanner.png',
+                                          width: 44.w,
+                                          height: 44.w,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                    : Image.asset(
+                                        'assets/images/restaurantBanner.png',
+                                        width: 44.w,
+                                        height: 44.w,
+                                        fit: BoxFit.cover,
+                                      ),
+                              ),
+                              SizedBox(width: 8.w),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    r.name,
+                                    style: TextStyle(
+                                      fontSize: 13.sp,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  if (r.offers.isNotEmpty)
+                                    Text(
+                                      '-${r.offers.reduce((a, b) => a.discountPercentage >= b.discountPercentage ? a : b).discountPercentage.toStringAsFixed(0)}%',
+                                      style: TextStyle(
+                                        color: const Color(0xFFF87B0D),
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                orElse: SizedBox.shrink,
+              ),
+            ),
         ],
       ),
     );
@@ -337,11 +388,17 @@ if (isExpanded && selectedRestaurant == null)
     final restaurants = ref.read(nearbyRestaurantsProvider).valueOrNull ?? [];
     if (restaurants.isNotEmpty) {
       await _controllerService.expandAround(
-  LatLng(double.tryParse(restaurants.first.lat) ?? 0, double.tryParse(restaurants.first.lng) ?? 0),
-);
-await _controllerService.fitRestaurants(
-  restaurants.map((r) => LatLng(double.tryParse(r.lat) ?? 0, double.tryParse(r.lng) ?? 0)),
-);
+        LatLng(
+          double.tryParse(restaurants.first.lat) ?? 0,
+          double.tryParse(restaurants.first.lng) ?? 0,
+        ),
+      );
+      await _controllerService.fitRestaurants(
+        restaurants.map(
+          (r) =>
+              LatLng(double.tryParse(r.lat) ?? 0, double.tryParse(r.lng) ?? 0),
+        ),
+      );
     }
   }
 
@@ -350,59 +407,66 @@ await _controllerService.fitRestaurants(
     ref.read(mapExpandedProvider.notifier).state = false;
   }
 
-// Replace _selectRestaurant
-Future<void> _selectRestaurant(RestaurantModel restaurant) async {
-  ref.read(mapExpandedProvider.notifier).state = true;
-  ref.read(selectedRestaurantProvider.notifier).state = restaurant;
-  await _controllerService.focusRestaurant(
-    LatLng(double.tryParse(restaurant.lat) ?? 0, double.tryParse(restaurant.lng) ?? 0),
-  );
-}
-  Future<void> _refreshMarkers(List<MarkerSpec> specs) async {
-  final signature = specs
-      .map((spec) =>
-          '${spec.restaurantId}:${spec.discountLabel}:${spec.isSelected}:${spec.isDimmed}')
-      .join('|');
-  if (signature == _lastMarkerSignature || !mounted) return;
-  _lastMarkerSignature = signature;
-
-  final restaurants = ref.read(nearbyRestaurantsProvider).valueOrNull ?? [];
-  final markers = <Marker>{};
-
-  for (final spec in specs) {
-    final icon = await _markerBitmapService.buildOfferMarker(
-      context,
-      label: spec.discountLabel,
-      isSelected: spec.isSelected,
-      isDimmed: spec.isDimmed,
-    );
-    markers.add(
-      Marker(
-        markerId: MarkerId(spec.restaurantId),
-        position: spec.position,
-        icon: icon,
-        anchor: const Offset(.5, .94),
-        zIndexInt: spec.isSelected ? 2 : 1,
-        onTap: () {                          // ← replace the onTap block here
-          final match = restaurants.firstWhere(
-            (r) => r.uuid == spec.restaurantId,
-            orElse: () => restaurants.first,
-          );
-          unawaited(_selectRestaurant(match));
-        },
+  // Replace _selectRestaurant
+  Future<void> _selectRestaurant(RestaurantModel restaurant) async {
+    ref.read(mapExpandedProvider.notifier).state = true;
+    ref.read(selectedRestaurantProvider.notifier).state = restaurant;
+    await _controllerService.focusRestaurant(
+      LatLng(
+        double.tryParse(restaurant.lat) ?? 0,
+        double.tryParse(restaurant.lng) ?? 0,
       ),
     );
   }
 
-  if (!mounted) return;
-  ref.read(mapMarkersProvider.notifier).state = markers;
-}
+  Future<void> _refreshMarkers(List<MarkerSpec> specs) async {
+    final signature = specs
+        .map(
+          (spec) =>
+              '${spec.restaurantId}:${spec.discountLabel}:${spec.isSelected}:${spec.isDimmed}',
+        )
+        .join('|');
+    if (signature == _lastMarkerSignature || !mounted) return;
+    _lastMarkerSignature = signature;
+
+    final restaurants = ref.read(nearbyRestaurantsProvider).valueOrNull ?? [];
+    final markers = <Marker>{};
+
+    for (final spec in specs) {
+      final icon = await _markerBitmapService.buildOfferMarker(
+        context,
+        label: spec.discountLabel,
+        isSelected: spec.isSelected,
+        isDimmed: spec.isDimmed,
+      );
+      markers.add(
+        Marker(
+          markerId: MarkerId(spec.restaurantId),
+          position: spec.position,
+          icon: icon,
+          anchor: const Offset(.5, .94),
+          zIndexInt: spec.isSelected ? 2 : 1,
+          onTap: () {
+            // ← replace the onTap block here
+            final match = restaurants.firstWhere(
+              (r) => r.uuid == spec.restaurantId,
+              orElse: () => restaurants.first,
+            );
+            unawaited(_selectRestaurant(match));
+          },
+        ),
+      );
+    }
+
+    if (!mounted) return;
+    ref.read(mapMarkersProvider.notifier).state = markers;
+  }
 }
 
 class _RestaurantHomeList extends StatelessWidget {
   const _RestaurantHomeList(this.restaurants);
 
-  final List<RestaurantModel> restaurants;  // ← was List<Restaurant>
+  final List<RestaurantModel> restaurants; // ← was List<Restaurant>
 
   @override
   Widget build(BuildContext context) {
@@ -415,7 +479,8 @@ class _RestaurantHomeList extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             itemCount: _discounts.length,
             separatorBuilder: (_, __) => SizedBox(width: 10.w),
-            itemBuilder: (context, index) => _DiscountChip(label: _discounts[index]),
+            itemBuilder: (context, index) =>
+                _DiscountChip(label: _discounts[index]),
           ),
         ),
         SizedBox(height: 14.h),
@@ -474,7 +539,7 @@ class _DiscountChip extends StatelessWidget {
 class _RestaurantListTile extends StatelessWidget {
   const _RestaurantListTile({required this.restaurant});
 
-  final RestaurantModel restaurant;  // ← was Restaurant
+  final RestaurantModel restaurant; // ← was Restaurant
 
   @override
   Widget build(BuildContext context) {
@@ -484,7 +549,11 @@ class _RestaurantListTile extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(18.r),
         boxShadow: const [
-          BoxShadow(color: Color(0x12000000), blurRadius: 18, offset: Offset(0, 8)),
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
         ],
       ),
       child: Row(
@@ -494,15 +563,21 @@ class _RestaurantListTile extends StatelessWidget {
             child: restaurant.image != null
                 ? Image.network(
                     restaurant.image!,
-                    width: 78.w, height: 78.w, fit: BoxFit.cover,
+                    width: 78.w,
+                    height: 78.w,
+                    fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Image.asset(
                       'assets/images/restaurantBanner.png',
-                      width: 78.w, height: 78.w, fit: BoxFit.cover,
+                      width: 78.w,
+                      height: 78.w,
+                      fit: BoxFit.cover,
                     ),
                   )
                 : Image.asset(
                     'assets/images/restaurantBanner.png',
-                    width: 78.w, height: 78.w, fit: BoxFit.cover,
+                    width: 78.w,
+                    height: 78.w,
+                    fit: BoxFit.cover,
                   ),
           ),
           SizedBox(width: 12.w),
@@ -514,23 +589,26 @@ class _RestaurantListTile extends StatelessWidget {
                   restaurant.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w900),
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 SizedBox(height: 5.h),
                 Text(
                   restaurant.address,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: const Color(0xFF666666), fontSize: 12.sp),
+                  style: TextStyle(
+                    color: const Color(0xFF666666),
+                    fontSize: 12.sp,
+                  ),
                 ),
                 SizedBox(height: 8.h),
                 // No rating field on RestaurantModel — show best offer instead
                 if (restaurant.offers.isNotEmpty)
                   Text(
-                    '-${restaurant.offers
-                        .reduce((a, b) => a.discountPercentage >= b.discountPercentage ? a : b)
-                        .discountPercentage
-                        .toStringAsFixed(0)}% off',
+                    '-${restaurant.offers.reduce((a, b) => a.discountPercentage >= b.discountPercentage ? a : b).discountPercentage.toStringAsFixed(0)}% off',
                     style: TextStyle(
                       color: const Color(0xFFF87B0D),
                       fontSize: 12.sp,

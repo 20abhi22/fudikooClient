@@ -4,11 +4,34 @@ import 'package:fudikoclient/model/restaurant/restaurant_filter_model.dart';
 import 'package:fudikoclient/model/restaurant/restaurant-model.dart';
 import 'package:fudikoclient/model/restaurant/restaurant_liked.dart';
 import 'package:fudikoclient/utils/tokens.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RestaurantService {
-  Future<RestaurantListResponse> getRestaurantList() async {
+  static const String _cacheKeyLat = 'cached_lat';
+  static const String _cacheKeyLng = 'cached_lng';
+
+  Future<RestaurantListResponse> getRestaurantList({
+    double? lat,
+    double? lng,
+    double searchRadiusKm = 10,
+    String? type,
+  }) async {
     final token = await getToken();
     try {
+      final double? resolvedLat = lat ?? await _getCachedLatitude();
+      final double? resolvedLng = lng ?? await _getCachedLongitude();
+
+      if (resolvedLat != null && resolvedLng != null) {
+        return filterRestaurants(
+          RestaurantFilterRequest(
+            lat: resolvedLat,
+            lng: resolvedLng,
+            searchRadiusKm: searchRadiusKm,
+            type: type,
+          ),
+        );
+      }
+
       final response = await DioClient.dio.get(
         '/customer/restaurants',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
@@ -77,24 +100,34 @@ class RestaurantService {
   Future<RestaurantListResponse> filterRestaurants(
     RestaurantFilterRequest request,
   ) async {
-  final token = await getToken();
-  try {
-    final response = await DioClient.dio.post(
-      '/customer/filter',
-      data: request.toFormData(),
-      options: Options(headers: {'Authorization': 'Bearer $token'}),
-    );
+    final token = await getToken();
+    try {
+      final response = await DioClient.dio.post(
+        '/customer/filter',
+        data: request.toFormData(),
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
 
-    if (response.statusCode == 200) {
-      print('Filter response: ${response.data}');
-      return RestaurantListResponse.fromJson(response.data);
-    } else {
-      print('Filter error: ${response.data}');
+      if (response.statusCode == 200) {
+        print('Filter response: ${response.data}');
+        return RestaurantListResponse.fromJson(response.data);
+      } else {
+        print('Filter error: ${response.data}');
+        return RestaurantListResponse(status: false, restaurant: []);
+      }
+    } catch (e) {
+      print('Filter exception: $e');
       return RestaurantListResponse(status: false, restaurant: []);
     }
-  } catch (e) {
-    print('Filter exception: $e');
-    return RestaurantListResponse(status: false, restaurant: []);
   }
-}
+
+  Future<double?> _getCachedLatitude() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble(_cacheKeyLat);
+  }
+
+  Future<double?> _getCachedLongitude() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble(_cacheKeyLng);
+  }
 }

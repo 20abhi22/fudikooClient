@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fudikoclient/screens/badge/aboutbadge.dart';
 import 'package:fudikoclient/screens/catering_tabs/main_catering_nav.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/model/auth/mapplace-model.dart';
 import 'package:fudikoclient/routetransitions.dart';
+import 'package:fudikoclient/utils/tokens.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fudikoclient/screens/aboutapp/about.dart';
 import 'package:fudikoclient/screens/auth/changepassword.dart';
@@ -44,11 +46,12 @@ class _HomePageState extends State<HomePage> {
   double? _currentLat;
   double? _currentLng;
   late SharedPreferences _prefs;
-  
+
   // Cache keys
   static const String _cacheKeyCity = 'cached_city';
   static const String _cacheKeyLat = 'cached_lat';
   static const String _cacheKeyLng = 'cached_lng';
+
   @override
   void initState() {
     super.initState();
@@ -75,7 +78,11 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _saveCachedLocation(String city, double? lat, double? lng) async {
+  Future<void> _saveCachedLocation(
+    String city,
+    double? lat,
+    double? lng,
+  ) async {
     await _prefs.setString(_cacheKeyCity, city);
     if (lat != null) await _prefs.setDouble(_cacheKeyLat, lat);
     if (lng != null) await _prefs.setDouble(_cacheKeyLng, lng);
@@ -490,6 +497,19 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 SizedBox(height: screenHeight * 0.012),
                                 _drawerItem(
+                                  "About Badges",
+                                  "assets/images/verificationgrey.png",
+                                  AboutBadgePage(),
+                                  26.w,
+                                ),
+                                SizedBox(height: screenHeight * 0.012),
+                                Divider(
+                                  thickness: 1,
+                                  color: Colors.grey,
+                                  height: 1,
+                                ),
+                                SizedBox(height: screenHeight * 0.012),
+                                _drawerItem(
                                   "Complaints",
                                   complainIcon,
                                   ComplaintPage(),
@@ -586,9 +606,10 @@ class _HomePageState extends State<HomePage> {
           isDrawerOpen = false;
         });
 
-        Future.delayed(Duration(milliseconds: 100), () {
+        Future.delayed(Duration(milliseconds: 100), () async {
           if (routeWidget != null) {
             if (routeWidget is Login) {
+              await removeToken();
               pushWidgetWhileRemove(newPage: routeWidget, context: context);
             } else {
               slideRightWidget(newPage: routeWidget, context: context);
@@ -599,7 +620,12 @@ class _HomePageState extends State<HomePage> {
       child: Row(
         children: [
           icon is String
-              ? Image.asset(icon, width: size ?? 20.w, height: size ?? 20.w)
+              ? Image.asset(
+                  icon,
+                  width: size ?? 18.w,
+                  height: size ?? 18.w,
+                  color: color ?? appTextColor2,
+                )
               : Icon(icon, size: size ?? 20.w, color: color ?? appTextColor2),
           SizedBox(width: 10.w),
           AppText(
@@ -612,8 +638,6 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
-
 
   Widget _navBar() {
     return Stack(
@@ -636,11 +660,11 @@ class _HomePageState extends State<HomePage> {
                 borderRadius: BorderRadius.circular(16.r),
                 boxShadow: [
                   BoxShadow(
-  color: const Color(0x0D000000), // 5% opacity black
-  offset: const Offset(0, 0),
-  blurRadius: 10,
-  spreadRadius: 5,
-),
+                    color: const Color(0x0D000000), // 5% opacity black
+                    offset: const Offset(0, 0),
+                    blurRadius: 10,
+                    spreadRadius: 5,
+                  ),
                 ],
               ),
               child: Padding(
@@ -842,19 +866,31 @@ class _HomePageState extends State<HomePage> {
                             final placeId = locations[index].placeId ?? '';
                             try {
                               final coords = await mapService.getPlace(placeId);
-                              final lat = double.tryParse(coords.lat.toString());
-                              final lng = double.tryParse(coords.lng.toString());
+                              final lat = double.tryParse(
+                                coords.lat.toString(),
+                              );
+                              final lng = double.tryParse(
+                                coords.lng.toString(),
+                              );
                               setState(() {
                                 _currentCity = places[index];
                                 _currentLat = lat;
                                 _currentLng = lng;
                               });
                               // Cache the selected location
-                              await _saveCachedLocation(places[index], lat, lng);
+                              await _saveCachedLocation(
+                                places[index],
+                                lat,
+                                lng,
+                              );
                             } catch (e) {
                               setState(() => _currentCity = places[index]);
                               // Cache even if coords not found
-                              await _saveCachedLocation(places[index], null, null);
+                              await _saveCachedLocation(
+                                places[index],
+                                null,
+                                null,
+                              );
                             }
                             if (!mounted) return;
                             Navigator.pop(context);
@@ -872,4 +908,3 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-

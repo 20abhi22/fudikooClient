@@ -181,7 +181,7 @@ class _CtInqueryBoxState extends State<CtInqueryBox> {
   }
 
   Widget _infoRow(
-    IconData icon,
+    String imageIcon,
     String text, {
     FontWeight fontWeight = FontWeight.w500,
     Color? color,
@@ -191,13 +191,13 @@ class _CtInqueryBoxState extends State<CtInqueryBox> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: appTextColor5, size: 18),
+          Image.asset(imageIcon, width: 18.w, height: 18.w),
           SizedBox(width: 5.w),
           Expanded(
             child: Text(
               text,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 15.sp,
                 fontWeight: fontWeight,
                 color: color ?? appTextColor5,
               ),
@@ -258,32 +258,32 @@ Widget build(BuildContext context) {
                       SizedBox(height: 10.h),
 
                       _infoRow(
-                        Icons.wallet,
+                        walletIcon,
                         "$amount Per Person",
                         fontWeight: FontWeight.w900,
                       ),
 
                       _infoRow(
-                        Icons.calendar_today_sharp,
+                        calenderIcon,
                         "${widget.enquiry.date} & ${widget.enquiry.time}",
                         fontWeight: FontWeight.w700,
                       ),
 
                       _infoRow(
-                        Icons.people,
+                        peopleIcon,
                         "${widget.enquiry.people} Person",
                         fontWeight: FontWeight.w700,
                       ),
 
                       _infoRow(
-                        Icons.dashboard,
+                        menuIcon,
                         widget.enquiry.menuItems
                             .split(',')
                             .join(" , "),
                       ),
 
                       _infoRow(
-                        Icons.analytics,
+                        radiusIcon,
                         placeName.isEmpty
                             ? "${widget.enquiry.lat}, ${widget.enquiry.lng} - ${widget.enquiry.searchRadius}km Radius"
                             : "$placeName - ${widget.enquiry.searchRadius}km Radius",
@@ -327,15 +327,17 @@ Widget build(BuildContext context) {
   children: [
     Row(
       children: [
-        Icon(
-          widget.enquiry.status.toLowerCase() == "confirmed"
-              ? Icons.check_circle
-              : Icons.timer,
-          size: 15.w,
-          color: widget.enquiry.status.toLowerCase() == "confirmed"
-              ? Colors.green
-              : Colors.red,
-        ),
+        widget.enquiry.status.toLowerCase() == "confirmed"
+            ? Icon(
+                Icons.check_circle,
+                size: 15.w,
+                color: Colors.green,
+              )
+            : Image.asset(
+                stopwatchIcon,
+                width: 15.w,
+                height: 15.w,
+              ),
         SizedBox(width: 5.w),
 
         AppText(
@@ -352,28 +354,28 @@ Widget build(BuildContext context) {
     ),
 
     // Hide buttons if confirmed OR expired
-    if (widget.enquiry.status.toLowerCase() != "confirmed" &&
-        !isExpired)
+        if (widget.enquiry.status.toLowerCase() != "confirmed" &&
+            !isExpired)
       Row(
         children: [
-          SizedBox(
-            width: 50.w,
-            height: 30.h,
-            child: AppButton(
-              text: "Edit",
-              onPressed: onEdit,
-              size: 11,
-              borderRadius: 5,
-              bgColor1: Colors.green,
-              bgColor2: Colors.green,
-            ),
-          ),
+          // SizedBox(
+          //   width: 50.w,
+          //   height: 30.h,
+          //   child: AppButton(
+          //     text: "Edit",
+          //     onPressed: onEdit,
+          //     size: 11,
+          //     borderRadius: 5,
+          //     bgColor1: Colors.green,
+          //     bgColor2: Colors.green,
+          //   ),
+          // ),
 
           SizedBox(width: 5.w),
 
           SizedBox(
             width: 80.w,
-            height: 30.h,
+            height: 25.h,
             child: AppButton(
               text: "Withdraw",
               onPressed: () {

@@ -34,6 +34,7 @@ class Restaurant {
   final String deliveryServiceArea;
   final String restaurantType;
   final String status;
+  final double? averageReview;
   final String? image;           // banner image
   final List<String> images;     // gallery images
   final List<OfferModel> offers;  // offers for the restaurant
@@ -54,6 +55,7 @@ class Restaurant {
     required this.deliveryServiceArea,
     required this.restaurantType,
     required this.status,
+    this.averageReview,
     this.image,
     this.images = const [],
     this.offers = const [],
@@ -76,6 +78,9 @@ class Restaurant {
       deliveryServiceArea: json['delivery_service_area'] ?? '',
       restaurantType: json['restaurant_type'] ?? '',
       status: json['status'] ?? '',
+      averageReview: json['average_review'] != null
+          ? double.tryParse(json['average_review'].toString())
+          : null,
       image: json['image']?.toString(),
         offers: (json['offers'] as List? ?? [])
           .map((item) => OfferModel.fromJson(item))

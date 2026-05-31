@@ -119,38 +119,48 @@ class About4 extends StatelessWidget {
                 ],
               ),
             ),
-            Positioned(
-              top: -81,
-              left: -60,
-              child: Container(
-                width: 259.w,
-                height: 259.w,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Color(0xFFF97A0D).withOpacity(0.58),
-                    width: 5.w,
-                  ),
-                ),
-                clipBehavior: Clip.hardEdge,
-              ),
+             Transform.translate(
+      offset: Offset(
+        -screenSize.width * 0.67,
+        -screenSize.height * 0.094,
+      ),
+      child: Align(
+        alignment: Alignment.topRight,
+        child: Container(
+          width: screenSize.width * 0.55,
+          height: screenSize.width * 0.55,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: const Color(0xFFF97A0D).withOpacity(0.58),
+              width: screenSize.width * 0.55 * 0.02,
             ),
-            Positioned(
-              bottom: -screenSize.height*0.078,
-              left: -screenSize.width*0.31,
-              child: Container(
-                width: 322.w,
-                height: 322.w,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Color(0xFFF97A0D).withOpacity(0.58),
-                    width: 10.w,
-                  ),
-                ),
-                clipBehavior: Clip.hardEdge,
-              ),
+          ),
+        ),
+      ),
+    ),
+
+    // 🔶 Bottom circle
+    Transform.translate(
+      offset: Offset(
+        -screenSize.width * 0.42,
+        screenSize.height * 0.071,
+      ),
+      child: Align(
+        alignment: Alignment.bottomRight,
+        child: Container(
+          width: screenSize.width * 0.7,
+          height: screenSize.width * 0.7,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: const Color(0xFFF97A0D).withOpacity(0.58),
+              width: screenSize.width * 0.7 * 0.02,
             ),
+          ),
+        ),
+      ),
+    ),
             Positioned(
               top: 150,
               right: -50,

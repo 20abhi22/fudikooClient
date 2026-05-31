@@ -3,6 +3,7 @@ import 'package:fudikoclient/screens/banquet_tabs/banquet_bottomnav.dart';
 import 'package:fudikoclient/screens/banquet_tabs/reservartion/banquet_reservation.dart';
 import 'package:fudikoclient/screens/customerProfile/customerProfile.dart';
 import 'package:fudikoclient/screens/home/homepage.dart';
+import 'package:fudikoclient/routetransitions.dart';
 import 'package:fudikoclient/screens/tabs/bottomnav.dart';
 import 'package:fudikoclient/screens/tabs/favorite/favorite.dart';
 import 'package:fudikoclient/screens/banquet_tabs/home/homepage.dart';
@@ -34,6 +35,11 @@ class _MainBanquetNavPageState extends State<MainBanquetNavPage> {
   }
 
   void onTabChanged(int index) {
+    if (index == 0) {
+      pushWidgetWhileRemove(newPage: const HomePage(), context: context);
+      return;
+    }
+
     setState(() {
       currentIndex = index;
     });
@@ -48,26 +54,25 @@ class _MainBanquetNavPageState extends State<MainBanquetNavPage> {
       //   currentLng: widget.lng,
       // ),
       // Home(),
-      
       HomePage(),
       BanquetInquery(),
       BanquetReservation(),
       // Favorite(),
-      CustomerProfile()
+      CustomerProfile(),
     ];
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: appSecondaryBackgroundColor,
-        bottomNavigationBar: BanquetBottomnav(
+    return Scaffold(
+      backgroundColor: appSecondaryBackgroundColor,
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: BanquetBottomnav(
           selectedIndex: currentIndex,
           onTabSelected: onTabChanged,
         ),
-        body: Stack(
-          children: [
-            screens[currentIndex],
-          ],
-        ),
       ),
+      body: SafeArea(
+         top: false,
+      maintainBottomViewPadding: true,
+        child: Stack(children: [screens[currentIndex]])),
     );
   }
 }

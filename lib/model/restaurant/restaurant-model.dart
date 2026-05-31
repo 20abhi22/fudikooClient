@@ -14,6 +14,7 @@ class RestaurantModel {
   final String restaurantType;
   final String status;
   final bool isFavorite;
+  final double? averageReview;
   final double? distance; 
   final List<OfferModel> offers; 
   final String? image;   
@@ -34,6 +35,7 @@ class RestaurantModel {
     required this.restaurantType,
     required this.status,
     required this.isFavorite,
+    this.averageReview,
      this.distance,
     required this.offers, // ← add
     this.image,
@@ -55,6 +57,7 @@ class RestaurantModel {
     String? restaurantType,
     String? status,
     bool? isFavorite,
+    double? averageReview,
     double? distance,
     List<OfferModel>? offers,
     String? image,
@@ -75,6 +78,7 @@ class RestaurantModel {
       restaurantType: restaurantType ?? this.restaurantType,
       status: status ?? this.status,
       isFavorite: isFavorite ?? this.isFavorite,
+      averageReview: averageReview ?? this.averageReview,
       distance: distance ?? this.distance,
       offers: offers ?? this.offers,
       image: image ?? this.image,
@@ -102,6 +106,9 @@ factory RestaurantModel.fromJson(Map<String, dynamic> json) {
     restaurantType: json['restaurant_type']?.toString() ?? '',
     status: json['status']?.toString() ?? '',
     isFavorite: json['is_favourite'] == true || json['is_favourite'] == 1,
+    averageReview: json['average_review'] != null
+      ? double.tryParse(json['average_review'].toString())
+      : null,
     distance: json['distance'] != null                // ← ADD THIS
           ? double.tryParse(json['distance'].toString())
           : null,

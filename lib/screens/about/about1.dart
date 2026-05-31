@@ -18,19 +18,24 @@ class About1 extends StatelessWidget {
           children: [
             Stack(
               children: [
-                Positioned(
-                  top: screenSize.width * -0.15,   // slightly off-screen top
-                  left: screenSize.width * -0.15,  
+                Transform.translate(
+                  offset: Offset(
+                    -screenSize.width * 0.27, // responsive left offset
+                    -screenSize.width * 0.28, // responsive top offset
+                  ),
                   child: Image.asset(
-                    'assets/images/aboutlogo1.png',
-                    width: screenSize.width * 1,   // 300/390 ≈ 0.77
+                    pizzaUp1,
+                    width: screenSize.width * 1,
                     height: screenSize.width * 1,
+                    fit: BoxFit.contain,
                   ),
                 ),
 
-                Positioned(
-                  top: screenSize.width * -0.25,
-                  left: screenSize.width * -0.25,
+                Transform.translate(
+                  offset: Offset(
+                    -screenSize.width * 0.25, // responsive horizontal offset
+                    -screenSize.height * 0.12, // responsive vertical offset
+                  ),
                   child: Container(
                     width: screenSize.width * 0.92,
                     height: screenSize.width * 0.92,
@@ -41,44 +46,73 @@ class About1 extends StatelessWidget {
                         width: 20.w,
                       ),
                     ),
-                    clipBehavior: Clip.hardEdge,
                   ),
                 ),
 
-                Positioned(
-                  top: screenSize.height * .14,
-                  right: screenSize.width * -0.128,
-                  child: Container(
-                    width: screenSize.width * .28,
-                    height: screenSize.width * .28,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Color(0xFFF97A0D).withOpacity(0.58),
-                        width: 10.w,
+                Transform.translate(
+                  offset: Offset(
+                    screenSize.width * 0.128, // responsive right overflow
+                    screenSize.height * 0.14, // responsive downward position
+                  ),
+                  child: Align(
+                    alignment: Alignment.topRight,
+                    child: Container(
+                      width: screenSize.width * .28,
+                      height: screenSize.width * .28,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFFF97A0D).withOpacity(0.58),
+                          width: 10.w,
+                        ),
+                      ),
+                      clipBehavior: Clip.hardEdge,
+                    ),
+                  ),
+                ),
+
+                Transform.translate(
+                  offset: Offset(
+                    screenSize.width * 0.0,
+                    screenSize.height * 0.0,
+                  ),
+                  child: Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                        vertical: 40.h,
+                      ),
+                      child: GestureDetector(
+                        onTap: onPress,
+                        child: AppText(
+                          text: "Next",
+                          size: 15,
+                          fontWeight: FontWeight.w400,
+                          color: abtNextColor2,
+                        ),
                       ),
                     ),
-                    clipBehavior: Clip.hardEdge,
                   ),
                 ),
               ],
             ),
-            Positioned(
-              top: screenSize.height * 0,
-              right: screenSize.width * 0,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 40.h),
-                child: GestureDetector(
-                  onTap: onPress,
-                  child: AppText(
-                    text: "Next",
-                    size: 15,
-                    fontWeight: FontWeight.w400,
-                    color: abtNextColor2,
-                  ),
-                ),
-              ),
-            ),
+            // Positioned(
+            //   top: screenSize.height * 0,
+            //   right: screenSize.width * 0,
+            //   child: Padding(
+            //     padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 40.h),
+            //     child: GestureDetector(
+            //       onTap: onPress,
+            //       child: AppText(
+            //         text: "Next",
+            //         size: 15,
+            //         fontWeight: FontWeight.w400,
+            //         color: abtNextColor2,
+            //       ),
+            //     ),
+            //   ),
+            // ),
             Align(
               alignment: Alignment.center,
               child: Column(
@@ -119,37 +153,79 @@ class About1 extends StatelessWidget {
                 ],
               ),
             ),
-            Positioned(
-              bottom: screenSize.height * 0.06,
-              right: -screenSize.width * 0.25,
-              child: Container(
-                width: 245.w,
-                height: 245.h,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Color(0xFFF97A0D).withOpacity(0.58),
-                    width: 10.w,
+            // Positioned(
+            //   bottom: screenSize.height * 0.06,
+            //   right: -screenSize.width * 0.25,
+            //   child: Container(
+            //     width: 245.w,
+            //     height: 245.h,
+            //     decoration: BoxDecoration(
+            //       shape: BoxShape.circle,
+            //       border: Border.all(
+            //         color: Color(0xFFF97A0D).withOpacity(0.58),
+            //         width: 10.w,
+            //       ),
+            //     ),
+            //     clipBehavior: Clip.hardEdge,
+            //   ),
+            // ),
+            Transform.translate(
+              offset: Offset(
+                screenSize.width * 0.15, // responsive right overflow
+                screenSize.height * -0.06, // move upward from bottom
+              ),
+              child: Align(
+                alignment: Alignment.bottomRight,
+                child: Container(
+                  width: screenSize.width * 0.6,
+                  height: screenSize.width * 0.6,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFF97A0D).withOpacity(0.58),
+                      width: 10.w,
+                    ),
                   ),
+                  clipBehavior: Clip.hardEdge,
                 ),
-                clipBehavior: Clip.hardEdge,
               ),
             ),
-            Positioned(
-              bottom: -screenSize.height * 0.07,
-              left: -screenSize.width * 0.19,
-              child: Container(
-                width: 172.w,
-                height: 172.h,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  // borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Color(0xFFF97A0D).withOpacity(0.58),
-                    width: 20.w,
+            // Positioned(
+            //   bottom: -screenSize.height * 0.07,
+            //   left: -screenSize.width * 0.19,
+            //   child: Container(
+            //     width: 172.w,
+            //     height: 172.h,
+            //     decoration: BoxDecoration(
+            //       shape: BoxShape.circle,
+            //       // borderRadius: BorderRadius.circular(20),
+            //       border: Border.all(
+            //         color: Color(0xFFF97A0D).withOpacity(0.58),
+            //         width: 20.w,
+            //       ),
+            //     ),
+            //     clipBehavior: Clip.hardEdge,
+            //   ),
+            // ),
+            Transform.translate(
+              offset: Offset(
+                -screenSize.width * 0.19, // responsive left overflow
+                screenSize.height * 0.07, // responsive bottom overflow
+              ),
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Container(
+                  width: 172.w,
+                  height: 172.h,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFF97A0D).withOpacity(0.58),
+                      width: 20.w,
+                    ),
                   ),
+                  clipBehavior: Clip.hardEdge,
                 ),
-                clipBehavior: Clip.hardEdge,
               ),
             ),
           ],

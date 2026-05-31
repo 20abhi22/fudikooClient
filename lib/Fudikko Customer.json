@@ -112,6 +112,72 @@
       "response": []
     },
     {
+      "name": "Update profile",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "name",
+              "value": "Suhail A K",
+              "type": "text"
+            },
+            {
+              "key": "phone",
+              "value": "9633058949",
+              "type": "text",
+              "uuid": "25691710-4eac-479d-84a7-f70d8fffdf20"
+            },
+            {
+              "key": "lat",
+              "value": "10.740278",
+              "type": "text",
+              "uuid": "473aaa5e-b226-4581-a809-70180abffcec"
+            },
+            {
+              "key": "lng",
+              "value": "75.974838",
+              "type": "text",
+              "uuid": "9d33609a-a960-4c7c-ae1c-328c1393b9a3"
+            },
+            {
+              "key": "profile_picture",
+              "type": "file",
+              "uuid": "67699242-3691-4555-aea7-df0723bc2ab2",
+              "src": "/Users/suhail/Downloads/1628255235611.jpg"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/update-profile",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "update-profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Login",
       "request": {
         "method": "POST",
@@ -398,6 +464,53 @@
       "response": []
     },
     {
+      "name": "Restaurant Reviews List",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": []
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/restaurant/reviews?restaurant_id=cc71f8ca-9166-45e6-8a64-826d44d2e47b",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "restaurant",
+            "reviews"
+          ],
+          "query": [
+            {
+              "key": "restaurant_id",
+              "value": "cc71f8ca-9166-45e6-8a64-826d44d2e47b",
+              "type": "text"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Restaurant Update Favourite",
       "request": {
         "auth": {
@@ -475,6 +588,133 @@
       "response": []
     },
     {
+      "name": "Restaurant Favourites Filter",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "lat",
+              "value": "10.735765",
+              "type": "text"
+            },
+            {
+              "key": "lng",
+              "value": "75.935815",
+              "type": "text"
+            },
+            {
+              "key": "search_radius",
+              "value": "10",
+              "type": "text"
+            },
+            {
+              "key": "type",
+              "value": "Restaurant",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/restaurant/favourites/filter",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "restaurant",
+            "favourites",
+            "filter"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Restaurant Favourites Search",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "lat",
+              "value": "10.735765",
+              "type": "text"
+            },
+            {
+              "key": "lng",
+              "value": "75.935815",
+              "type": "text"
+            },
+            {
+              "key": "search_radius",
+              "value": "10",
+              "type": "text"
+            },
+            {
+              "key": "type",
+              "value": "Restaurant",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/restaurant/favourites/search?name=char",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "restaurant",
+            "favourites",
+            "search"
+          ],
+          "query": [
+            {
+              "key": "name",
+              "value": "char"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "New Reservation",
       "request": {
         "auth": {
@@ -515,6 +755,12 @@
               "value": "2025-07-15",
               "type": "text",
               "uuid": "1989eb49-9958-4da0-a06a-f1e2768f9c84"
+            },
+            {
+              "key": "offer_id",
+              "value": "fa086c39-c9c8-4ab8-a879-0902b6f0201f",
+              "type": "text",
+              "uuid": "3a1e2934-738d-4bdc-83cf-f7f1dcdb8e94"
             }
           ]
         },
@@ -575,6 +821,159 @@
             "restaurant",
             "reservation",
             "offer-code"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "My Restaurant Reservations",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/restaurant/reservations/all",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "restaurant",
+            "reservations",
+            "all"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Restaurant Reservations Search",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/restaurant/reservations/search?id=12",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "restaurant",
+            "reservations",
+            "search"
+          ],
+          "query": [
+            {
+              "key": "id",
+              "value": "12"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Reservation Decline",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "reservation_id",
+              "value": "23f-xdvasc-3dsjns",
+              "type": "text",
+              "uuid": "7b31569a-8510-4fbf-b2a5-c539280ba3a2"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/restaurant/reservation/decline",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "restaurant",
+            "reservation",
+            "decline"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Declined Reservations",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/restaurant/reservations/declined",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "restaurant",
+            "reservations",
+            "declined"
           ]
         }
       },
@@ -736,6 +1135,45 @@
             "customer",
             "enquiry",
             "all"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "My Enquiries Search",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/enquiry/search?id= ",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "enquiry",
+            "search"
+          ],
+          "query": [
+            {
+              "key": "id",
+              "value": " "
+            }
           ]
         }
       },
@@ -911,6 +1349,79 @@
       "response": []
     },
     {
+      "name": "Enquiry Responses Search",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/enquiry/responses/search?id=E3443",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "enquiry",
+            "responses",
+            "search"
+          ],
+          "query": [
+            {
+              "key": "id",
+              "value": "E3443"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Declined Enquiry Responses",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/enquiry/declined-responses",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "enquiry",
+            "declined-responses"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Confirm Enquiry",
       "request": {
         "auth": {
@@ -948,6 +1459,255 @@
             "customer",
             "enquiry",
             "confirm"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Decline Enquiry",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "response_id",
+              "value": "2e3s-s42md-3dm3-dmd",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/enquiry/decline",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "enquiry",
+            "decline"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Declined Enquiry Reponse",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "response_id",
+              "value": "2e3s-s42md-3dm3-dmd",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/enquiry/response/delete",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "enquiry",
+            "response",
+            "delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Restore Declined Enquiry Reponse",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "response_id",
+              "value": "2e3s-s42md-3dm3-dmd",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/enquiry/response/restore",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "enquiry",
+            "response",
+            "restore"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Enquiry Reservations List",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/enquiry/reservations/all",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "enquiry",
+            "reservations",
+            "all"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Enquiry Reservations Search",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/enquiry/reservations/search?id=ER33543",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "enquiry",
+            "reservations",
+            "search"
+          ],
+          "query": [
+            {
+              "key": "id",
+              "value": "ER33543"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Enquiry Reservation Cancel",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "reservation_id",
+              "value": "2e3s-s42md-3dm3-dmd",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/enquiry/reservation/cancel",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "enquiry",
+            "reservation",
+            "cancel"
           ]
         }
       },
@@ -1069,6 +1829,45 @@
             "customer",
             "catering-enquiry",
             "all"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Catering Enquiries Search",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/catering-enquiry/search?id=C122",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "catering-enquiry",
+            "search"
+          ],
+          "query": [
+            {
+              "key": "id",
+              "value": "C122"
+            }
           ]
         }
       },
@@ -1244,6 +2043,79 @@
       "response": []
     },
     {
+      "name": "Enquiry Catering Responses Search",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/catering-enquiry/responses/search?id=C1333",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "catering-enquiry",
+            "responses",
+            "search"
+          ],
+          "query": [
+            {
+              "key": "id",
+              "value": "C1333"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Declined Enquiry Catering Responses",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/catering-enquiry/declined-responses",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "catering-enquiry",
+            "declined-responses"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Confirm Catering Enquiry",
       "request": {
         "auth": {
@@ -1281,6 +2153,255 @@
             "customer",
             "catering-enquiry",
             "confirm"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Decline Catering Enquiry",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "response_id",
+              "value": "2e3s-s42md-3dm3-dmd",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/catering-enquiry/decline",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "catering-enquiry",
+            "decline"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Declined Catering Enquiry Reponse",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "response_id",
+              "value": "2e3s-s42md-3dm3-dmd",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/catering-enquiry/response/delete",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "catering-enquiry",
+            "response",
+            "delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Restore Declined Catering Enquiry Reponse",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "response_id",
+              "value": "2e3s-s42md-3dm3-dmd",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/catering-enquiry/response/restore",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "catering-enquiry",
+            "response",
+            "restore"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Catering Enquiry Reservations List",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/catering-enquiry/reservations/all",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "catering-enquiry",
+            "reservations",
+            "all"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Catering Enquiry Reservations Search",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/catering-enquiry/reservations/search?id=CR33543",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "catering-enquiry",
+            "reservations",
+            "search"
+          ],
+          "query": [
+            {
+              "key": "id",
+              "value": "CR33543"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Catering Enquiry Reservation Cancel",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "reservation_id",
+              "value": "2e3s-s42md-3dm3-dmd",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/catering-enquiry/reservation/cancel",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "catering-enquiry",
+            "reservation",
+            "cancel"
           ]
         }
       },

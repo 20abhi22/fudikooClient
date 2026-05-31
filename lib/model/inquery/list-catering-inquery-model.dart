@@ -1,3 +1,4 @@
+ 
 class CateringInqueryModel {
   final String uuid;
   final String enquiryId;
@@ -13,7 +14,7 @@ class CateringInqueryModel {
   final String expirationDate;
   final String expirationTime;
   final String status;
-
+ 
   CateringInqueryModel({
     required this.uuid,
     required this.enquiryId,
@@ -30,7 +31,7 @@ class CateringInqueryModel {
     required this.expirationTime,
     required this.status,
   });
-
+ 
   factory CateringInqueryModel.fromJson(Map<String, dynamic> json) {
     return CateringInqueryModel(
       uuid: json['uuid'] ?? '',
@@ -52,13 +53,13 @@ class CateringInqueryModel {
     );
   }
 }
-
+ 
 class CateringInqueryListModel {
   final bool status;
   final List<CateringInqueryModel> enquiries;
-
+ 
   CateringInqueryListModel({required this.status, required this.enquiries});
-
+ 
   factory CateringInqueryListModel.fromJson(Map<String, dynamic> json) {
     return CateringInqueryListModel(
       status: json['status'],
@@ -67,4 +68,4 @@ class CateringInqueryListModel {
           .toList(),
     );
   }
-} 
+}

@@ -70,7 +70,8 @@ class _InqueryBoxState extends State<InqueryBox> {
     fetchPlace();
 
     // Combine date + time
-    final dateTimeString = "${widget.enquiry.expirationDate} ${widget.enquiry.expirationTime}";
+    final dateTimeString =
+        "${widget.enquiry.expirationDate} ${widget.enquiry.expirationTime}";
     expiryDateTime = DateFormat("yyyy-MM-dd hh:mm a").parse(dateTimeString);
 
     // Initial check
@@ -120,7 +121,8 @@ class _InqueryBoxState extends State<InqueryBox> {
             place.locality,
           ].where((p) => p != null && p.isNotEmpty).join(', ');
           if (placeName.isEmpty) {
-            placeName = place.country ?? "${widget.enquiry.lat}, ${widget.enquiry.lng}";
+            placeName =
+                place.country ?? "${widget.enquiry.lat}, ${widget.enquiry.lng}";
           }
         });
       } else {
@@ -199,7 +201,7 @@ class _InqueryBoxState extends State<InqueryBox> {
   }
 
   Widget buildInfoRow(
-    IconData icon,
+    String imageIcon,
     String text, {
     FontWeight fontWeight = FontWeight.w500,
     Color? color,
@@ -209,13 +211,16 @@ class _InqueryBoxState extends State<InqueryBox> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: appTextColor5, size: 18),
+          Image.asset(imageIcon, width: 18.w, height: 18.w),
           SizedBox(width: 5.w),
           Expanded(
             child: Text(
               text,
+              softWrap: true,
+              maxLines: null,
+              overflow: TextOverflow.visible,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 15.sp,
                 fontWeight: fontWeight,
                 color: color ?? appTextColor5,
               ),
@@ -229,8 +234,13 @@ class _InqueryBoxState extends State<InqueryBox> {
   @override
   Widget build(BuildContext context) {
     bool isConfirmed = widget.enquiry.status.toLowerCase() == "confirmed";
-    final estimatedAmount = double.parse(widget.enquiry.estimatedAmount).toInt();
+    final estimatedAmount = double.parse(
+      widget.enquiry.estimatedAmount,
+    ).toInt();
     final radius = double.parse(widget.enquiry.searchRadius).toInt();
+    final DateTime enquiryDate =
+        DateTime.tryParse(widget.enquiry.date) ?? DateTime.now();
+    final String formattedEnquiryDate = DateFormat('MMM d').format(enquiryDate);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
@@ -267,26 +277,30 @@ class _InqueryBoxState extends State<InqueryBox> {
                         ),
                         SizedBox(height: 10.h),
                         buildInfoRow(
-                          Icons.wallet,
+                          walletIcon,
                           "$estimatedAmount Per Person",
                           fontWeight: FontWeight.w900,
                         ),
                         buildInfoRow(
-                          Icons.calendar_today_sharp,
-                          "${widget.enquiry.date} & ${widget.enquiry.time}",
+                          calenderIcon,
+                          "$formattedEnquiryDate - ${widget.enquiry.time}",
                           fontWeight: FontWeight.w700,
                         ),
                         buildInfoRow(
-                          Icons.people,
+                          peopleIcon,
                           "${widget.enquiry.people} Person",
                           fontWeight: FontWeight.w700,
                         ),
                         buildInfoRow(
-                          Icons.dashboard,
-                          widget.enquiry.menuItems.split(',').join(" , "),
+                          menuIcon,
+                          widget.enquiry.menuItems
+                              .split(',')
+                              .map((item) => item.trim())
+                              .where((item) => item.isNotEmpty)
+                              .join(', '),
                         ),
                         buildInfoRow(
-                          Icons.analytics,
+                          radiusIcon,
                           placeName.isEmpty
                               ? "${widget.enquiry.lat}, ${widget.enquiry.lng} - ${widget.enquiry.searchRadius}km Radius"
                               : "$placeName - ${widget.enquiry.searchRadius}km Radius",
@@ -301,7 +315,7 @@ class _InqueryBoxState extends State<InqueryBox> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       AppText(
-                        text: widget.enquiry.expirationDate,
+                        text: DateFormat('d MMM').format(expiryDateTime),
                         size: 10,
                         fontWeight: FontWeight.w600,
                         color: appTextColor3,
@@ -318,64 +332,122 @@ class _InqueryBoxState extends State<InqueryBox> {
                 ],
               ),
               SizedBox(height: 20.h),
-Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    Row(
-      children: [
-        Icon(
-          isConfirmed ? Icons.check_circle : Icons.timer,
-          size: 15.w,
-          color: isConfirmed ? Colors.green : Colors.red,
-        ),
-        SizedBox(width: 5.w),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      (isConfirmed == true)
+                          ? Icon(
+                              Icons.check_circle,
+                              size: 15.w,
+                              color: Colors.green,
+                            )
+                          : Image.asset(
+                              stopwatchIcon,
+                              width: 15.w,
+                              height: 15.w,
+                            ),
 
-        AppText(
-          text: isConfirmed ? "Confirmed" : countdown,
-          size: 11,
-          fontWeight: FontWeight.w600,
-          color: isConfirmed ? Colors.green : Colors.red,
-        ),
-      ],
-    ),
+                      SizedBox(width: 5.w),
 
-    // Hide buttons if confirmed OR expired
-    if (!isConfirmed && !isExpired)
-      Row(
-        children: [
-          SizedBox(
-            width: 50.w,
-            height: 30.h,
-            child: AppButton(
-              text: "Edit",
-              onPressed: onEdit,
-              size: 11,
-              borderRadius: 5,
-              bgColor1: Colors.green,
-              bgColor2: Colors.green,
-            ),
-          ),
+                      AppText(
+                        text: isConfirmed ? "Confirmed" : countdown,
+                        size: 11,
+                        fontWeight: FontWeight.w600,
+                        color: isConfirmed ? Colors.green : Colors.red,
+                      ),
+                    ],
+                  ),
 
-          SizedBox(width: 5.w),
+                  // Hide buttons if confirmed OR expired
+                  if (!isConfirmed && !isExpired)
+                    Row(
+                      children: [
+                        SizedBox(width: 5.w),
 
-          SizedBox(
-            width: 80.w,
-            height: 30.h,
-            child: AppButton(
-              text: "Withdraw",
-              onPressed: () {
-                // existing dialog
-              },
-              size: 11,
-              borderRadius: 5,
-              bgColor1: Colors.red,
-              bgColor2: Colors.red,
-            ),
-          ),
-        ],
-      ),
-  ],
-)
+                        SizedBox(
+                          width: 80.w,
+                          height: 35.h,
+                          child: AppButton(
+                            text: "Withdraw",
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => Dialog(
+                                  backgroundColor: Colors.white,
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 30.w,
+                                      vertical: 20.h,
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        AppText(
+                                          text:
+                                              "Are you sure you want to withdraw this enquiry?",
+                                          isCentered: true,
+                                          lineSpacing: 1.5,
+                                          size: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: appTextColor2,
+                                        ),
+
+                                        SizedBox(height: 20.h),
+
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: SizedBox(
+                                                height: 30.h,
+                                                child: AppButton(
+                                                  text: "Yes",
+                                                  onPressed: () {
+                                                    deleteInquery();
+                                                  },
+                                                  size: 11,
+                                                  bgColor1: Color(0xFFF73B256),
+                                                  bgColor2: Color(0xFFF73B256),
+                                                  borderRadius: 10,
+                                                ),
+                                              ),
+                                            ),
+
+                                            SizedBox(width: 10.w),
+
+                                            Expanded(
+                                              child: SizedBox(
+                                                height: 30.h,
+                                                child: AppButton(
+                                                  text: "No",
+                                                  onPressed: () =>
+                                                      Navigator.pop(context),
+                                                  size: 11,
+                                                  bgColor1: Color(0xFFCE3F3F),
+                                                  bgColor2: Color(0xFFCE3F3F),
+                                                  borderRadius: 10,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                            size: 11,
+                            borderRadius: 5,
+                            bgColor1: Color(0xFFCE3F3F),
+                            bgColor2: Color(0xFFCE3F3F),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
             ],
           ),
         ),
