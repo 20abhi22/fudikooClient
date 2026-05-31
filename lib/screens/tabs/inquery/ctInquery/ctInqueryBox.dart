@@ -75,27 +75,27 @@ class _CtInqueryBoxState extends State<CtInqueryBox> {
   }
 
   void onEdit() {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: Colors.white,
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 600),
-        child: UpdateCtInquery(
-          enquiry: widget.enquiry,
-          placeName: placeName,
-          onEdit: widget.onEdit,
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 600),
+          child: UpdateCtInquery(
+            enquiry: widget.enquiry,
+            placeName: placeName,
+            onEdit: widget.onEdit,
+          ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
-        ),
-      ],
-    ),
-  );
-}
+    );
+  }
 
   // Future<void> fetchPlace() async {
   //   final response = await mapService.getPlaceName(
@@ -108,7 +108,6 @@ class _CtInqueryBoxState extends State<CtInqueryBox> {
   //         : "Unknown Location";
   //   });
   // }
-
 
   Future<void> fetchPlace() async {
     try {
@@ -123,7 +122,8 @@ class _CtInqueryBoxState extends State<CtInqueryBox> {
             place.locality,
           ].where((p) => p != null && p.isNotEmpty).join(', ');
           if (placeName.isEmpty) {
-            placeName = place.country ?? "${widget.enquiry.lat}, ${widget.enquiry.lng}";
+            placeName =
+                place.country ?? "${widget.enquiry.lat}, ${widget.enquiry.lng}";
           }
         });
       } else {
@@ -196,6 +196,9 @@ class _CtInqueryBoxState extends State<CtInqueryBox> {
           Expanded(
             child: Text(
               text,
+              softWrap: true,
+              maxLines: null,
+              overflow: TextOverflow.visible,
               style: TextStyle(
                 fontSize: 15.sp,
                 fontWeight: fontWeight,
@@ -209,292 +212,261 @@ class _CtInqueryBoxState extends State<CtInqueryBox> {
   }
 
   @override
-Widget build(BuildContext context) {
-  bool isConfirmed =
-      widget.enquiry.status.toLowerCase() == "confirmed";
+  Widget build(BuildContext context) {
+    bool isConfirmed = widget.enquiry.status.toLowerCase() == "confirmed";
 
-  final amount =
+    final amount =
       double.tryParse(widget.enquiry.estimatedAmount)?.toInt() ??
       widget.enquiry.estimatedAmount;
 
-  final radius =
-      double.tryParse(widget.enquiry.searchRadius)?.toInt() ??
-      widget.enquiry.searchRadius;
+    final radius =
+        double.tryParse(widget.enquiry.searchRadius)?.toInt() ??
+        widget.enquiry.searchRadius;
 
-  return Padding(
-    padding: EdgeInsets.only(bottom: 20.h),
-    child: Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(20.w),
-        child: Column(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 4,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+    final DateTime? _parsedEnquiryDate =
+      DateTime.tryParse(widget.enquiry.date);
+    final String _formattedEnquiryDate = _parsedEnquiryDate != null
+      ? DateFormat('MMM d').format(_parsedEnquiryDate)
+      : widget.enquiry.date;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: 20.h),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(20.w),
+          child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText(
+                          text: widget.enquiry.enquiryId,
+                          size: 20,
+                          fontWeight: FontWeight.bold,
+                          color: appTextColor3,
+                        ),
+
+                        SizedBox(height: 10.h),
+
+                        _infoRow(
+                          walletIcon,
+                          "$amount Per Person",
+                          fontWeight: FontWeight.w900,
+                        ),
+
+                        _infoRow(
+                          calenderIcon,
+                          "$_formattedEnquiryDate - ${widget.enquiry.time}",
+                          fontWeight: FontWeight.w700,
+                        ),
+
+                        _infoRow(
+                          peopleIcon,
+                          "${widget.enquiry.people} Person",
+                          fontWeight: FontWeight.w700,
+                        ),
+
+                        _infoRow(
+                          menuIcon,
+                          widget.enquiry.menuItems
+                              .split(',')
+                              .map((item) => item.trim())
+                              .where((item) => item.isNotEmpty)
+                              .join(', '),
+                        ),
+
+                        _infoRow(
+                          radiusIcon,
+                          placeName.isEmpty
+                              ? "${widget.enquiry.lat}, ${widget.enquiry.lng} - ${widget.enquiry.searchRadius}km Radius"
+                              : "$placeName - ${widget.enquiry.searchRadius}km Radius",
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(width: 10.w),
+
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       AppText(
-                        text: widget.enquiry.enquiryId,
-                        size: 20,
-                        fontWeight: FontWeight.bold,
+                        text: DateFormat('d MMM').format(expiryDateTime),
+                        size: 10,
+                        fontWeight: FontWeight.w600,
                         color: appTextColor3,
                       ),
 
-                      SizedBox(height: 10.h),
+                      SizedBox(height: 5.h),
 
-                      _infoRow(
-                        walletIcon,
-                        "$amount Per Person",
-                        fontWeight: FontWeight.w900,
-                      ),
-
-                      _infoRow(
-                        calenderIcon,
-                        "${widget.enquiry.date} & ${widget.enquiry.time}",
-                        fontWeight: FontWeight.w700,
-                      ),
-
-                      _infoRow(
-                        peopleIcon,
-                        "${widget.enquiry.people} Person",
-                        fontWeight: FontWeight.w700,
-                      ),
-
-                      _infoRow(
-                        menuIcon,
-                        widget.enquiry.menuItems
-                            .split(',')
-                            .join(" , "),
-                      ),
-
-                      _infoRow(
-                        radiusIcon,
-                        placeName.isEmpty
-                            ? "${widget.enquiry.lat}, ${widget.enquiry.lng} - ${widget.enquiry.searchRadius}km Radius"
-                            : "$placeName - ${widget.enquiry.searchRadius}km Radius",
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black,
+                      AppText(
+                        text: widget.enquiry.expirationTime,
+                        size: 10,
+                        fontWeight: FontWeight.w600,
+                        color: appTextColor3,
                       ),
                     ],
                   ),
-                ),
-
-                SizedBox(width: 10.w),
-
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    AppText(
-                      text: widget.enquiry.expirationDate,
-                      size: 10,
-                      fontWeight: FontWeight.w600,
-                      color: appTextColor3,
-                    ),
-
-                    SizedBox(height: 5.h),
-
-                    AppText(
-                      text: widget.enquiry.expirationTime,
-                      size: 10,
-                      fontWeight: FontWeight.w600,
-                      color: appTextColor3,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-
-            SizedBox(height: 20.h),
-
-            // ✅ Same as InqueryBox
-            Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    Row(
-      children: [
-        widget.enquiry.status.toLowerCase() == "confirmed"
-            ? Icon(
-                Icons.check_circle,
-                size: 15.w,
-                color: Colors.green,
-              )
-            : Image.asset(
-                stopwatchIcon,
-                width: 15.w,
-                height: 15.w,
+                ],
               ),
-        SizedBox(width: 5.w),
 
-        AppText(
-          text: widget.enquiry.status.toLowerCase() == "confirmed"
-              ? "Confirmed"
-              : countdown,
-          size: 11,
-          fontWeight: FontWeight.w600,
-          color: widget.enquiry.status.toLowerCase() == "confirmed"
-              ? Colors.green
-              : Colors.red,
-        ),
-      ],
-    ),
+              SizedBox(height: 20.h),
 
-    // Hide buttons if confirmed OR expired
-        if (widget.enquiry.status.toLowerCase() != "confirmed" &&
-            !isExpired)
-      Row(
-        children: [
-          // SizedBox(
-          //   width: 50.w,
-          //   height: 30.h,
-          //   child: AppButton(
-          //     text: "Edit",
-          //     onPressed: onEdit,
-          //     size: 11,
-          //     borderRadius: 5,
-          //     bgColor1: Colors.green,
-          //     bgColor2: Colors.green,
-          //   ),
-          // ),
+              // ✅ Same as InqueryBox
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      widget.enquiry.status.toLowerCase() == "confirmed"
+                          ? Icon(
+                              Icons.check_circle,
+                              size: 15.w,
+                              color: Colors.green,
+                            )
+                          : Image.asset(
+                              stopwatchIcon,
+                              width: 15.w,
+                              height: 15.w,
+                            ),
+                      SizedBox(width: 5.w),
 
-          SizedBox(width: 5.w),
-
-          SizedBox(
-            width: 80.w,
-            height: 25.h,
-            child: AppButton(
-              text: "Withdraw",
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => Dialog(
-                    backgroundColor: Colors.white,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 30.w,
-                        vertical: 20.h,
+                      AppText(
+                        text: widget.enquiry.status.toLowerCase() == "confirmed"
+                            ? "Confirmed"
+                            : countdown,
+                        size: 11,
+                        fontWeight: FontWeight.w600,
+                        color:
+                            widget.enquiry.status.toLowerCase() == "confirmed"
+                            ? Colors.green
+                            : Colors.red,
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          AppText(
-                            text:
-                                "Are you sure you want to withdraw this enquiry?",
-                            isCentered: true,
-                            lineSpacing: 1.5,
-                            size: 12,
-                            fontWeight: FontWeight.w500,
-                            color: appTextColor2,
-                          ),
-
-                          SizedBox(height: 20.h),
-
-                          Row(
-                            children: [
-                              Expanded(
-                                child: SizedBox(
-                                  height: 30.h,
-                                  child: AppButton(
-                                    text: "Yes",
-                                    onPressed: deleteEnquiry,
-                                    size: 11,
-                                    bgColor1: Colors.green,
-                                    bgColor2: Colors.green,
-                                    borderRadius: 10,
-                                  ),
-                                ),
-                              ),
-
-                              SizedBox(width: 10.w),
-
-                              Expanded(
-                                child: SizedBox(
-                                  height: 30.h,
-                                  child: AppButton(
-                                    text: "No",
-                                    onPressed: () =>
-                                        Navigator.pop(context),
-                                    size: 11,
-                                    bgColor1: Colors.red,
-                                    bgColor2: Colors.red,
-                                    borderRadius: 10,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                    ],
                   ),
-                );
-              },
-              size: 11,
-              borderRadius: 5,
-              bgColor1: Colors.red,
-              bgColor2: Colors.red,
-            ),
+
+                  // Hide buttons if confirmed OR expired
+                  if (widget.enquiry.status.toLowerCase() != "confirmed" &&
+                      !isExpired)
+                    Row(
+                      children: [
+                        // SizedBox(
+                        //   width: 50.w,
+                        //   height: 30.h,
+                        //   child: AppButton(
+                        //     text: "Edit",
+                        //     onPressed: onEdit,
+                        //     size: 11,
+                        //     borderRadius: 5,
+                        //     bgColor1: Colors.green,
+                        //     bgColor2: Colors.green,
+                        //   ),
+                        // ),
+                        SizedBox(width: 5.w),
+
+                        SizedBox(
+                          width: 80.w,
+                          height: 35.h,
+                          child: AppButton(
+                            text: "Withdraw",
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => Dialog(
+                                  backgroundColor: Colors.white,
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 30.w,
+                                      vertical: 20.h,
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        AppText(
+                                          text:
+                                              "Are you sure you want to withdraw this enquiry?",
+                                          isCentered: true,
+                                          lineSpacing: 1.5,
+                                          size: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: appTextColor2,
+                                        ),
+
+                                        SizedBox(height: 20.h),
+
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: SizedBox(
+                                                height: 30.h,
+                                                child: AppButton(
+                                                  text: "Yes",
+                                                  onPressed: deleteEnquiry,
+                                                  size: 11,
+                                                  bgColor1: const Color(0xFFF73B256),
+                                                  bgColor2: const Color(0xFFF73B256),
+                                                  borderRadius: 10,
+                                                ),
+                                              ),
+                                            ),
+
+                                            SizedBox(width: 10.w),
+
+                                            Expanded(
+                                              child: SizedBox(
+                                                height: 30.h,
+                                                child: AppButton(
+                                                  text: "No",
+                                                  onPressed: () =>
+                                                      Navigator.pop(context),
+                                                  size: 11,
+                                                  bgColor1: const Color(0xFFCE3F3F),
+                                                  bgColor2: const Color(0xFFCE3F3F),
+                                                  borderRadius: 10,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                            size: 11,
+                            borderRadius: 5,
+                            bgColor1: const Color(0xFFCE3F3F),
+                            bgColor2: const Color(0xFFCE3F3F),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ],
           ),
-        ],
-      ),
-  ],
-)
-          ],
         ),
       ),
-    ),
-  );
+    );
+  }
 }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

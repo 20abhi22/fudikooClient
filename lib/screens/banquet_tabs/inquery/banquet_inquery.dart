@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:flutter/material.dart';
@@ -39,6 +39,7 @@ class BanquetInquery extends StatefulWidget {
 class _BanquetInqueryState extends State<BanquetInquery> {
   // ── Tab selection ─────────────────────────────────────────
   String selectedStatus = 'Plan a Party';
+  String _previousStatus = 'Plan a Party';
 
   // ── Overlay/modal flags ───────────────────────────────────
   bool isReviewOnClick = false;
@@ -750,28 +751,13 @@ class _BanquetInqueryState extends State<BanquetInquery> {
       body: SafeArea(
         child: Stack(
           children: [
-            // ── Main content area ─────────────────────────────
-            // KEY FIX: ViewInquery is placed inside Expanded inside a Column.
-            // It is a plain Column widget (no Scaffold), so it inherits the
-            // bounded height from the Expanded and no longer overflows.
             if (viewEnquiryOnClick)
               Positioned.fill(
                 child: ViewInquery(
-                  onEnquiryTap: (val) => setState(() => viewEnquiryOnClick = val),
+                  onEnquiryTap: (val) =>
+                      setState(() => viewEnquiryOnClick = val),
                 ),
               )
-            // Column(
-            //   children: [
-            //     Expanded(
-            //       child: ViewInquery(
-            //         onEnquiryTap: (val) =>
-            //             setState(() => viewEnquiryOnClick = val),
-            //       ),
-            //     ),
-            //   ],
-            // )
-            // else if (viewDeclineOnClick)
-            //   _viewDeclineWidget()
             else if (viewDeclineOnClick)
               // ✅ Wrap this too
               Positioned.fill(child: _viewDeclineWidget())
@@ -786,34 +772,28 @@ class _BanquetInqueryState extends State<BanquetInquery> {
                   // ── Tab buttons ──────────────────────────────
                   Padding(
                     padding: EdgeInsets.all(20.w),
-                    child: Row(
-                      children: [
-                        buildStatusButton("Plan a Party"),
-                        SizedBox(width: 10.w),
-                        buildStatusButton("Response"),
-                      ],
+                    child: SizedBox(
+                      height: 35.h,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return _buildAnimatedStatusTabs(
+                            width: constraints.maxWidth,
+                          );
+                        },
+                      ),
                     ),
                   ),
                   // ── Tab content ──────────────────────────────
                   Expanded(
-                    child: selectedStatus == "Plan a Party"
-                        ? PlanAParty(
-                            key: planPartyKey,
-                            onReviewTap: (data) {
-                              setState(() {
-                                partyEnquiryData = data;
-                                isReviewOnClick = true;
-                              });
-                              _startPartyTimer();
-                            },
-                            viewEnquiryOnTap: () =>
-                                setState(() => viewEnquiryOnClick = true),
-                          )
-                        : _responseWidget(),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onHorizontalDragEnd: _handleTabSwipe,
+                      child: ClipRect(child: _buildSlidingTabBody()),
+                    ),
                   ),
                 ],
               ),
-        
+
             // ── Overlays (always on top in Stack) ─────────────
             if (isResponseAcceptOnClick) _responseAcceptBox(),
             if (viewRequest) _viewRequestWidget(),
@@ -828,6 +808,62 @@ class _BanquetInqueryState extends State<BanquetInquery> {
   // ─────────────────────────────────────────────────────────
   // SUBVIEW: Decline list
   // ─────────────────────────────────────────────────────────
+  void _handleTabSwipe(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+    if (velocity.abs() < 250) return;
+
+    if (velocity < 0 && selectedStatus == "Plan a Party") {
+      _selectStatus("Response");
+    } else if (velocity > 0 && selectedStatus == "Response") {
+      _selectStatus("Plan a Party");
+    }
+  }
+
+  Widget _buildSlidingTabBody() {
+    final bool showPartyTab = selectedStatus == "Plan a Party";
+    const duration = Duration(milliseconds: 430);
+    const curve = Curves.easeInOutCubic;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Positioned.fill(
+          child: AnimatedSlide(
+            offset: showPartyTab ? Offset.zero : const Offset(-1, 0),
+            duration: duration,
+            curve: curve,
+            child: IgnorePointer(
+              ignoring: !showPartyTab,
+              child: PlanAParty(
+                key: planPartyKey,
+                onReviewTap: (data) {
+                  setState(() {
+                    partyEnquiryData = data;
+                    isReviewOnClick = true;
+                  });
+                  _startPartyTimer();
+                },
+                viewEnquiryOnTap: () =>
+                    setState(() => viewEnquiryOnClick = true),
+              ),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: AnimatedSlide(
+            offset: showPartyTab ? const Offset(1, 0) : Offset.zero,
+            duration: duration,
+            curve: curve,
+            child: IgnorePointer(
+              ignoring: showPartyTab,
+              child: _responseWidget(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _viewDeclineWidget() {
     final declined = _filteredDeclinedResponses;
     return Column(
@@ -1274,15 +1310,7 @@ class _BanquetInqueryState extends State<BanquetInquery> {
                       children: [
                         // Icon(Icons.search, size: 17.w, color: Colors.black),
                         Image.asset(searchBlackIcon, width: 12.w, height: 12.h),
-                        // SvgPicture.asset(
-                        //   searchBlackIcon,
-                        //   width: 17.w,
-                        //   height: 17.h,
-                        //   colorFilter: ColorFilter.mode(
-                        //     appTextColor2,
-                        //     BlendMode.srcIn,
-                        //   ),
-                        // ),
+
                         SizedBox(width: 2.w),
                         AppText(
                           text: "Search",
@@ -1846,44 +1874,107 @@ class _BanquetInqueryState extends State<BanquetInquery> {
     ),
   );
 
-  Widget buildStatusButton(String text) {
-    final bool isSelected = selectedStatus == text;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() => selectedStatus = text);
-          if (text == "Response") _fetchPartyResponses();
-        },
-        child: Container(
-          height: 35.h,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            gradient: isSelected
-                ? const LinearGradient(
-                    colors: [Color(0xFFEC7B2D), Color(0xFFF7A440)],
-                  )
-                : null,
-            color: isSelected ? null : Colors.white,
-            borderRadius: BorderRadius.circular(10.r),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 6.r,
-                offset: Offset(2.w, 2.w),
-              ),
-            ],
+  void _selectStatus(String text) {
+    if (selectedStatus == text) return;
+
+    setState(() {
+      _previousStatus = selectedStatus;
+      selectedStatus = text;
+    });
+
+    if (text == "Response") _fetchPartyResponses();
+  }
+
+  Widget _buildAnimatedStatusTabs({required double width}) {
+    final tabs = ["Plan a Party", "Response"];
+
+    return Stack(
+      children: [
+        _buildStatusIndicator(width: width),
+        ...tabs.map((tab) => _buildPositionedStatusButton(tab, width: width)),
+      ],
+    );
+  }
+
+  Widget _buildStatusIndicator({required double width}) {
+    final rect = _statusTabRect(selectedStatus, width: width);
+    final bool isStatusSwitch = _previousStatus != selectedStatus;
+    final indicator = Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFEC7B2D), Color(0xFFF7A440)],
+        ),
+        borderRadius: BorderRadius.circular(10.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 6.r,
+            offset: Offset(2.w, 2.w),
           ),
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w500,
-              color: isSelected ? Colors.white : appTextColor3,
+        ],
+      ),
+    );
+
+    return AnimatedPositioned.fromRect(
+      rect: rect,
+      duration: Duration(milliseconds: isStatusSwitch ? 430 : 280),
+      curve: Curves.easeInOutCubic,
+      child: indicator,
+    );
+  }
+
+  Widget _buildPositionedStatusButton(String text, {required double width}) {
+    final isSelected = selectedStatus == text;
+
+    return Positioned.fromRect(
+      rect: _statusTabRect(text, width: width),
+      child: GestureDetector(
+        onTap: () => _selectStatus(text),
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutBack,
+          scale: isSelected ? 1.02 : 1,
+          child: Container(
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.transparent : Colors.white,
+              borderRadius: BorderRadius.circular(10.r),
+              boxShadow: isSelected
+                  ? null
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 6.r,
+                        offset: Offset(2.w, 2.w),
+                      ),
+                    ],
+            ),
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w500,
+                color: isSelected ? Colors.white : appTextColor3,
+              ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  Rect _statusTabRect(String text, {required double width}) {
+    final double gap = 10.w;
+    final double tabHeight = 35.h;
+    final double tabWidth = (width - gap) / 2;
+
+    switch (text) {
+      case "Response":
+        return Rect.fromLTWH(tabWidth + gap, 0, tabWidth, tabHeight);
+      case "Plan a Party":
+      default:
+        return Rect.fromLTWH(0, 0, tabWidth, tabHeight);
+    }
   }
 }
 

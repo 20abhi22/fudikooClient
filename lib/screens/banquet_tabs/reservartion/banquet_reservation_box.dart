@@ -213,6 +213,7 @@ class BanquetReservationBox extends StatelessWidget {
                                   booking: reservation.toBookingModel(),
                                   reservationType:
                                       OfferCodeReservationType.enquiry,
+                                  pricePerPerson: reservation.pricePerPerson,
                                 ),
                                 context: context,
                               );

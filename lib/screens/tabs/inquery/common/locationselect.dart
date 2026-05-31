@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
+import 'package:fudikoclient/components/apptextfeild.dart';
 import 'package:fudikoclient/model/auth/mapplace-model.dart';
 import 'package:fudikoclient/service/auth/map-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
@@ -270,30 +272,52 @@ class _LocationSelectState extends State<LocationSelect> {
                 Navigator.pop(context);
               }
             },
-            child: const SizedBox(
+            child: SizedBox(
               width: 44,
-              child: Icon(Icons.close, size: 18, color: Color(0xFFf87b0d)),
+              child: Icon(
+                Icons.close,
+                size: 18,
+                color: const Color(0xFFD3690E).withOpacity(0.7),
+              ),
             ),
           ),
           Expanded(
-            child: TextField(
+            child: AppTextFeild(
+
               controller: _searchController,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, color: Color(0xFFf87b0d)),
-              decoration: const InputDecoration(
+              text: 'Search Location',
+              height: 60.h,
+              size: 14,
+              isTextCenter: true,
+              textColor: const Color(0xFFD3690E).withOpacity(0.7),
+              backgroundColor: Colors.transparent,
+              padding: EdgeInsets.zero,
+              boxShadow: [
+  BoxShadow(
+    color: Colors.black.withOpacity(0.05), // #000000 5%
+    offset: const Offset(0, 0),            // X: 0, Y: 0
+    blurRadius: 10,                        // Blur: 10
+    spreadRadius: 5,                       // Spread: 5
+  ),
+],
+              fieldBorderRadius: 16,
+              sideIconSlotWidth: 0,
+              sideSpacing: 0,
+              inputContentPadding: const EdgeInsets.symmetric(vertical: 14),
+              textInputAction: TextInputAction.search,
+              onChanged: _onSearchChanged,
+              onFieldSubmitted: (_) => _searchLocation(),
+              decoration: InputDecoration(
                 hintText: 'Search Location',
                 hintStyle: TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFFf87b0d),
+                  fontSize: 14.sp,
+                  color: const Color(0xFFD3690E).withOpacity(0.7),
                   fontWeight: FontWeight.w400,
                 ),
                 border: InputBorder.none,
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              textInputAction: TextInputAction.search,
-              onChanged: _onSearchChanged,
-              onSubmitted: (_) => _searchLocation(),
             ),
           ),
           SizedBox(
@@ -309,14 +333,7 @@ class _LocationSelectState extends State<LocationSelect> {
                       ),
                     ),
                   )
-                : IconButton(
-                    icon: const Icon(
-                      Icons.search,
-                      size: 18,
-                      color: Color(0xFFf87b0d),
-                    ),
-                    onPressed: _searchLocation,
-                  ),
+                : null,
           ),
         ],
       ),

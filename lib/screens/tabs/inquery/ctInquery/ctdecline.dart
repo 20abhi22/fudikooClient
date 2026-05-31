@@ -7,8 +7,8 @@ import 'package:fudikoclient/utils/constants.dart';
 import 'package:intl/intl.dart';
 
 class CtDeclineBox extends StatelessWidget {
-  final VoidCallback onCancelTap;
-  final VoidCallback onRestoreTap;
+  final Future<void> Function() onCancelTap;
+  final Future<void> Function() onRestoreTap;
   final ResponseModel response;
   // final VoidCallback onAcceptTap;
   // final VoidCallback viewRequestClick;
@@ -25,6 +25,7 @@ class CtDeclineBox extends StatelessWidget {
     await showDialog(
       context: context,
       builder: (dialogContext) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
         backgroundColor: Colors.white,
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 20.h),
@@ -47,9 +48,9 @@ class CtDeclineBox extends StatelessWidget {
                       height: 30.h,
                       child: AppButton(
                         text: 'Yes',
-                        onPressed: () {
+                        onPressed: () async {
                           Navigator.of(dialogContext).pop();
-                          onCancelTap();
+                          await onCancelTap();
                         },
                         size: 11,
                         bgColor1: const Color(0xFF73B256),
@@ -85,6 +86,7 @@ class CtDeclineBox extends StatelessWidget {
     await showDialog(
       context: context,
       builder: (dialogContext) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
         backgroundColor: Colors.white,
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 20.h),
@@ -107,9 +109,9 @@ class CtDeclineBox extends StatelessWidget {
                       height: 30.h,
                       child: AppButton(
                         text: 'Yes',
-                        onPressed: () {
+                        onPressed: () async {
                           Navigator.of(dialogContext).pop();
-                          onRestoreTap();
+                          await onRestoreTap();
                         },
                         size: 11,
                         bgColor1: const Color(0xFF73B256),
@@ -143,129 +145,140 @@ class CtDeclineBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-        final DateTime parsedDate =
+    final DateTime parsedDate =
         DateTime.tryParse(response.date) ?? DateTime.now();
     final String displayDate = DateFormat('MMM d').format(parsedDate);
 
     return Padding(
       padding: EdgeInsets.only(bottom: 20.h),
       child: Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(20.w),
+          child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText(
+                          text: response.couponId,
+                          size: 20,
+                          fontWeight: FontWeight.bold,
+                          color: appTextColor3,
+                        ),
+                        SizedBox(height: 10.h),
+                        _richRow(shopIcon, [
+                          _span(
+                            response.restaurantName,
+                            FontWeight.w700,
+                            appLinkColor2,
+                          ),
+                        ]),
+                        SizedBox(height: 10.h),
+                        _richRow(walletIcon, [
+                          _span(
+                            '${response.pricePerPerson} ',
+                            FontWeight.w700,
+                            appTextColor5,
+                          ),
+                          _span('Per Person', FontWeight.w500, appTextColor5),
+                        ]),
+                        SizedBox(height: 10.h),
+                        _richRow(offerIcon, [
+                          _span(
+                            response.discount,
+                            FontWeight.w500,
+                            appTextColor5,
+                          ),
+                        ]),
+                        SizedBox(height: 10.h),
+                        _richRow(commentIcon, [
+                          _span(
+                            response.message,
+                            FontWeight.w700,
+                            Colors.black,
+                          ),
+                        ]),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  // ── Top-right date ────────────────────────
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      AppText(
+                        text: displayDate,
+                        size: 11,
+                        fontWeight: FontWeight.w600,
+                        color: appTextColor3,
+                      ),
+                      SizedBox(height: 5.h),
+                      AppText(
+                        text: response.time,
+                        size: 11,
+                        fontWeight: FontWeight.w400,
+                        color: appTextColor3,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 20.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 80.w,
+                        height: 25.h,
+                        child: AppButton(
+                          text: "Delete",
+                          onPressed: () => _showDeleteDialog(context),
+                          size: 12,
+                          borderRadius: 5,
+                          bgColor1: Color(0xFFCE3F3F),
+                          bgColor2: Color(0xFFCE3F3F),
+                        ),
+                      ),
+                      SizedBox(width: 5.w),
+                      SizedBox(
+                        width: 80.w,
+                        height: 25.h,
+                        child: AppButton(
+                          text: "Restore",
+                          onPressed: () => _showRestoreDialog(context),
+                          size: 12,
+                          borderRadius: 5,
+                          bgColor1: Color(0xFF4662EC),
+                          bgColor2: Color(0xFF4662EC),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
-          child: Padding(
-            padding: EdgeInsets.all(20.w),
-            child: Column(
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 4,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          AppText(
-                            text: response.couponId,
-                            size: 20,
-                            fontWeight: FontWeight.bold,
-                            color: appTextColor3,
-                          ),
-                          SizedBox(height: 10.h),
-                          _richRow(shopIcon, [
-                            _span(response.restaurantName,
-                                FontWeight.w700, appLinkColor2),
-                          ]),
-                          SizedBox(height: 10.h),
-                          _richRow(walletIcon, [
-                            _span('${response.pricePerPerson} ',
-                                FontWeight.w700, appTextColor5),
-                            _span('Per Person',
-                             FontWeight.w500, appTextColor5),
-                          ]),
-                          SizedBox(height: 10.h),
-                          _richRow(offerIcon, [
-                          _span(response.discount,
-                              FontWeight.w500, appTextColor5),
-                        ]),                       
-                          SizedBox(height: 10.h),
-                          _richRow(commentIcon, [
-                          _span(response.message,
-                              FontWeight.w700, Colors.black),
-                        ]),  
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: 10.w),
-                   // ── Top-right date ────────────────────────
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        AppText(
-                          text: displayDate,
-                          size: 11,
-                          fontWeight: FontWeight.w600,
-                          color: appTextColor3,
-                        ),
-                        SizedBox(height: 5.h),
-                        AppText(
-                          text: response.time,
-                          size: 11,
-                          fontWeight: FontWeight.w400,
-                          color: appTextColor3,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20.h),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Row(
-                      children: [
-                        SizedBox(
-                          width: 80.w,
-                          height: 25.h,
-                          child: AppButton(
-                            text: "Delete",
-                            onPressed: () => _showDeleteDialog(context),
-                            size: 12,
-                            borderRadius: 5,
-                            bgColor1: Color(0xFFCE3F3F),
-                            bgColor2: Color(0xFFCE3F3F),
-                          ),
-                        ),
-                        SizedBox(width: 5.w),
-                        SizedBox(
-                          width: 80.w,
-                          height: 25.h,
-                          child: AppButton(
-                            text: "Restore",
-                            onPressed: () => _showRestoreDialog(context),
-                            size: 12,
-                            borderRadius: 5,
-                            bgColor1: Color(0xFF4662EC),
-                            bgColor2: Color(0xFF4662EC),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-          ),
         ),
-    ),
+      ),
     );
   }
 
@@ -275,13 +288,19 @@ class CtDeclineBox extends StatelessWidget {
       children: [
         Image.asset(imageicon, width: 18.w, height: 18.h),
         SizedBox(width: 5.w),
-        Flexible(child: RichText(text: TextSpan(children: spans))),
+        Expanded(
+          child: RichText(
+            softWrap: true,
+            overflow: TextOverflow.visible,
+            text: TextSpan(children: spans),
+          ),
+        ),
       ],
     );
   }
 
   TextSpan _span(String text, FontWeight weight, Color color) => TextSpan(
-        text: text,
-        style: TextStyle(fontSize: 15, fontWeight: weight, color: color),
-      );
+    text: text,
+    style: TextStyle(fontSize: 15, fontWeight: weight, color: color),
+  );
 }

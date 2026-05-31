@@ -161,7 +161,10 @@ class _CtInqueryState extends State<CtInquery> {
   Future<void> _selectDateTime(BuildContext context) async {
     DateTime tempDate = selectedDateTime ?? DateTime.now();
     TimeOfDay tempTime = selectedDateTime != null
-        ? TimeOfDay(hour: selectedDateTime!.hour, minute: selectedDateTime!.minute)
+        ? TimeOfDay(
+            hour: selectedDateTime!.hour,
+            minute: selectedDateTime!.minute,
+          )
         : TimeOfDay.now();
 
     await showDialog(
@@ -171,7 +174,9 @@ class _CtInqueryState extends State<CtInquery> {
           builder: (context, setDialogState) {
             return Dialog(
               backgroundColor: const Color(0xFFF5F5F5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
                 child: Column(
@@ -179,7 +184,8 @@ class _CtInqueryState extends State<CtInquery> {
                   children: [
                     _buildCustomCalendar(
                       tempDate: tempDate,
-                      onDateChanged: (date) => setDialogState(() => tempDate = date),
+                      onDateChanged: (date) =>
+                          setDialogState(() => tempDate = date),
                     ),
                     SizedBox(height: 12.h),
                     _buildTimeRow(
@@ -193,8 +199,11 @@ class _CtInqueryState extends State<CtInquery> {
                       onApply: () {
                         setState(() {
                           selectedDateTime = DateTime(
-                            tempDate.year, tempDate.month, tempDate.day,
-                            tempTime.hour, tempTime.minute,
+                            tempDate.year,
+                            tempDate.month,
+                            tempDate.day,
+                            tempTime.hour,
+                            tempTime.minute,
                           );
                         });
                         Navigator.pop(context);
@@ -222,7 +231,9 @@ class _CtInqueryState extends State<CtInquery> {
           builder: (context, setDialogState) {
             return Dialog(
               backgroundColor: const Color(0xFFF5F5F5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
                 child: Column(
@@ -230,7 +241,8 @@ class _CtInqueryState extends State<CtInquery> {
                   children: [
                     _buildCustomCalendar(
                       tempDate: tempDate,
-                      onDateChanged: (date) => setDialogState(() => tempDate = date),
+                      onDateChanged: (date) =>
+                          setDialogState(() => tempDate = date),
                     ),
                     SizedBox(height: 12.h),
                     _buildTimeRow(
@@ -243,7 +255,11 @@ class _CtInqueryState extends State<CtInquery> {
                     _buildDialogActions(
                       onApply: () {
                         setState(() {
-                          expirationDate = DateTime(tempDate.year, tempDate.month, tempDate.day);
+                          expirationDate = DateTime(
+                            tempDate.year,
+                            tempDate.month,
+                            tempDate.day,
+                          );
                           expirationTime = tempTime;
                         });
                         Navigator.pop(context);
@@ -290,7 +306,10 @@ class _CtInqueryState extends State<CtInquery> {
               });
             },
           ),
-          Text(' : ', style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold)),
+          Text(
+            ' : ',
+            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+          ),
           _timeScroller(
             value: tempTime.minute,
             min: 0,
@@ -309,14 +328,17 @@ class _CtInqueryState extends State<CtInquery> {
                 final newHour = tempTime.period == DayPeriod.am
                     ? tempTime.hour + 12
                     : tempTime.hour - 12;
-                onTimeChanged(TimeOfDay(hour: newHour, minute: tempTime.minute));
+                onTimeChanged(
+                  TimeOfDay(hour: newHour, minute: tempTime.minute),
+                );
               });
             },
             child: Container(
               width: 38.w,
               height: 30.h,
               decoration: BoxDecoration(
-                color: (highlightPm
+                color:
+                    (highlightPm
                         ? tempTime.period == DayPeriod.pm
                         : tempTime.period == DayPeriod.am)
                     ? const Color(0xFFD9D9D9)
@@ -352,7 +374,10 @@ class _CtInqueryState extends State<CtInquery> {
         children: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: Colors.black54, fontSize: 14.sp)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.black54, fontSize: 14.sp),
+            ),
           ),
           TextButton(
             onPressed: onApply,
@@ -442,7 +467,7 @@ class _CtInqueryState extends State<CtInquery> {
             hintText:
                 "Example: Chicken Biriyani , Porotta ,Rotti  , Payasam, Butter Chicken , Ice cream, Salad",
             topHintText: "Your Menu",
-            iconColor: appTextColor2,
+            iconColor: Color.fromARGB(255, 15, 15, 15),
             imageIconPath: menuIcon,
             maxLength: 300,
             controller: menuController,
@@ -453,7 +478,7 @@ class _CtInqueryState extends State<CtInquery> {
           DescriptionTextArea(
             hintText: "Example: 10 Service Boys needed",
             topHintText: "Other Services",
-            iconColor: appTextColor2,
+            iconColor: Color.fromARGB(255, 15, 15, 15),
             imageIconPath: handshakeIcon,
             maxLength: 100,
             controller: otherServicesController,
@@ -474,7 +499,7 @@ class _CtInqueryState extends State<CtInquery> {
                 offset: const Offset(0, 0),
               ),
             ],
-            iconImagecolor: appTextColor2,
+            iconImagecolor: Color.fromARGB(255, 15, 15, 15),
             controller: peopleController,
           ),
           SizedBox(height: 20.h),
@@ -483,14 +508,19 @@ class _CtInqueryState extends State<CtInquery> {
           GestureDetector(
             onTap: () => _selectDateTime(context),
             child: AppTextFeild(
-              text: selectedDateTime != null ? _formatDate(selectedDateTime!) : "Date",
+              text: selectedDateTime != null
+                  ? _formatDate(selectedDateTime!)
+                  : "Date",
               secondText: selectedDateTime != null
-                  ? _formatTime(selectedDateTime!.hour, selectedDateTime!.minute)
+                  ? _formatTime(
+                      selectedDateTime!.hour,
+                      selectedDateTime!.minute,
+                    )
                   : "Time",
               iconImagePath: calenderIcon,
               secondIconImagePath: timeIcon,
-              iconImagecolor: appTextColor2,
-              secondIconImageColor: appTextColor2,
+              iconImagecolor: Color.fromARGB(255, 15, 15, 15),
+              secondIconImageColor: Color.fromARGB(255, 15, 15, 15),
               isDateTimeField: true,
               height: 55.h,
               fieldBorderRadius: 10.r,
@@ -516,7 +546,7 @@ class _CtInqueryState extends State<CtInquery> {
             text: "Expected amount per person",
             iconImagePath: walletIcon,
             sideIconSlotWidth: 17.w,
-            iconImagecolor: appTextColor2,
+            iconImagecolor: Color.fromARGB(255, 15, 15, 15),
             controller: amountController,
           ),
           SizedBox(height: 20.h),
@@ -542,9 +572,10 @@ class _CtInqueryState extends State<CtInquery> {
                       String name = '';
                       if (placemarks.isNotEmpty) {
                         final p = placemarks.first;
-                        name = [p.subLocality, p.locality]
-                            .where((s) => s != null && s.isNotEmpty)
-                            .join(', ');
+                        name = [
+                          p.subLocality,
+                          p.locality,
+                        ].where((s) => s != null && s.isNotEmpty).join(', ');
                         if (name.isEmpty) name = p.country ?? '';
                       }
                       setState(() {
@@ -554,7 +585,8 @@ class _CtInqueryState extends State<CtInquery> {
                       });
                     } catch (_) {
                       setState(() {
-                        locationLabel = '$newLat, $newLng - ${distance}km Radius';
+                        locationLabel =
+                            '$newLat, $newLng - ${distance}km Radius';
                       });
                     }
                   },
@@ -562,7 +594,8 @@ class _CtInqueryState extends State<CtInquery> {
               ),
             ),
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 75.w, vertical: 7.h),
+              constraints: const BoxConstraints(maxWidth: double.infinity),
+              padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 9.h),
               decoration: BoxDecoration(
                 color: const Color(0xFF798FFF),
                 borderRadius: BorderRadius.circular(10.r),
@@ -580,6 +613,9 @@ class _CtInqueryState extends State<CtInquery> {
                   size: 15.sp,
                   fontWeight: FontWeight.w400,
                   color: Colors.white,
+                  isCentered: true,
+                  maxLines: null,
+                  overflow: TextOverflow.visible,
                 ),
               ),
             ),
@@ -593,26 +629,37 @@ class _CtInqueryState extends State<CtInquery> {
               clipBehavior: Clip.none,
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 12.h,
+                  ),
                   decoration: BoxDecoration(
                     color: appSecondaryBackgroundColor,
                     borderRadius: BorderRadius.circular(15.r),
                     border: Border.all(color: Colors.black54),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 4.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 15.0,
+                      vertical: 4.0,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _IconTextButton(
                           imageIcon: calenderIcon,
-                          label: expirationDate != null ? _formatDate(expirationDate!) : 'Date',
+                          label: expirationDate != null
+                              ? _formatDate(expirationDate!)
+                              : 'Date',
                           onTap: () => _selectExpirationDateTime(context),
                         ),
                         _IconTextButton(
                           imageIcon: timeIcon,
                           label: expirationTime != null
-                              ? _formatTime(expirationTime!.hour, expirationTime!.minute)
+                              ? _formatTime(
+                                  expirationTime!.hour,
+                                  expirationTime!.minute,
+                                )
                               : 'Time',
                           onTap: () => _selectExpirationDateTime(context),
                         ),
@@ -680,7 +727,12 @@ class _IconTextButton extends StatelessWidget {
       onTap: onTap,
       child: Row(
         children: [
-          Image.asset(imageIcon, width: 20.w, height: 20.h, color: appTextColor2),
+          Image.asset(
+            imageIcon,
+            width: 20.w,
+            height: 20.h,
+            color: Color.fromARGB(255, 15, 15, 15),
+          ),
           SizedBox(width: 8.w),
           AppText(
             text: label,
@@ -706,7 +758,10 @@ class _CustomCalendar extends StatefulWidget {
   final DateTime selectedDate;
   final void Function(DateTime) onDateChanged;
 
-  const _CustomCalendar({required this.selectedDate, required this.onDateChanged});
+  const _CustomCalendar({
+    required this.selectedDate,
+    required this.onDateChanged,
+  });
 
   @override
   State<_CustomCalendar> createState() => _CustomCalendarState();
@@ -720,25 +775,30 @@ class _CustomCalendarState extends State<_CustomCalendar> {
   @override
   void initState() {
     super.initState();
-    _displayMonth = DateTime(widget.selectedDate.year, widget.selectedDate.month);
+    _displayMonth = DateTime(
+      widget.selectedDate.year,
+      widget.selectedDate.month,
+    );
     _pickerYear = _displayMonth.year;
   }
 
   void _prevMonth() => setState(
-      () => _displayMonth = DateTime(_displayMonth.year, _displayMonth.month - 1));
+    () => _displayMonth = DateTime(_displayMonth.year, _displayMonth.month - 1),
+  );
 
   void _nextMonth() => setState(
-      () => _displayMonth = DateTime(_displayMonth.year, _displayMonth.month + 1));
+    () => _displayMonth = DateTime(_displayMonth.year, _displayMonth.month + 1),
+  );
 
   void _togglePicker() => setState(() {
-        _showMonthYearPicker = !_showMonthYearPicker;
-        _pickerYear = _displayMonth.year;
-      });
+    _showMonthYearPicker = !_showMonthYearPicker;
+    _pickerYear = _displayMonth.year;
+  });
 
   void _selectMonthYear(int month, int year) => setState(() {
-        _displayMonth = DateTime(year, month);
-        _showMonthYearPicker = false;
-      });
+    _displayMonth = DateTime(year, month);
+    _showMonthYearPicker = false;
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -761,11 +821,17 @@ class _CustomCalendarState extends State<_CustomCalendar> {
                 children: [
                   Text(
                     '$monthName  ${_displayMonth.year}',
-                    style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: Colors.black),
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
                   ),
                   SizedBox(width: 4.w),
                   Icon(
-                    _showMonthYearPicker ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                    _showMonthYearPicker
+                        ? Icons.arrow_drop_up
+                        : Icons.arrow_drop_down,
                     color: Colors.black54,
                     size: 20.sp,
                   ),
@@ -797,15 +863,25 @@ class _CustomCalendarState extends State<_CustomCalendar> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            IconButton(icon: const Icon(Icons.chevron_left, size: 20), onPressed: () => setState(() => _pickerYear--)),
+            IconButton(
+              icon: const Icon(Icons.chevron_left, size: 20),
+              onPressed: () => setState(() => _pickerYear--),
+            ),
             GestureDetector(
               onTap: () => _showYearScrollPicker(context),
               child: Text(
                 '$_pickerYear',
-                style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600, color: const Color(0xFFf87b0d)),
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFFf87b0d),
+                ),
               ),
             ),
-            IconButton(icon: const Icon(Icons.chevron_right, size: 20), onPressed: () => setState(() => _pickerYear++)),
+            IconButton(
+              icon: const Icon(Icons.chevron_right, size: 20),
+              onPressed: () => setState(() => _pickerYear++),
+            ),
           ],
         ),
         SizedBox(height: 8.h),
@@ -821,18 +897,27 @@ class _CustomCalendarState extends State<_CustomCalendar> {
           ),
           itemBuilder: (context, index) {
             final month = index + 1;
-            final isSelected = month == _displayMonth.month && _pickerYear == _displayMonth.year;
-            final isPast = DateTime(_pickerYear, month).isBefore(
-              DateTime(DateTime.now().year, DateTime.now().month),
-            );
+            final isSelected =
+                month == _displayMonth.month &&
+                _pickerYear == _displayMonth.year;
+            final isPast = DateTime(
+              _pickerYear,
+              month,
+            ).isBefore(DateTime(DateTime.now().year, DateTime.now().month));
             return GestureDetector(
               onTap: isPast ? null : () => _selectMonthYear(month, _pickerYear),
               child: Container(
                 height: 50.h,
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFFFE943A) : Colors.transparent,
+                  color: isSelected
+                      ? const Color(0xFFFE943A)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(8.r),
-                  border: Border.all(color: isSelected ? const Color(0xFFFE943A) : Colors.black12),
+                  border: Border.all(
+                    color: isSelected
+                        ? const Color(0xFFFE943A)
+                        : Colors.black12,
+                  ),
                 ),
                 child: Center(
                   child: Text(
@@ -840,7 +925,11 @@ class _CustomCalendarState extends State<_CustomCalendar> {
                     style: TextStyle(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
-                      color: isSelected ? Colors.white : isPast ? Colors.black26 : Colors.black87,
+                      color: isSelected
+                          ? Colors.white
+                          : isPast
+                          ? Colors.black26
+                          : Colors.black87,
                     ),
                   ),
                 ),
@@ -859,7 +948,9 @@ class _CustomCalendarState extends State<_CustomCalendar> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16.r))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+      ),
       builder: (_) => SizedBox(
         height: 250.h,
         child: ListView.builder(
@@ -878,7 +969,9 @@ class _CustomCalendarState extends State<_CustomCalendar> {
                   style: TextStyle(
                     fontSize: 15.sp,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                    color: isSelected ? const Color(0xFFf87b0d) : Colors.black87,
+                    color: isSelected
+                        ? const Color(0xFFf87b0d)
+                        : Colors.black87,
                   ),
                 ),
               ),
@@ -895,21 +988,33 @@ class _CustomCalendarState extends State<_CustomCalendar> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-            .map((d) => SizedBox(
-                  width: 36.w,
-                  child: Center(
-                    child: Text(d,
-                        style: TextStyle(fontSize: 12.sp, color: Colors.black54, fontWeight: FontWeight.w500)),
+            .map(
+              (d) => SizedBox(
+                width: 36.w,
+                child: Center(
+                  child: Text(
+                    d,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.black54,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ))
+                ),
+              ),
+            )
             .toList(),
       ),
     );
   }
 
   Widget _buildDayGrid(DateTime today) {
-    final daysInMonth = DateUtils.getDaysInMonth(_displayMonth.year, _displayMonth.month);
-    final firstWeekday = DateTime(_displayMonth.year, _displayMonth.month, 1).weekday % 7;
+    final daysInMonth = DateUtils.getDaysInMonth(
+      _displayMonth.year,
+      _displayMonth.month,
+    );
+    final firstWeekday =
+        DateTime(_displayMonth.year, _displayMonth.month, 1).weekday % 7;
 
     return GridView.builder(
       shrinkWrap: true,
@@ -927,7 +1032,9 @@ class _CustomCalendarState extends State<_CustomCalendar> {
         final date = DateTime(_displayMonth.year, _displayMonth.month, day);
         final isSelected = DateUtils.isSameDay(date, widget.selectedDate);
         final isToday = DateUtils.isSameDay(date, today);
-        final isPast = date.isBefore(DateTime(today.year, today.month, today.day));
+        final isPast = date.isBefore(
+          DateTime(today.year, today.month, today.day),
+        );
 
         return GestureDetector(
           onTap: isPast ? null : () => widget.onDateChanged(date),
@@ -938,15 +1045,24 @@ class _CustomCalendarState extends State<_CustomCalendar> {
                 width: 32.w,
                 height: 32.w,
                 decoration: isSelected
-                    ? BoxDecoration(color: const Color(0xFFf87b0d), borderRadius: BorderRadius.circular(10.r))
+                    ? BoxDecoration(
+                        color: const Color(0xFFf87b0d),
+                        borderRadius: BorderRadius.circular(10.r),
+                      )
                     : null,
                 child: Center(
                   child: Text(
                     '$day',
                     style: TextStyle(
                       fontSize: 13.sp,
-                      fontWeight: isSelected || isToday ? FontWeight.w600 : FontWeight.w400,
-                      color: isSelected ? Colors.white : isPast ? Colors.black26 : Colors.black87,
+                      fontWeight: isSelected || isToday
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                      color: isSelected
+                          ? Colors.white
+                          : isPast
+                          ? Colors.black26
+                          : Colors.black87,
                     ),
                   ),
                 ),
@@ -956,7 +1072,10 @@ class _CustomCalendarState extends State<_CustomCalendar> {
                   ? Container(
                       width: 5.w,
                       height: 5.w,
-                      decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                      decoration: const BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                      ),
                     )
                   : SizedBox(height: 5.w),
             ],
@@ -967,12 +1086,32 @@ class _CustomCalendarState extends State<_CustomCalendar> {
   }
 
   String _monthName(int month) => const [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December',
-      ][month - 1];
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ][month - 1];
 
   String _shortMonth(int month) => const [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-      ][month - 1];
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ][month - 1];
 }

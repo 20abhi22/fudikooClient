@@ -12,7 +12,7 @@ class CateringBottomnav extends StatelessWidget {
   });
 
   static const _activeColor = Color(0xFFE8820C);
-  static const _inactiveColor = Color(0xFF9E9E9E);
+  static const _inactiveColor = Color(0xFF545450);
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +33,7 @@ class CateringBottomnav extends StatelessWidget {
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: items.asMap().entries.map((entry) {
           final index = entry.key;
           final item = entry.value;

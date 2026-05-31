@@ -80,31 +80,31 @@ class CtResponseBox extends StatelessWidget {
     );
   }
 
-Future<void> _declineResponse(BuildContext context) async {
-  final String responseId = response.uuid;
+  Future<void> _declineResponse(BuildContext context) async {
+    final String responseId = response.uuid;
 
-  final result = await InqueryService().declineCateringEnquiry(responseId);
+    final result = await InqueryService().declineCateringEnquiry(responseId);
 
-  if (!context.mounted) return;
+    if (!context.mounted) return;
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        result['status'] == true
-            ? (result['message']?.toString() ??
-                'Enquiry response declined successfully')
-            : (result['message']?.toString() ?? 'Something went wrong'),
-        style: const TextStyle(color: Colors.white),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          result['status'] == true
+              ? (result['message']?.toString() ??
+                    'Enquiry response declined successfully')
+              : (result['message']?.toString() ?? 'Something went wrong'),
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: result['status'] == true ? Colors.green : Colors.red,
+        behavior: SnackBarBehavior.floating,
       ),
-      backgroundColor: result['status'] == true ? Colors.green : Colors.red,
-      behavior: SnackBarBehavior.floating,
-    ),
-  );
+    );
 
-  if (result['status'] == true) {
-    onCancelTap();
+    if (result['status'] == true) {
+      onCancelTap();
+    }
   }
-}
 
   String _formatDateLabel() {
     if (response.createdAt != null) {
@@ -133,238 +133,186 @@ Future<void> _declineResponse(BuildContext context) async {
     final bool canAct = response.status.trim().toLowerCase() == 'active';
 
     return Padding(
-      padding:  EdgeInsets.only(bottom: 20.h),
-      child: GestureDetector(
-        onTap: () {},
-        child: Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 10,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding:  EdgeInsets.all(20.w),
-            child: Column(
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 4,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          AppText(
-                            text: response.couponId,
-                            size: 20,
-                            fontWeight: FontWeight.bold,
-                            color: appTextColor3,
-                          ),
-
-                          SizedBox(height: 10.h),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Image.asset(shopIcon, width: 18.w, height: 18.h, color: appTextColor5),
-                              SizedBox(width: 5.w),
-                              Flexible(
-                                child: RichText(
-                                  text: TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: response.restaurantName.isNotEmpty
-                                            ? response.restaurantName
-                                            : 'Catering Service',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                          color: appLinkColor2,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 10.h),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Image.asset(walletIcon, width: 18.w, height: 18.h, color: appTextColor5),
-                              SizedBox(width: 5.w),
-                              Flexible(
-                                child: RichText(
-                                  text: TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: '${response.pricePerPerson} ',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                          color: appTextColor5,
-                                        ),
-                                      ),
-                                      TextSpan(
-                                        text: 'Per Person',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
-                                          color: appTextColor5,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 10.h),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Image.asset(offerIcon, width: 18.w, height: 18.h, color: appTextColor5),
-                              SizedBox(width: 5.w),
-                              Expanded(
-                                child: RichText(
-                                  text: TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: response.discount.isNotEmpty
-                                            ? response.discount
-                                            : 'No offer added',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
-                                          color: appTextColor5,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 10.h),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Image.asset(commentIcon, width: 18.w, height: 18.h, color: appTextColor5),
-                              SizedBox(width: 5.w),
-                              Flexible(
-                                child: RichText(
-                                  text: TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: response.message.isNotEmpty
-                                            ? response.message
-                                            : 'No comments provided',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: 10.w),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+      padding: EdgeInsets.only(bottom: 20.h),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(20.w),
+          child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         AppText(
-                          text: _formatDateLabel(),
-                          size: 10,
-                          fontWeight: FontWeight.w600,
+                          text: response.couponId,
+                          size: 20,
+                          fontWeight: FontWeight.bold,
                           color: appTextColor3,
                         ),
-                        SizedBox(height: 5.h),
+                        SizedBox(height: 10.h),
+                        _richRow(shopIcon, [
+                          _span(
+                            response.restaurantName.isNotEmpty
+                                ? response.restaurantName
+                                : 'Catering Service',
+                            FontWeight.w700,
+                            appLinkColor2.withOpacity(.9),
+                          ),
+                        ]),
+                        SizedBox(height: 10.h),
+                        _richRow(walletIcon, [
+                          _span(
+                            '${response.pricePerPerson} ',
+                            FontWeight.w700,
+                            appTextColor5,
+                          ),
+                          _span('Per Person', FontWeight.w500, appTextColor5),
+                        ]),
+                        SizedBox(height: 10.h),
+                        _richRow(offerIcon, [
+                          _span(
+                            response.discount.isNotEmpty
+                                ? response.discount
+                                : 'No offer added',
+                            FontWeight.w500,
+                            appTextColor5,
+                          ),
+                        ]),
+                        SizedBox(height: 10.h),
+                        _richRow(commentIcon, [
+                          _span(
+                            response.message.isNotEmpty
+                                ? response.message
+                                : 'No comments provided',
+                            FontWeight.w700,
+                            appTextColor5,
+                          ),
+                        ]),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      AppText(
+                        text: _formatDateLabel(),
+                        size: 10,
+                        fontWeight: FontWeight.w600,
+                        color: appTextColor3,
+                      ),
+                      SizedBox(height: 5.h),
+                      AppText(
+                        text: _formatTimeLabel(),
+                        size: 10,
+                        fontWeight: FontWeight.w600,
+                        color: appTextColor3,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 20.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  GestureDetector(
+                    onTap: viewRequestClick,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          fit: BoxFit.cover,
+                          detailsIcon,
+                          width: 15.w,
+                          height: 15.h,
+                        ),
+                        SizedBox(width: 5.w),
                         AppText(
-                          text: _formatTimeLabel(),
-                          size: 10,
-                          fontWeight: FontWeight.w600,
-                          color: appTextColor3,
+                          text: 'View Request',
+                          size: 12,
+                          fontWeight: FontWeight.w400,
+                          color: requestLinkColor,
                         ),
                       ],
                     ),
-                  ],
-                ),
-                SizedBox(height: 20.h),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    GestureDetector(
-                      onTap: viewRequestClick,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Image.asset(
-                            detailsIcon,
-                            width: 20.w,
-                            height: 20.h,
-                          ),
-                          SizedBox(width: 5.w),
-                          AppText(
-                            text: 'View Request',
+                  ),
+                  if (canAct)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        SizedBox(
+                          width: 80.w,
+                          height: 28.h,
+                          child: AppButton(
+                            text: 'Decline',
+                            onPressed: () => _showDeclineDialog(context),
                             size: 12,
-                            fontWeight: FontWeight.w400,
-                            color: appLinkColor2,
+                            borderRadius: 5.r,
+                            bgColor1: const Color(0xFFCE3F3F),
+                            bgColor2: const Color(0xFFCE3F3F),
                           ),
-                        ],
-                      ),
+                        ),
+                        SizedBox(width: 10.w),
+                        SizedBox(
+                          width: 80.w,
+                          height: 28.h,
+                          child: AppButton(
+                            text: 'Accept',
+                            onPressed: onAcceptTap,
+                            size: 12,
+                            borderRadius: 5.r,
+                            bgColor1: const Color(0xFFF73B256),
+                            bgColor2: const Color(0xFFF73B256),
+                          ),
+                        ),
+                      ],
                     ),
-                    if (canAct)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          SizedBox(
-                            width: 80.w,
-                            height: 25.h,
-                            child: AppButton(
-                              text: 'Decline',
-                              onPressed: () => _showDeclineDialog(context),
-                              size: 12,
-                              borderRadius: 5.r,
-                              bgColor1: const Color(0xFFCE3F3F),
-                              bgColor2: const Color(0xFFCE3F3F),
-                            ),
-                          ),
-                          SizedBox(width: 12.w),
-                          SizedBox(
-                            width: 80.w,
-                            height: 25.h,
-                            child: AppButton(
-                              text: 'Accept',
-                              onPressed: onAcceptTap,
-                              size: 12,
-                              borderRadius: 5.r,
-                              bgColor1: const Color(0xFFF73B256),
-                              bgColor2: const Color(0xFFF73B256),
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
     );
   }
+
+  Widget _richRow(String imageIcon, List<TextSpan> spans) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Image.asset(imageIcon, width: 18.w, height: 18.h, color: Color.fromARGB(255, 15, 15, 15)),
+        SizedBox(width: 5.w),
+        Expanded(
+          child: RichText(
+            softWrap: true,
+            overflow: TextOverflow.visible,
+            text: TextSpan(children: spans),
+          ),
+        ),
+      ],
+    );
+  }
+
+  TextSpan _span(String text, FontWeight weight, Color color) => TextSpan(
+    text: text,
+    style: TextStyle(fontSize: 15, fontWeight: weight, color: color),
+  );
 }

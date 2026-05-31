@@ -680,7 +680,6 @@ class _BanquetReservationState extends State<BanquetReservation> {
 
   Widget buildStatusButton(String text) {
     final bool isSelected = selectedStatus == text;
-
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -1341,7 +1340,8 @@ class _BanquetReservationState extends State<BanquetReservation> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.dashboard, size: 20, color: appTextColor2),
+                      // 
+                      Image.asset(menuIcon, width: 20.w, height: 20.h, color: Color.fromARGB(255, 15, 15, 15)),
                       SizedBox(width: 10.w),
                       Expanded(
                         child: Column(
@@ -1371,7 +1371,7 @@ class _BanquetReservationState extends State<BanquetReservation> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.people, size: 20, color: appTextColor2),
+                      Image.asset(peopleIcon, width: 20.w, height: 20.h, color: Color.fromARGB(255, 15, 15, 15)),
                       SizedBox(width: 10.w),
                       Expanded(
                         child: Column(
@@ -1400,11 +1400,7 @@ class _BanquetReservationState extends State<BanquetReservation> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.calendar_today_sharp,
-                        size: 20,
-                        color: appTextColor2,
-                      ),
+                      Image.asset(calenderIcon, width: 20.w, height: 20.h, color: Color.fromARGB(255, 15, 15, 15)),
                       SizedBox(width: 10.w),
                       Expanded(
                         child: Column(
@@ -1433,7 +1429,7 @@ class _BanquetReservationState extends State<BanquetReservation> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.wallet, size: 20, color: appTextColor2),
+                      Image.asset(walletIcon, width: 20.w, height: 20.h, color: Color.fromARGB(255, 15, 15, 15)),
                       SizedBox(width: 10.w),
                       Expanded(
                         child: Column(
@@ -1462,7 +1458,7 @@ class _BanquetReservationState extends State<BanquetReservation> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.analytics, size: 20, color: appTextColor2),
+                      Image.asset(radiusIcon, width: 20.w, height: 20.h, color: Color.fromARGB(255, 15, 15, 15)),
                       SizedBox(width: 10.w),
                       Expanded(
                         child: Column(

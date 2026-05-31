@@ -26,15 +26,20 @@ class CateringReservationBox extends StatelessWidget {
     final isConfirmed = reservation.status == "Confirmed";
     final isCancelled =
         reservation.status == "Cancelled" || reservation.status == "Canceled";
+    final isCompleted = reservation.status == "Completed";
     final statusColor = isConfirmed
-        ? const Color(0xFF32BA7C)
+        ? const Color(0xFF32BA7C).withOpacity(.9)
         : isCancelled
-        ? const Color(0xFFFB5858)
-        : const Color(0xFF3954DB);
+        ? const Color(0xFFFB5858).withOpacity(.9)
+        : const Color(0xFF3954DB).withOpacity(.9);
     final eventDate = DateFormat("MMM d").format(reservation.eventDate);
     final eventTime = DateFormat("h:mm a").format(reservation.eventDate);
     final bookingDate = DateFormat("MMM d").format(reservation.bookingDate);
     final bookingTime = DateFormat("h:mm a").format(reservation.bookingDate);
+    final applicableFor = reservation.applicableFor?.trim();
+    final offerSuffix = applicableFor == null || applicableFor.isEmpty
+        ? ''
+        : '% $applicableFor';
 
     return Padding(
       padding: EdgeInsets.only(bottom: 20.h),
@@ -42,120 +47,167 @@ class CateringReservationBox extends StatelessWidget {
         width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(17.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 8.r,
-              offset: Offset(0, 2.r),
+              color: Colors.black.withOpacity(0.10),
+              offset: const Offset(0, 0),
+              blurRadius: 10,
+              spreadRadius: 2,
             ),
           ],
         ),
         child: Padding(
-          padding: EdgeInsets.all(16.w),
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 22.h),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   AppText(
                     text: reservation.couponId,
-                    size: 21.sp,
+                    size: 20,
                     fontWeight: FontWeight.w700,
-                    color: appTextColor3,
+                    color: appTextColor6,
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       AppText(
                         text: bookingDate,
-                        size: 11.sp,
+                        size: 10,
                         fontWeight: FontWeight.w600,
-                        color: appTextColor3,
+                        color: appTextColor6,
                       ),
-                      SizedBox(height: 2.h),
                       AppText(
                         text: bookingTime,
-                        size: 11.sp,
+                        size: 10,
                         fontWeight: FontWeight.w400,
-                        color: appTextColor3,
+                        color: appTextColor6,
                       ),
                     ],
                   ),
                 ],
               ),
-              SizedBox(height: 14.h),
-              _iconRow(shopIcon, reservation.restaurantName),
               SizedBox(height: 10.h),
+              _iconRow(
+                shopIcon,
+                reservation.restaurantName,
+                const Color(0xff485599).withOpacity(.9),
+                FontWeight.w600,
+                textsize: 16,
+              ),
+              SizedBox(height: 8.h),
               _iconRowWithEmphasis(
                 walletIcon,
                 reservation.pricePerPerson.toString(),
                 ' Per Person',
               ),
-              SizedBox(height: 10.h),
+              SizedBox(height: 8.h),
               _iconRowWithEmphasis(
                 offerIcon,
                 reservation.discount.toStringAsFixed(0),
-                '% offer',
+                offerSuffix,
               ),
-              SizedBox(height: 10.h),
+              if (reservation.message.isNotEmpty) ...[
+                SizedBox(height: 8.h),
+                _iconRow(
+                  commentIcon,
+                  reservation.message,
+                  appTextColor5,
+                  FontWeight.w400,
+                  maxLines: null,
+                ),
+              ],
+              SizedBox(height: 8.h),
               _iconRowWithEmphasis(calenderIcon, eventDate, ' - $eventTime'),
-              SizedBox(height: 10.h),
-              _iconRow(peopleIcon, '${reservation.persons} Person'),
-              SizedBox(height: 12.h),
+              SizedBox(height: 8.h),
+              _iconRow(
+                peopleIcon,
+                '${reservation.persons} Person',
+                appTextColor5,
+                FontWeight.w400,
+              ),
+              SizedBox(height: 6.h),
               Row(
                 children: [
                   Image.asset(statusIcon, width: 18.w, height: 18.h),
                   SizedBox(width: 8.w),
                   AppText(
                     text: reservation.status,
-                    size: 15.sp,
+                    size: 15,
                     fontWeight: FontWeight.w600,
                     color: statusColor,
                   ),
                 ],
               ),
-              if (reservation.message.isNotEmpty) ...[
-                SizedBox(height: 10.h),
-                _iconRow(commentIcon, reservation.message),
-              ],
-              SizedBox(height: 16.h),
+              SizedBox(height: 20.h),
               if (!isCancelled)
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    GestureDetector(
-                      onTap: onCancelTap,
-                      child: AppText(
-                        text: "Cancel",
-                        size: 14.sp,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFFCE3F3F),
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          onTap: onRequestTap,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Image.asset(
+                                detailsIcon,
+                                width: 11.w,
+                                height: 11.h,
+                                color: const Color(0xFF3954DB),
+                              ),
+                              SizedBox(width: 2.w),
+                              AppText(
+                                text: "View request",
+                                size: 11,
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF3954DB),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (!isCompleted) ...[
+                          SizedBox(height: 3.h),
+                          GestureDetector(
+                            onTap: onCancelTap,
+                            child: AppText(
+                              text: "Cancel",
+                              size: 15,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFFCE3F3F).withOpacity(.9),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                    SizedBox(width: 10.w),
+                    const Spacer(),
                     SizedBox(
-                      width: 121.w,
-                      height: 42.h,
                       child: Opacity(
                         opacity: isConfirmed ? 1 : 0.45,
                         child: IgnorePointer(
                           ignoring: !isConfirmed,
                           child: AppButton(
+                            buttonheight: 45.h,
                             bgColor1: const Color(0xFFFE943A),
                             bgColor2: const Color(0xFFFE943A),
                             imageIconPath: couponIcon,
-                            iconSize: 32,
-                            text: "Coupon",
+                            iconSize: 35,
+                            text: " Coupon",
                             size: 18,
-                            borderRadius: 10.r,
+                            borderRadius: 12.r,
                             onPressed: () {
                               slideRightWidget(
                                 newPage: QrCoupon(
                                   booking: reservation.toBookingModel(),
                                   reservationType:
                                       OfferCodeReservationType.cateringEnquiry,
+                                  pricePerPerson: reservation.pricePerPerson,
                                 ),
                                 context: context,
                               );
@@ -173,7 +225,14 @@ class CateringReservationBox extends StatelessWidget {
     );
   }
 
-  Widget _iconRow(String imageIconPath, String text) {
+  Widget _iconRow(
+    String imageIconPath,
+    String text,
+    Color color,
+    FontWeight fontWeight, {
+    int? maxLines = 2,
+    double? textsize,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -181,15 +240,18 @@ class CateringReservationBox extends StatelessWidget {
           imageIconPath,
           width: 18.w,
           height: 18.h,
-          color: const Color(0xFF000000).withValues(alpha: .9),
         ),
         SizedBox(width: 8.w),
         Flexible(
           child: AppText(
             text: text,
-            size: 14.sp,
-            fontWeight: FontWeight.w500,
-            color: Colors.black,
+            size: textsize ?? 14,
+            fontWeight: fontWeight,
+            color: color,
+            maxLines: maxLines,
+            overflow: maxLines == null
+                ? TextOverflow.visible
+                : TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -199,8 +261,9 @@ class CateringReservationBox extends StatelessWidget {
   Widget _iconRowWithEmphasis(
     String imageIconPath,
     String boldText,
-    String regularText,
-  ) {
+    String regularText, {
+    FontWeight boldWeight = FontWeight.w700,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -208,7 +271,6 @@ class CateringReservationBox extends StatelessWidget {
           imageIconPath,
           width: 18.w,
           height: 18.h,
-          color: const Color(0xFF000000).withValues(alpha: .9),
         ),
         SizedBox(width: 8.w),
         Flexible(
@@ -217,15 +279,15 @@ class CateringReservationBox extends StatelessWidget {
             children: [
               AppText(
                 text: boldText,
-                size: 14.sp,
-                fontWeight: FontWeight.w700,
-                color: Colors.black,
+                size: 14,
+                fontWeight: boldWeight,
+                color: appTextColor5,
               ),
               AppText(
                 text: regularText,
-                size: 14.sp,
+                size: 14,
                 fontWeight: FontWeight.w500,
-                color: Colors.black,
+                color: appTextColor5,
               ),
             ],
           ),

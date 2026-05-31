@@ -65,14 +65,19 @@ class _MainCateringNavPageState extends State<MainCateringNavPage> {
       // Favorite(),
       CustomerProfile()
     ];
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: appSecondaryBackgroundColor,
-        bottomNavigationBar: CateringBottomnav(
+    return Scaffold(
+      backgroundColor: appSecondaryBackgroundColor,
+      bottomNavigationBar: SafeArea(
+         top: false,
+        child: CateringBottomnav(
           selectedIndex: currentIndex,
           onTabSelected: onTabChanged,
         ),
-        body: Stack(
+      ),
+      body: SafeArea(
+         top: false,
+      maintainBottomViewPadding: true,
+        child: Stack(
           children: [
             screens[currentIndex],
           ],

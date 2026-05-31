@@ -154,7 +154,7 @@ class ResponseBox extends StatelessWidget {
                           _span(
                             response.restaurantName,
                             FontWeight.w700,
-                            appLinkColor2.withOpacity(.9),
+                            restoLinkColor.withOpacity(.9),
                           ),
                         ]),
                         SizedBox(height: 10.h),
@@ -276,7 +276,7 @@ class ResponseBox extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Image.asset(imageIcon, width: 18.w, height: 18.h, color: appTextColor5),
+        Image.asset(imageIcon, width: 18.w, height: 18.h, color: Color.fromARGB(255, 15, 15, 15)),
         SizedBox(width: 5.w),
         Expanded(
           child: RichText(

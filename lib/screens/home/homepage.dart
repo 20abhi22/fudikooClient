@@ -624,9 +624,9 @@ class _HomePageState extends State<HomePage> {
                   icon,
                   width: size ?? 18.w,
                   height: size ?? 18.w,
-                  color: color ?? appTextColor2,
+                  color: color ?? Color.fromARGB(255, 15, 15, 15),
                 )
-              : Icon(icon, size: size ?? 20.w, color: color ?? appTextColor2),
+              : Icon(icon, size: size ?? 20.w, color: color ?? Color.fromARGB(255, 0, 0, 0)),
           SizedBox(width: 10.w),
           AppText(
             text: text,

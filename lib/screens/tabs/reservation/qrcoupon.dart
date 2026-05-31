@@ -15,12 +15,14 @@ class QrCoupon extends StatefulWidget {
   final BookingModel? booking;
   final OfferCodeReservationType reservationType;
   final String? offerText;
+  final int? pricePerPerson;
 
   const QrCoupon({
     super.key,
     this.booking,
     this.reservationType = OfferCodeReservationType.restaurant,
     this.offerText,
+    this.pricePerPerson,
   });
 
   @override
@@ -39,15 +41,21 @@ class _QrCouponState extends State<QrCoupon> {
 
   int get _persons => widget.booking?.persons ?? 2;
 
+  int get _pricePerPerson =>
+      widget.pricePerPerson ?? widget.booking?.pricePerPerson ?? 0;
+
+  bool get _isCateringEnquiry =>
+      widget.reservationType == OfferCodeReservationType.cateringEnquiry;
+
   double get _discount => widget.booking?.discount ?? 25;
 
   String get _discountStr => _discount % 1 == 0
       ? _discount.toInt().toString()
       : _discount.toStringAsFixed(1);
 
-    String get _offerText =>
+  String get _offerText =>
       widget.offerText ??
-      '${_discountStr}% offer for ${widget.booking?.applicableFor ?? 'entire menu'}';
+      '$_discountStr% offer for ${widget.booking?.applicableFor ?? 'entire menu'}';
 
   String get _reservationId {
     final booking = widget.booking;
@@ -258,13 +266,60 @@ class _QrCouponState extends State<QrCoupon> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        AppText(
-                          text: _offerText,
-                          size: 20.sp,
-                          fontWeight: FontWeight.w500,
-                          color: appTextColor5.withOpacity(.9),
-                          isCentered: true,
-                        ),
+                        _isCateringEnquiry
+                            ? Wrap(
+                                alignment: WrapAlignment.center,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  AppText(
+                                    text: 'Free',
+                                    size: 20.sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: appTextColor5.withValues(alpha: .9),
+                                    isCentered: true,
+                                    maxLines: 1,
+                                  ),
+                                  AppText(
+                                    text: ' delivery included',
+                                    size: 20.sp,
+                                    fontWeight: FontWeight.w500,
+                                    color: appTextColor5.withValues(alpha: .9),
+                                    isCentered: true,
+                                    maxLines: 1,
+                                  ),
+                                ],
+                              )
+                            : AppText(
+                                text: _offerText,
+                                size: 20.sp,
+                                fontWeight: FontWeight.w500,
+                                color: appTextColor5.withValues(alpha: .9),
+                                isCentered: true,
+                              ),
+                        if (widget.pricePerPerson != null &&
+                            _pricePerPerson > 0) ...[
+                          SizedBox(height: 6.h),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AppText(
+                                text: '$_pricePerPerson',
+                                size: 20.sp,
+                                fontWeight: FontWeight.w700,
+                                color: appTextColor5.withValues(alpha: .9),
+                                isCentered: true,
+                              ),
+                              AppText(
+                                text: ' per person',
+                                size: 20.sp,
+                                fontWeight: FontWeight.w500,
+                                color: appTextColor5.withValues(alpha: .9),
+                                isCentered: true,
+                              ),
+                            ],
+                          ),
+                        ],
                         SizedBox(height: 10.h),
                         Row(
                           mainAxisSize: MainAxisSize.min,
@@ -274,14 +329,14 @@ class _QrCouponState extends State<QrCoupon> {
                               text: '$_persons',
                               size: 20.sp,
                               fontWeight: FontWeight.w700,
-                              color: appTextColor5.withOpacity(.9),
+                              color: appTextColor5.withValues(alpha: .9),
                               isCentered: true,
                             ),
                             AppText(
                               text: ' Person',
                               size: 20.sp,
                               fontWeight: FontWeight.w500,
-                              color: appTextColor5.withOpacity(.9),
+                              color: appTextColor5.withValues(alpha: .9),
                               isCentered: true,
                             ),
                           ],

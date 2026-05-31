@@ -357,76 +357,78 @@ class _CateringReservationState extends State<CateringReservation> {
       },
       child: Scaffold(
         backgroundColor: appSecondaryBackgroundColor,
-        body: Stack(
-          children: [
-            // ── Main scrollable content ──────────────────────────────────
-            RefreshIndicator(
-              color: appButtonColor,
-              onRefresh: _fetchReservations,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: _buildMainContent(),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              // ── Main scrollable content ──────────────────────────────────
+              RefreshIndicator(
+                color: appButtonColor,
+                onRefresh: _fetchReservations,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: _buildMainContent(),
+                ),
               ),
-            ),
-
-            // ── Overlays ─────────────────────────────────────────────────
-            if (isSearchDeletePressed || isDeletePressed)
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: _isCancellingReservation
-                      ? null
-                      : () {
-                          setState(() {
-                            isSearchDeletePressed = false;
-                            isDeletePressed = false;
-                            _selectedReservationId = '';
-                          });
-                        },
-                  child: Container(
-                    color: Colors.black54,
-                    child: _cancelReasonSheet(),
+          
+              // ── Overlays ─────────────────────────────────────────────────
+              if (isSearchDeletePressed || isDeletePressed)
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _isCancellingReservation
+                        ? null
+                        : () {
+                            setState(() {
+                              isSearchDeletePressed = false;
+                              isDeletePressed = false;
+                              _selectedReservationId = '';
+                            });
+                          },
+                    child: Container(
+                      color: Colors.black54,
+                      child: _cancelReasonSheet(),
+                    ),
                   ),
                 ),
-              ),
-
-            if (isPartyRequestPressed)
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => setState(() => isPartyRequestPressed = false),
-                  child: Container(
-                    color: Colors.black54,
-                    child: _viewPartyRequestWidget(),
+          
+              if (isPartyRequestPressed)
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() => isPartyRequestPressed = false),
+                    child: Container(
+                      color: Colors.black54,
+                      child: _viewPartyRequestWidget(),
+                    ),
                   ),
                 ),
-              ),
-
-            if (isCateringRequestPressed)
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => setState(() => isCateringRequestPressed = false),
-                  child: Container(
-                    color: Colors.black54,
-                    child: _viewCateringRequestWidget(),
+          
+              if (isCateringRequestPressed)
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() => isCateringRequestPressed = false),
+                    child: Container(
+                      color: Colors.black54,
+                      child: _viewCateringRequestWidget(),
+                    ),
                   ),
                 ),
-              ),
-
-            if (isConfirmedPressed)
-              Positioned.fill(
-                child: Container(color: Colors.black54, child: _confirmedBox()),
-              ),
-
-            if (isBookingCanceled)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black54,
-                  child: _bookingCanceledBox(),
+          
+              if (isConfirmedPressed)
+                Positioned.fill(
+                  child: Container(color: Colors.black54, child: _confirmedBox()),
                 ),
-              ),
-          ],
+          
+              if (isBookingCanceled)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black54,
+                    child: _bookingCanceledBox(),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -443,30 +445,41 @@ class _CateringReservationState extends State<CateringReservation> {
         Padding(
           padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h),
           child: AppTextFeild(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                offset: const Offset(0, 0),
+                blurRadius: 10,
+                spreadRadius: 5,
+              ),
+            ],
             controller: _reservationSearchController,
             focusNode: _reservationSearchFocusNode,
             text: "Enter the Coupon Number",
             textColor: appTextColor3,
             isTextCenter: true,
-            icon: _isReservationSearchActive ? Icons.close : Icons.search,
+            icon: _isReservationSearchActive ? Icons.close : null,
             iconColor: appTextColor3,
             size: 13.sp,
             onboxTap: _activateReservationSearch,
             iconOnTap: _isReservationSearchActive
                 ? _exitReservationSearch
-                : _activateReservationSearch,
+                : null,
             onChanged: _onReservationSearchChanged,
+            fieldBorderRadius: 16,
           ),
         ),
         SizedBox(height: 20.h),
 
         // ── Filter dropdown ──────────────────────────────────────────
         SizedBox(
-          width: 200,
+          width: 150.w,
           child: AppFilterDropDown(
+            height: 30.h,
             hint: selectedFilter,
             imageIconPath: filterIcon,
             imageIconSize: 18.sp,
+            textSize: 10.sp,
             toggleDropdown: _showFilterBottomSheet,
           ),
         ),
@@ -551,8 +564,9 @@ class _CateringReservationState extends State<CateringReservation> {
               isSearchDeletePressed = true;
             });
           },
-          onRequestTap: () =>
-              setState(() => isPartyRequestPressed = !isPartyRequestPressed),
+          onRequestTap: () => setState(
+            () => isCateringRequestPressed = !isCateringRequestPressed,
+          ),
         );
       },
     );
@@ -659,8 +673,8 @@ class _CateringReservationState extends State<CateringReservation> {
             padding: EdgeInsets.only(
               left: 40.w,
               right: 40.w,
-              top: 24.h,
-              bottom: 24.h,
+              top: 30.h,
+              bottom: 30.h,
             ),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -676,14 +690,14 @@ class _CateringReservationState extends State<CateringReservation> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // ── Header ──────────────────────────────────────────
                 Row(
                   children: [
+                    const Spacer(),
                     AppText(
                       text: "Reason for Cancel",
-                      size: 13,
+                      size: 14,
                       fontWeight: FontWeight.w500,
-                      color: appTextColor3,
+                      color: menuIconColor,
                     ),
                     const Spacer(),
                     GestureDetector(
@@ -700,43 +714,42 @@ class _CateringReservationState extends State<CateringReservation> {
                     ),
                   ],
                 ),
-                SizedBox(height: 18.h),
+                SizedBox(height: 20.h),
 
-                // ── Scrollable reason buttons + info text ────────────
                 Flexible(
                   child: SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         SizedBox(
-                          height: 40.h,
+                          height: 35.h,
                           child: _buildStatusButton("I changed my mind"),
                         ),
                         SizedBox(height: 10.h),
                         SizedBox(
-                          height: 40.h,
+                          height: 35.h,
                           child: _buildStatusButton(
                             "I need to reschedule the event",
                           ),
                         ),
                         SizedBox(height: 10.h),
                         SizedBox(
-                          height: 40.h,
+                          height: 35.h,
                           child: _buildStatusButton(
                             "Entered the wrong details",
                           ),
                         ),
                         SizedBox(height: 10.h),
                         SizedBox(
-                          height: 40.h,
+                          height: 35.h,
                           child: _buildStatusButton("I booked by mistake"),
                         ),
                         SizedBox(height: 10.h),
                         SizedBox(
-                          height: 40.h,
+                          height: 35.h,
                           child: _buildStatusButton("Other Reasons"),
                         ),
-                        SizedBox(height: 24.h),
+                        SizedBox(height: 35.h),
                         AppText(
                           text:
                               "Canceling a confirmed booking may negatively impact your reliability rating.",
@@ -754,7 +767,7 @@ class _CateringReservationState extends State<CateringReservation> {
                           color: appTextColor2,
                           isCentered: true,
                         ),
-                        SizedBox(height: 16.h),
+                        SizedBox(height: 15.h),
                         GestureDetector(
                           onTap: _showAcceptAnotherReasonPopup,
                           child: AppText(
@@ -770,17 +783,16 @@ class _CateringReservationState extends State<CateringReservation> {
                   ),
                 ),
 
-                // ── Cancel button — pinned outside scroll ────────────
-                SizedBox(height: 16.h),
+                SizedBox(height: 20.h),
                 SizedBox(
-                  width: 150,
-                  height: 40,
+                  width: 120.w,
+                  height: 35.h,
                   child: AppButton(
                     text: _isCancellingReservation ? "Cancelling..." : "Cancel",
-                    bgColor1: const Color(0xFFCE3F3F),
-                    bgColor2: const Color(0xFFCE3F3F),
+                    bgColor1: Color(0xFFCE3F3F),
+                    bgColor2: Color(0xFFCE3F3F),
                     size: 15,
-                    borderRadius: 10,
+                    borderRadius: 8,
                     onPressed: _isCancellingReservation
                         ? null
                         : _cancelSelectedReservation,
@@ -954,17 +966,22 @@ class _CateringReservationState extends State<CateringReservation> {
   // REUSABLE BUTTON WIDGETS
   // ════════════════════════════════════════════════════════════════════════
 
-  Widget _buildStatusButton(String text) {
+   Widget _buildStatusButton(String text) {
     final bool isSelected = selectedStatus == text;
+
     return GestureDetector(
-      onTap: () => setState(() => selectedStatus = text),
+      onTap: () {
+        setState(() {
+          selectedStatus = text;
+        });
+      },
       child: Container(
         height: 35.h,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           gradient: isSelected
               ? const LinearGradient(
-                  colors: [Color(0xFFEC7B2D), Color(0xFFF7A440)],
+                  colors: [Color(0xFFF97A0D), Color(0xFFF97A0D)],
                 )
               : null,
           color: isSelected ? null : Colors.grey[200],
@@ -978,8 +995,8 @@ class _CateringReservationState extends State<CateringReservation> {
         ),
         child: AppText(
           text: text,
-          size: 13.sp,
-          fontWeight: FontWeight.w500,
+          size: 13,
+          fontWeight: FontWeight.w400,
           color: isSelected ? Colors.white : Colors.black,
         ),
       ),
@@ -1025,14 +1042,14 @@ class _CateringReservationState extends State<CateringReservation> {
 
   /// Shared row builder for request detail fields
   Widget _buildDetailRow({
-    required IconData icon,
+    required String icon,
     required String label,
     required String value,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 20, color: appTextColor2),
+        Image.asset(icon, width: 20.w, height: 20.h, color: Color.fromARGB(255, 15, 15, 15)),
         SizedBox(width: 10.w),
         Expanded(
           child: Column(
@@ -1112,32 +1129,32 @@ class _CateringReservationState extends State<CateringReservation> {
                     child: Column(
                       children: [
                         _buildDetailRow(
-                          icon: Icons.dashboard,
+                          icon:menuIcon,
                           label: "Your Menu",
                           value:
                               "Chicken Biriyani , Porotta, Rotti ,Salad, Payasam, Butter Chicken , Ice cream.",
                         ),
                         SizedBox(height: 20.h),
                         _buildDetailRow(
-                          icon: Icons.people,
+                          icon: peopleIcon,
                           label: "Number of Persons",
                           value: "12 Person",
                         ),
                         SizedBox(height: 20.h),
                         _buildDetailRow(
-                          icon: Icons.calendar_today_sharp,
+                          icon: calenderIcon,
                           label: "Date and Time",
                           value: "April 12 - 2:30 pm",
                         ),
                         SizedBox(height: 20.h),
                         _buildDetailRow(
-                          icon: Icons.wallet,
+                          icon: walletIcon,
                           label: "Expected amount per person",
                           value: "1000 Per person",
                         ),
                         SizedBox(height: 20.h),
                         _buildDetailRow(
-                          icon: Icons.analytics,
+                          icon: radiusIcon,
                           label: "Enquiry Radius",
                           value: "Moscow City - 20km Radius",
                         ),
@@ -1179,7 +1196,7 @@ class _CateringReservationState extends State<CateringReservation> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     AppText(
-                      text: "Requested party",
+                      text: "Requested catering",
                       size: 15,
                       fontWeight: FontWeight.w500,
                       color: appTextColor2,
@@ -1207,38 +1224,38 @@ class _CateringReservationState extends State<CateringReservation> {
                     child: Column(
                       children: [
                         _buildDetailRow(
-                          icon: Icons.dashboard,
+                          icon: menuIcon,
                           label: "Your Menu",
                           value:
                               "Chicken Biriyani , Porotta, Rotti ,Salad, Payasam, Butter Chicken , Ice cream.",
                         ),
                         SizedBox(height: 20.h),
                         _buildDetailRow(
-                          icon: Icons.handshake,
+                          icon: handshakeIcon,
                           label: "Other Services",
                           value: "7 Service boys needed.",
                         ),
                         SizedBox(height: 20.h),
                         _buildDetailRow(
-                          icon: Icons.people,
+                          icon: peopleIcon,
                           label: "Number of Persons",
                           value: "12 Person",
                         ),
                         SizedBox(height: 20.h),
                         _buildDetailRow(
-                          icon: Icons.calendar_today_sharp,
+                          icon: calenderIcon,
                           label: "Date and Time",
                           value: "April 12 - 2:30 pm",
                         ),
                         SizedBox(height: 20.h),
                         _buildDetailRow(
-                          icon: Icons.wallet,
+                          icon: walletIcon,
                           label: "Expected amount per person",
                           value: "1000 Per person",
                         ),
                         SizedBox(height: 20.h),
                         _buildDetailRow(
-                          icon: Icons.analytics,
+                          icon: radiusIcon,
                           label: "Enquiry Radius",
                           value: "Moscow City - 20km Radius",
                         ),
