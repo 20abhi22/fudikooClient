@@ -1,13 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
+import 'package:fudikoclient/components/apptextfeild.dart';
 import 'package:fudikoclient/model/auth/mapplace-model.dart';
 import 'package:fudikoclient/service/auth/map-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:geocoding/geocoding.dart' as geo;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart' as loc;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationSelect extends StatefulWidget {
   final Function(String, String, String) returndata;
@@ -20,13 +23,18 @@ class LocationSelect extends StatefulWidget {
 
 class _LocationSelectState extends State<LocationSelect> {
   static const double _orangeHue = BitmapDescriptor.hueOrange;
+  static const String _cacheKeyLat = 'cached_lat';
+  static const String _cacheKeyLng = 'cached_lng';
 
   double _distance = 10;
   late GoogleMapController mapController;
-  final LatLng _center = const LatLng(12.9716, 77.5946);
+  static const LatLng _defaultCenter = LatLng(12.9716, 77.5946);
+  LatLng _initialCenter = _defaultCenter;
   late String lat = '12.9716';
   late String lng = '77.5946';
-  LatLng _selectedLocation = const LatLng(12.9716, 77.5946);
+  LatLng _selectedLocation = _defaultCenter;
+  bool _hasSelectedLocation = false;
+  bool _isMapReady = false;
 
   final loc.Location location = loc.Location();
   final MapService mapService = MapService();
@@ -35,17 +43,28 @@ class _LocationSelectState extends State<LocationSelect> {
   Timer? _searchDebounce;
   List<MapPlacesResponse> _placeSuggestions = [];
   bool _isSearching = false;
+  bool _isLocating = false;
 
-  Set<Circle> get _circles => {
-    Circle(
-      circleId: const CircleId('selected_radius'),
-      center: _selectedLocation,
-      radius: _distance * 1000,
-      strokeColor: const Color(0xFFf87b0d),
-      strokeWidth: 1,
-      fillColor: const Color(0xFFf87b0d).withValues(alpha: 0.08),
-    ),
-  };
+  Set<Circle> get _circles {
+    if (!_hasSelectedLocation) return {};
+
+    return {
+      Circle(
+        circleId: const CircleId('selected_radius'),
+        center: _selectedLocation,
+        radius: _distance * 1000,
+        strokeColor: const Color(0xFFf87b0d),
+        strokeWidth: 1,
+        fillColor: const Color(0xFFf87b0d).withValues(alpha: 0.08),
+      ),
+    };
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCachedLocation();
+  }
 
   @override
   void dispose() {
@@ -56,7 +75,34 @@ class _LocationSelectState extends State<LocationSelect> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _setSelectedLocation(_center, markerId: 'initial_location');
+    _isMapReady = true;
+    if (_hasSelectedLocation) {
+      mapController.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: _selectedLocation, zoom: 14),
+        ),
+      );
+    }
+  }
+
+  Future<void> _loadCachedLocation() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedLat = prefs.getDouble(_cacheKeyLat);
+    final cachedLng = prefs.getDouble(_cacheKeyLng);
+    if (cachedLat == null || cachedLng == null) return;
+    if (!mounted) return;
+
+    final cachedPosition = LatLng(cachedLat, cachedLng);
+    _initialCenter = cachedPosition;
+    _setSelectedLocation(cachedPosition, markerId: 'cached_location');
+
+    if (_isMapReady) {
+      mapController.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: cachedPosition, zoom: 14),
+        ),
+      );
+    }
   }
 
   void _setSelectedLocation(
@@ -68,6 +114,7 @@ class _LocationSelectState extends State<LocationSelect> {
       lat = position.latitude.toString();
       lng = position.longitude.toString();
       _selectedLocation = position;
+      _hasSelectedLocation = true;
       _markers
         ..clear()
         ..add(
@@ -84,18 +131,29 @@ class _LocationSelectState extends State<LocationSelect> {
   }
 
   Future<void> _goToCurrentLocation() async {
-    final userLocation = await location.getLocation();
-    final currentLatLng = LatLng(
-      userLocation.latitude!,
-      userLocation.longitude!,
-    );
+    if (_isLocating) return;
 
-    mapController.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(target: currentLatLng, zoom: 15),
-      ),
-    );
-    _setSelectedLocation(currentLatLng, markerId: 'current_location');
+    setState(() => _isLocating = true);
+    try {
+      final userLocation = await location.getLocation();
+      if (!mounted) return;
+
+      final currentLatLng = LatLng(
+        userLocation.latitude!,
+        userLocation.longitude!,
+      );
+
+      mapController.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: currentLatLng, zoom: 15),
+        ),
+      );
+      _setSelectedLocation(currentLatLng, markerId: 'current_location');
+    } finally {
+      if (mounted) {
+        setState(() => _isLocating = false);
+      }
+    }
   }
 
   void _onSearchChanged(String value) {
@@ -191,8 +249,8 @@ class _LocationSelectState extends State<LocationSelect> {
               GoogleMap(
                 onMapCreated: _onMapCreated,
                 initialCameraPosition: CameraPosition(
-                  target: _center,
-                  zoom: 11,
+                  target: _initialCenter,
+                  zoom: _hasSelectedLocation ? 14 : 11,
                 ),
                 myLocationEnabled: true,
                 myLocationButtonEnabled: false,
@@ -227,8 +285,17 @@ class _LocationSelectState extends State<LocationSelect> {
                 right: 20,
                 child: FloatingActionButton(
                   backgroundColor: Colors.white,
-                  onPressed: _goToCurrentLocation,
-                  child: const Icon(Icons.my_location, color: Colors.black),
+                  onPressed: _isLocating ? null : _goToCurrentLocation,
+                  child: _isLocating
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.4,
+                            color: Colors.black,
+                          ),
+                        )
+                      : const Icon(Icons.my_location, color: Colors.black),
                 ),
               ),
               Positioned(
@@ -270,30 +337,51 @@ class _LocationSelectState extends State<LocationSelect> {
                 Navigator.pop(context);
               }
             },
-            child: const SizedBox(
+            child: SizedBox(
               width: 44,
-              child: Icon(Icons.close, size: 18, color: Color(0xFFf87b0d)),
+              child: Icon(
+                Icons.close,
+                size: 18,
+                color: const Color(0xFFD3690E).withValues(alpha: 0.7),
+              ),
             ),
           ),
           Expanded(
-            child: TextField(
+            child: AppTextFeild(
               controller: _searchController,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, color: Color(0xFFf87b0d)),
-              decoration: const InputDecoration(
+              text: 'Search Location',
+              height: 60.h,
+              size: 14,
+              isTextCenter: true,
+              textColor: const Color(0xFFD3690E).withValues(alpha: 0.7),
+              backgroundColor: Colors.transparent,
+              padding: EdgeInsets.zero,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05), // #000000 5%
+                  offset: const Offset(0, 0), // X: 0, Y: 0
+                  blurRadius: 10, // Blur: 10
+                  spreadRadius: 5, // Spread: 5
+                ),
+              ],
+              fieldBorderRadius: 16,
+              sideIconSlotWidth: 0,
+              sideSpacing: 0,
+              inputContentPadding: const EdgeInsets.symmetric(vertical: 14),
+              textInputAction: TextInputAction.search,
+              onChanged: _onSearchChanged,
+              onFieldSubmitted: (_) => _searchLocation(),
+              decoration: InputDecoration(
                 hintText: 'Search Location',
                 hintStyle: TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFFf87b0d),
+                  fontSize: 14.sp,
+                  color: const Color(0xFFD3690E).withValues(alpha: 0.7),
                   fontWeight: FontWeight.w400,
                 ),
                 border: InputBorder.none,
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              textInputAction: TextInputAction.search,
-              onChanged: _onSearchChanged,
-              onSubmitted: (_) => _searchLocation(),
             ),
           ),
           SizedBox(
@@ -309,14 +397,7 @@ class _LocationSelectState extends State<LocationSelect> {
                       ),
                     ),
                   )
-                : IconButton(
-                    icon: const Icon(
-                      Icons.search,
-                      size: 18,
-                      color: Color(0xFFf87b0d),
-                    ),
-                    onPressed: _searchLocation,
-                  ),
+                : null,
           ),
         ],
       ),

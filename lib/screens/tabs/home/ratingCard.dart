@@ -38,7 +38,10 @@ class RatingCard extends StatelessWidget {
 
     if (postedAt == null) return rawDate;
 
-    final difference = DateTime.now().difference(postedAt);
+    final now = DateTime.now();
+    if (_isSameDate(postedAt, now)) return 'Today';
+
+    final difference = now.difference(postedAt);
     if (difference.isNegative) return 'just now';
 
     final minutes = difference.inMinutes;
@@ -66,6 +69,12 @@ class RatingCard extends StatelessWidget {
     }
 
     return '${(days / 365).floor()}y ago';
+  }
+
+  bool _isSameDate(DateTime first, DateTime second) {
+    return first.year == second.year &&
+        first.month == second.month &&
+        first.day == second.day;
   }
 
   DateTime? _parseDayFirstDate(String rawDate) {
@@ -128,7 +137,7 @@ class RatingCard extends StatelessWidget {
   }
 
   Widget _buildStars() {
-    final stars = (review?.stars ?? 4).clamp(0, 5);
+    final stars = (review?.stars ?? 0).clamp(0, 5);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(

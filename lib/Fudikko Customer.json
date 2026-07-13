@@ -187,12 +187,12 @@
           "formdata": [
             {
               "key": "username",
-              "value": "suhail3515",
+              "value": "chopsy",
               "type": "text"
             },
             {
               "key": "password",
-              "value": "suhail@1123",
+              "value": "chopsycgy",
               "type": "text"
             }
           ]
@@ -1714,6 +1714,50 @@
       "response": []
     },
     {
+      "name": "Enquiry QR Code",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "reservation_id",
+              "value": "cc71f8ca-9166-45e6-8a64-826d44d2e47b",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/enquiry/reservation/offer-code",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "enquiry",
+            "reservation",
+            "offer-code"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "New Cateting Enquiry",
       "request": {
         "auth": {
@@ -2408,6 +2452,50 @@
       "response": []
     },
     {
+      "name": "Enquiry QR Code Copy",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "reservation_id",
+              "value": "cc71f8ca-9166-45e6-8a64-826d44d2e47b",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/catering-enquiry/reservation/offer-code",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "catering-enquiry",
+            "reservation",
+            "offer-code"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Get Notification Settings",
       "request": {
         "auth": {
@@ -2505,7 +2593,7 @@
           "bearer": [
             {
               "key": "token",
-              "value": "42|E7thb1umZOpVVn0X3CX8LSTFyzR87iIhxZaWYj0r9970bfbf",
+              "value": "{{auth_secret_07wc}}",
               "type": "string"
             }
           ]
@@ -2628,6 +2716,112 @@
         }
       },
       "response": []
+    },
+    {
+      "name": "Partner Ads",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{auth_secret_0y4i}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/partner-ads",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "partner-ads"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Badges",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{auth_secret_0y4i}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/badges",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "badges"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Support Information",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{auth_secret_0y4i}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://fudikko.bitwissenddev.in/api/customer/support-information",
+          "protocol": "https",
+          "host": [
+            "fudikko",
+            "bitwissenddev",
+            "in"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "support-information"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "auth_secret_0y4i",
+      "secret": true
+    },
+    {
+      "key": "auth_secret_07wc",
+      "secret": true
     }
   ]
 }

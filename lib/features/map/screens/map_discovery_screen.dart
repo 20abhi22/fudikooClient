@@ -262,7 +262,7 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen> {
                     offers: selectedRestaurant.offers,
                     isFavoriteBox: false,
                     onRatingOnClick: () {},
-                    onBoxClicked: (String? offerId) {
+                    onBoxClicked: (String? offerId, OfferModel? offer) {
                       final selectedOffers = selectedRestaurant.offers
                           .where((offer) => offer.uuid == offerId)
                           .toList();
@@ -278,9 +278,11 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen> {
                         builder: (_) => NumberOfPeopleModal(
                           uuid: selectedRestaurant.uuid,
                           offerId: offerId,
-                          offer: selectedOffers.isEmpty
-                              ? null
-                              : selectedOffers.first,
+                          offer:
+                              offer ??
+                              (selectedOffers.isEmpty
+                                  ? null
+                                  : selectedOffers.first),
                         ),
                       );
                     },

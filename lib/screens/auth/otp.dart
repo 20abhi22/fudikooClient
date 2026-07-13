@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/components/apptextfeild.dart';
+import 'package:fudikoclient/core/responsive/app_dimensions.dart';
+import 'package:fudikoclient/core/responsive/breakpoints.dart';
 import 'package:fudikoclient/routetransitions.dart';
-import 'package:fudikoclient/screens/home/homepage.dart';
+import 'package:fudikoclient/screens/auth/changepassword.dart';
+import 'package:fudikoclient/screens/auth/info.dart';
+import 'package:fudikoclient/service/auth/otp_auth-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 
 class Otp extends StatefulWidget {
-  const Otp({super.key});
+  // null = registration flow, provided = forgot password flow.
+  final String? token;
+  final String? authToken;
+  const Otp({super.key, this.token, this.authToken});
 
   @override
   State<Otp> createState() => _OtpState();
@@ -17,18 +23,102 @@ class Otp extends StatefulWidget {
 
 class _OtpState extends State<Otp> {
   final List<TextEditingController> _controllers = List.generate(
-    4, (_) => TextEditingController(),
+    4,
+    (_) => TextEditingController(),
   );
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
+  final List<FocusNode> _keyboardFocusNodes = List.generate(
+    4,
+    (_) => FocusNode(),
+  );
+  final OtpAuthService _otpservice = OtpAuthService();
+
+  String? _otpId;
+  bool _isSending = true; // true while send-otp call is in flight
+  bool _isVerifying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _sendOtp();
+  }
+
+  Future<void> _sendOtp() async {
+    final result = await _otpservice.sendOtp(tokenOverride: _requestToken);
+    if (!mounted) return;
+    setState(() => _isSending = false);
+    if (result.status) {
+      _otpId = result.otpId;
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result.message)));
+    }
+  }
+
+  Future<void> _verifyOtp() async {
+    if (_otp.length < 4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter complete OTP')),
+      );
+      return;
+    }
+    if (_otpId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('OTP not ready, please wait')),
+      );
+      return;
+    }
+    setState(() => _isVerifying = true);
+    final result = await _otpservice.verifyOtp(
+      _otp,
+      _otpId!,
+      tokenOverride: _requestToken,
+    );
+    if (!mounted) return;
+    setState(() => _isVerifying = false);
+    if (result.status) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result.message)));
+      if (widget.token != null) {
+        // Forgot password flow goes to ChangePassword.
+        slideRightWidget(
+          newPage: ChangePassword(token: widget.token),
+          context: context,
+        );
+      } else {
+        // registration flow → go to InfoPage
+        slideRightWidget(
+          newPage: InfoPage(authToken: widget.authToken),
+          context: context,
+          // clearStack: widget.authToken != null,
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result.message)));
+    }
+  }
 
   @override
   void dispose() {
-    for (final c in _controllers) c.dispose();
-    for (final f in _focusNodes) f.dispose();
+    for (final controller in _controllers) {
+      controller.dispose();
+    }
+    for (final focusNode in _focusNodes) {
+      focusNode.dispose();
+    }
+    for (final focusNode in _keyboardFocusNodes) {
+      focusNode.dispose();
+    }
     super.dispose();
   }
 
-  String get _otp => _controllers.map((c) => c.text).join();
+  String get _otp => _controllers.map((controller) => controller.text).join();
+
+  String? get _requestToken => widget.token ?? widget.authToken;
 
   void _onChanged(String value, int index) {
     if (value.length == 1) {
@@ -40,8 +130,8 @@ class _OtpState extends State<Otp> {
     }
   }
 
-  void _onKeyPressed(RawKeyEvent event, int index) {
-    if (event is RawKeyDownEvent &&
+  void _onKeyPressed(KeyEvent event, int index) {
+    if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.backspace &&
         _controllers[index].text.isEmpty &&
         index > 0) {
@@ -53,156 +143,153 @@ class _OtpState extends State<Otp> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 30.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/images/otp.png',
-              width: 180.w,
-              fit: BoxFit.contain,
-            ),
-            SizedBox(height: 40.h),
-            AppText(
-              text:
-                  "An OTP has been sent to your registered email address. Kindly enter it to continue.",
-              size: 15,
-              fontWeight: FontWeight.w400,
-              color: appTextColor2,
-              isCentered: true,
-              lineSpacing: 1.2,
-            ),
-            SizedBox(height: 40.h),
-            Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: List.generate(4, (index) {
-    return Expanded(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 6.w),
-        child: RawKeyboardListener(
-          focusNode: FocusNode(),
-          onKey: (event) => _onKeyPressed(event, index),
-          child: AppTextFeild(
-            controller: _controllers[index],
-            focusNode: _focusNodes[index],
-            isTextCenter: true,
-            keyboardType: TextInputType.number,
-            maxLength: 1,
-            onChanged: (value) => _onChanged(value, index),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final size = MediaQuery.sizeOf(context);
+            final height = size.height;
+            final isMobileDevice = Breakpoints.isMobileDevice(size);
+            final isTablet = Breakpoints.isTabletDevice(size);
+            final isDesktop = Breakpoints.isDesktop(width);
+            final isWideShortPhone =
+                isMobileDevice && width >= 500 && height <= 760;
+            final isCompactPhone =
+                isMobileDevice && (width < 390 || height < 700);
+            final padding = AppDimensions.pagePadding(context);
+            final contentWidth = isDesktop
+                ? 430.0
+                : isWideShortPhone
+                ? 300.0
+                : 340.0;
+            final imageWidth = isWideShortPhone
+                ? 108.0
+                : isCompactPhone
+                ? 140.0
+                : 180.0;
+            final sectionGap = isWideShortPhone
+                ? 18.0
+                : isCompactPhone
+                ? 28.0
+                : 40.0;
+            final otpBoxWidth = isWideShortPhone
+                ? 56.0
+                : isCompactPhone
+                ? 62.0
+                : 68.0;
+            final otpBoxHeight = isWideShortPhone
+                ? 50.0
+                : isCompactPhone
+                ? 56.0
+                : 61.0;
+            final buttonWidth = isWideShortPhone
+                ? 280.0
+                : isCompactPhone
+                ? 300.0
+                : 330.81;
+            final buttonHeight = isWideShortPhone
+                ? 50.0
+                : isCompactPhone
+                ? 56.0
+                : 60.76;
+            final bodyTextSize = isWideShortPhone
+                ? 13.0
+                : isTablet
+                ? 16.0
+                : 15.0;
+            final otpTextSize = isWideShortPhone
+                ? 20.0
+                : isCompactPhone
+                ? 22.0
+                : 24.0;
 
-            // ── fixes ──
-            sideIconSlotWidth: 0,   // no icon slot consuming width
-            sideSpacing: 0,         // no spacing either side
-            boxShadow: [            // shadow stays INSIDE bounds
-              BoxShadow(
-                color: Colors.black.withOpacity(0.10),
-                blurRadius: 6,
-                spreadRadius: 0,
-                offset: const Offset(0, 2),
-              ),
-            ],
-            padding: EdgeInsets.zero,
-            inputContentPadding: EdgeInsets.symmetric(vertical: 14.h),
-          ),
-        ),
-      ),
-    );
-  }),
-),
-            SizedBox(height: 40.h),
-            AppButton(
-              text: 'Verify',
-              onPressed: () {
-                if (_otp.length < 4) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please enter complete OTP'),
+            return SingleChildScrollView(
+              padding: padding,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: (constraints.maxHeight - padding.vertical)
+                      .clamp(0.0, double.infinity)
+                      .toDouble(),
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: contentWidth),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          'assets/images/otp.png',
+                          width: imageWidth,
+                          fit: BoxFit.contain,
+                        ),
+                        SizedBox(height: sectionGap),
+                        AppText(
+                          text:
+                              'An OTP has been sent to your registered email address. Kindly enter it to continue.',
+                          size: bodyTextSize,
+                          fontWeight: FontWeight.w400,
+                          color: appTextColor2,
+                          isCentered: true,
+                          lineSpacing: 1.2,
+                        ),
+                        SizedBox(height: sectionGap),
+                        SizedBox(
+                          width: buttonWidth,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              for (var index = 0; index < 4; index++)
+                                KeyboardListener(
+                                  focusNode: _keyboardFocusNodes[index],
+                                  onKeyEvent: (event) =>
+                                      _onKeyPressed(event, index),
+                                  child: AppTextFeild(
+                                    width: otpBoxWidth,
+                                    height: otpBoxHeight,
+                                    controller: _controllers[index],
+                                    focusNode: _focusNodes[index],
+                                    isTextCenter: true,
+                                    keyboardType: TextInputType.number,
+                                    maxLength: 1,
+                                    onChanged: (value) =>
+                                        _onChanged(value, index),
+                                    padding: EdgeInsets.zero,
+                                    size: otpTextSize,
+                                    textColor: const Color(0xFF8E8E8E),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: sectionGap),
+                        AppButton(
+                          text: _isSending
+                              ? 'Sending...'
+                              : _isVerifying
+                              ? 'Verifying...'
+                              : 'Verify',
+                          isLoading: _isSending || _isVerifying,
+                          buttonwidth: buttonWidth,
+                          buttonheight: buttonHeight,
+                          size: isWideShortPhone
+                              ? 14
+                              : isTablet
+                              ? 17
+                              : null,
+                          onPressed: (_isSending || _isVerifying)
+                              ? null
+                              : _verifyOtp,
+                        ),
+                      ],
                     ),
-                  );
-                  return;
-                }
-                print('OTP: $_otp');
-                pushWidgetWhileRemove(
-                  newPage: const HomePage(),
-                  context: context,
-                );
-              },
-            ),
-          ],
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 }
-
-
-
-
-// import 'package:flutter/material.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
-// import 'package:fudikoclient/components/appbutton.dart';
-// import 'package:fudikoclient/components/apptext.dart';
-// import 'package:fudikoclient/components/apptextfeild.dart';
-// import 'package:fudikoclient/routetransitions.dart';
-// import 'package:fudikoclient/screens/home/homepage.dart';
-// import 'package:fudikoclient/utils/constants.dart';
-
-// class Otp extends StatelessWidget {
-//   const Otp({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: Padding(
-//         padding:  EdgeInsets.symmetric(horizontal: 30.w),
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             Image.asset(
-//               'assets/images/otp.png',
-//               width: 180.w,
-//               fit: BoxFit.contain,
-//             ),
-//             SizedBox(height: 40.h),
-//             AppText(
-//               text:
-//                   "An OTP has been sent to your registered email address. Kindly enter it to continue.",
-//               size: 15,
-//               fontWeight: FontWeight.w400,
-//               color: appTextColor2,
-//               isCentered: true,
-//               lineSpacing: 1.2,
-//             ),
-//             SizedBox(height: 40.h),
-//             Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//               children: [
-//                 Expanded(child: AppTextFeild()),
-//                 SizedBox(width: 20.w),
-//                 Expanded(child: AppTextFeild()),
-                
-//                 SizedBox(width: 20.w),
-//                 Expanded(child: AppTextFeild()),
-//                 SizedBox(width: 20.w),
-//                 Expanded(child: AppTextFeild()),
-//               ],
-//             ),
-//             SizedBox(height: 40.h),
-//             AppButton(
-//               text: 'Verify',
-//               onPressed: () {
-//                 // Navigator.pushAndRemoveUntil(
-//                 //   context,
-//                 //   MaterialPageRoute(builder: (context) => HomePage()),
-//                 //   (route) => false,
-//                 // );
-//                 slideRightWidget(newPage: HomePage(), context: context, clearStack: true);
-//               },
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }

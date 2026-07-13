@@ -13,8 +13,10 @@ class RestaurantService {
   Future<RestaurantListResponse> getRestaurantList({
     double? lat,
     double? lng,
-    double searchRadiusKm = 10,
+    double? searchRadiusKm,
     String? type,
+    int? offerPercentage,
+    DateTime? dateTime,
   }) async {
     final token = await getToken();
     try {
@@ -28,6 +30,8 @@ class RestaurantService {
             lng: resolvedLng,
             searchRadiusKm: searchRadiusKm,
             type: type,
+            offerPercentage: offerPercentage,
+            dateTime: dateTime,
           ),
         );
       }
@@ -48,52 +52,59 @@ class RestaurantService {
       return RestaurantListResponse(status: false, restaurant: []);
     }
   }
-//   Future<RestaurantListResponse> getRestaurantList() async {
-//   final token = await getToken();
-//   print('TOKEN BEING SENT: $token'); 
-//   try {
-//     final response = await DioClient.dio.get(
-//       '/customer/restaurants',
-//       options: Options(headers: {'Authorization': 'Bearer $token'}),
-//     );
-//     if (response.statusCode == 200) {
-//       print('RESPONSE TYPE: ${response.headers['content-type']}');
-//       print('RAW DATA: ${response.data}');              // ← add here
-//       final result = RestaurantListResponse.fromJson(response.data);
-//       print('PARSED COUNT: ${result.restaurant.length}'); // ← add here
-//       return result;
-//     } else {
-//       return RestaurantListResponse(status: false, restaurant: []);
-//     }
-//   } catch (e) {
-//     print('Error: $e');
-//     return RestaurantListResponse(status: false, restaurant: []);
-//   }
-// }
+  //   Future<RestaurantListResponse> getRestaurantList() async {
+  //   final token = await getToken();
+  //   print('TOKEN BEING SENT: $token');
+  //   try {
+  //     final response = await DioClient.dio.get(
+  //       '/customer/restaurants',
+  //       options: Options(headers: {'Authorization': 'Bearer $token'}),
+  //     );
+  //     if (response.statusCode == 200) {
+  //       print('RESPONSE TYPE: ${response.headers['content-type']}');
+  //       print('RAW DATA: ${response.data}');              // ← add here
+  //       final result = RestaurantListResponse.fromJson(response.data);
+  //       print('PARSED COUNT: ${result.restaurant.length}'); // ← add here
+  //       return result;
+  //     } else {
+  //       return RestaurantListResponse(status: false, restaurant: []);
+  //     }
+  //   } catch (e) {
+  //     print('Error: $e');
+  //     return RestaurantListResponse(status: false, restaurant: []);
+  //   }
+  // }
 
-  Future<RestaurantLikedDislikedResponseModel> changeStatus(RestaurantLikedDislikedModel uuiddata) async {
+  Future<RestaurantLikedDislikedResponseModel> changeStatus(
+    RestaurantLikedDislikedModel uuiddata,
+  ) async {
     final token = await getToken();
     final data = uuiddata.toFormData();
-    try{
+    try {
       final response = await DioClient.dio.post(
         '/customer/restaurant/update-favourite',
         data: data,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      if(response.statusCode == 200){
+      if (response.statusCode == 200) {
         print(response.data);
 
         return RestaurantLikedDislikedResponseModel.fromJson(response.data);
-      }
-      else{
+      } else {
         print(response.data);
 
-        return RestaurantLikedDislikedResponseModel(status: false, message: response.data.toString());
+        return RestaurantLikedDislikedResponseModel(
+          status: false,
+          message: response.data.toString(),
+        );
       }
-    }catch(e){
+    } catch (e) {
       print(e);
 
-      return RestaurantLikedDislikedResponseModel(status: false, message: e.toString());
+      return RestaurantLikedDislikedResponseModel(
+        status: false,
+        message: e.toString(),
+      );
     }
   }
 
@@ -117,6 +128,41 @@ class RestaurantService {
       }
     } catch (e) {
       print('Filter exception: $e');
+      return RestaurantListResponse(status: false, restaurant: []);
+    }
+  }
+
+  Future<RestaurantListResponse> searchRestaurants({
+    required String name,
+    double? lat,
+    double? lng,
+  }) async {
+    final token = await getToken();
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty) {
+      return RestaurantListResponse(status: true, restaurant: []);
+    }
+
+    try {
+      final double? resolvedLat = lat ?? await _getCachedLatitude();
+      final double? resolvedLng = lng ?? await _getCachedLongitude();
+
+      final response = await DioClient.dio.get(
+        '/customer/restaurants/search',
+        queryParameters: {
+          if (resolvedLat != null) 'lat': resolvedLat.toString(),
+          if (resolvedLng != null) 'lng': resolvedLng.toString(),
+          'name': trimmedName,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      if (response.statusCode == 200) {
+        return RestaurantListResponse.fromJson(response.data);
+      } else {
+        return RestaurantListResponse(status: false, restaurant: []);
+      }
+    } catch (e) {
       return RestaurantListResponse(status: false, restaurant: []);
     }
   }

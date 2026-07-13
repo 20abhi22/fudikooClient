@@ -75,28 +75,34 @@ class ResponseModel {
       updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()),
       date: resolvedDate,
       time: (json['time'] ?? '').toString(),
-      requestMenuItems: _stringFromAny(requestJson, const [
-        'menu_items',
-        'menu',
-      ]),
-      requestOtherServices: _stringFromAny(requestJson, const [
-        'other_services',
-        'other_service',
-        'services',
-      ]),
-      requestPeople: _toInt(requestJson['people']) ?? 0,
-      requestDate: _stringFromAny(requestJson, const ['date']),
-      requestTime: _stringFromAny(requestJson, const ['time']),
-      requestEstimatedAmount: _stringFromAny(requestJson, const [
-        'estimated_amount',
-        'amount',
-      ]),
-      requestSearchRadius: _stringFromAny(requestJson, const [
-        'search_radius',
-        'radius',
-      ]),
-      requestLat: _stringFromAny(requestJson, const ['lat', 'latitude']),
-      requestLng: _stringFromAny(requestJson, const ['lng', 'longitude']),
+      requestMenuItems: _stringFromAny(
+        [requestJson, json],
+        const ['menu_items', 'menu'],
+      ),
+      requestOtherServices: _stringFromAny(
+        [requestJson, json],
+        const ['other_services', 'other_service', 'services'],
+      ),
+      requestPeople:
+          _toInt(requestJson['people']) ?? _toInt(json['people']) ?? 0,
+      requestDate: _stringFromAny([requestJson, json], const ['date']),
+      requestTime: _stringFromAny([requestJson, json], const ['time']),
+      requestEstimatedAmount: _stringFromAny(
+        [requestJson, json],
+        const ['estimated_amount', 'amount'],
+      ),
+      requestSearchRadius: _stringFromAny(
+        [requestJson, json],
+        const ['enquiry_radius', 'search_radius', 'radius'],
+      ),
+      requestLat: _stringFromAny(
+        [requestJson, json],
+        const ['lat', 'latitude'],
+      ),
+      requestLng: _stringFromAny(
+        [requestJson, json],
+        const ['lng', 'longitude'],
+      ),
     );
   }
 }
@@ -147,11 +153,13 @@ Map<String, dynamic> _requestPayload(Map<String, dynamic> json) {
   return json;
 }
 
-String _stringFromAny(Map<String, dynamic> json, List<String> keys) {
-  for (final key in keys) {
-    final value = json[key];
-    final text = value?.toString().trim() ?? '';
-    if (text.isNotEmpty && text != 'null') return text;
+String _stringFromAny(List<Map<String, dynamic>> sources, List<String> keys) {
+  for (final source in sources) {
+    for (final key in keys) {
+      final value = source[key];
+      final text = value?.toString().trim() ?? '';
+      if (text.isNotEmpty && text != 'null') return text;
+    }
   }
   return '';
 }

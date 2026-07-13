@@ -31,11 +31,12 @@ class RegistrationAuthService {
   }
 
   Future<CompleteRegistrationModelResponse> completeRegistration(
-    CompleteRegistrationModel details,
-  ) async {
+    CompleteRegistrationModel details, {
+    String? tokenOverride,
+  }) async {
     try {
       final formData = await details.toFormData();
-      final token = await getToken();
+      final token = tokenOverride ?? await getToken();
       final response = await DioClient.dio.post(
         '/customer/complete-registration',
         data: formData,

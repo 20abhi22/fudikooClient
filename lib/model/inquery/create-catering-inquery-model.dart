@@ -4,6 +4,7 @@ class CreateCateringInqueryModel {
   final String lat;
   final String lng;
   final String menuItems;
+  final String otherServices;
   final String people;
   final String time;
   final String date;
@@ -16,6 +17,7 @@ class CreateCateringInqueryModel {
     required this.lat,
     required this.lng,
     required this.menuItems,
+    required this.otherServices,
     required this.people,
     required this.time,
     required this.date,
@@ -30,6 +32,7 @@ class CreateCateringInqueryModel {
       "lat": lat,
       "lng": lng,
       "menu_items": menuItems,
+      "other_services": otherServices,
       "people": people,
       "time": time,
       "date": date,

@@ -139,6 +139,7 @@ class _InqueryState extends State<Inquery> {
       lat: ctEnquiryData['lat'] ?? '',
       lng: ctEnquiryData['lng'] ?? '',
       menuItems: ctEnquiryData['menu'] ?? '',
+      otherServices: ctEnquiryData['otherServices'] ?? '',
       people: ctEnquiryData['people'] ?? '',
       // time: ctEnquiryData['dateTime']?.split(' ').last ?? '',
       // date: ctEnquiryData['dateTime']?.split(' ').first ?? '',
@@ -206,7 +207,7 @@ class _InqueryState extends State<Inquery> {
   @override
   void dispose() {
     _ctTimer?.cancel();
-    _partyTimer?.cancel(); 
+    _partyTimer?.cancel();
     super.dispose();
   }
 
@@ -324,12 +325,13 @@ class _InqueryState extends State<Inquery> {
           if (viewCtRequest) _viewCtRequestWidget(),
           if (isResponseAcceptConfirmOnClick) _responseAcceptConfirmBox(),
           if (isCtReviewOnClick) _ctReviewBox(),
-          if (isReviewOnClick) _partyReviewBox(), 
+          if (isReviewOnClick) _partyReviewBox(),
         ],
       ),
     );
   }
-//---------------------Catering Widgets------------------------------//
+
+  //---------------------Catering Widgets------------------------------//
   Widget _viewCtSearchWidget() {
     return Stack(
       children: [
@@ -570,7 +572,7 @@ class _InqueryState extends State<Inquery> {
                 itemBuilder: (context, index) {
                   return Padding(
                     padding: EdgeInsets.only(left: 30.w, right: 30.w),
-                    // child: 
+                    // child:
                     child: SizedBox.shrink(),
                   );
                 },
@@ -962,7 +964,7 @@ class _InqueryState extends State<Inquery> {
             itemBuilder: (context, index) {
               return Padding(
                 padding: EdgeInsets.symmetric(horizontal: 30.w),
-                // child: 
+                // child:
                 child: SizedBox.shrink(),
               );
             },
@@ -1257,10 +1259,10 @@ class _InqueryState extends State<Inquery> {
                           setState(() {
                             isWithdrawOnClick = !isWithdrawOnClick;
                           });
-                        }, onEdit: () { 
-                           setState(() => viewCtEnquiryOnClick = false);
-                         },
-                        
+                        },
+                        onEdit: () {
+                          setState(() => viewCtEnquiryOnClick = false);
+                        },
                       ),
                     );
                   },
@@ -1581,10 +1583,10 @@ class _InqueryState extends State<Inquery> {
       ),
     );
   }
-//-----------------------------Catering Widgets--------------------------//
-//-----------------------------Party Widgets--------------------------//
+  //-----------------------------Catering Widgets--------------------------//
+  //-----------------------------Party Widgets--------------------------//
 
- Widget _partyReviewBox() {
+  Widget _partyReviewBox() {
     return Positioned.fill(
       child: Container(
         color: Colors.black54,
@@ -1632,7 +1634,6 @@ class _InqueryState extends State<Inquery> {
                       partyEnquiryData['menu'] ?? '',
                     ),
 
-
                     SizedBox(height: 20.h),
                     _reviewRow(
                       Icons.handshake,
@@ -1646,7 +1647,6 @@ class _InqueryState extends State<Inquery> {
                       "Number of Persons",
                       "${partyEnquiryData['people'] ?? ''} Person",
                     ),
-         
 
                     SizedBox(height: 20.h),
                     _reviewRow(
@@ -1655,7 +1655,6 @@ class _InqueryState extends State<Inquery> {
                       partyEnquiryData['dateTime'] ?? '',
                     ),
 
-
                     SizedBox(height: 20.h),
                     _reviewRow(
                       Icons.wallet,
@@ -1663,7 +1662,6 @@ class _InqueryState extends State<Inquery> {
                       "${partyEnquiryData['amount'] ?? ''} Per person",
                     ),
 
-                    
                     SizedBox(height: 20.h),
                     _reviewRow(
                       Icons.analytics,
@@ -1692,7 +1690,7 @@ class _InqueryState extends State<Inquery> {
                       child: AppButton(
                         text: "Send",
                         onPressed: () {
-                          _stopPartyTimer(); 
+                          _stopPartyTimer();
                           _submitPartyEnquiry();
                         },
                         size: 15,
@@ -1710,9 +1708,7 @@ class _InqueryState extends State<Inquery> {
       ),
     );
   }
-//-----------------------------Party Widgets--------------------------//
-
-
+  //-----------------------------Party Widgets--------------------------//
 
   // helper widget for each row
   Widget _reviewRow(IconData icon, String label, String value) {
@@ -2090,8 +2086,8 @@ class _InqueryState extends State<Inquery> {
                 itemBuilder: (context, index) {
                   return Padding(
                     padding: EdgeInsets.only(left: 30.w, right: 30.w),
-                      // child: DeclineBox(onCancelTap: () {}),
-                      child: SizedBox.shrink(),
+                    // child: DeclineBox(onCancelTap: () {}),
+                    child: SizedBox.shrink(),
                   );
                 },
               ),
@@ -2551,8 +2547,7 @@ class _InqueryState extends State<Inquery> {
                 //     setState(() {});
                 //   },
                 // ),
-                child:SizedBox.shrink(),
-
+                child: SizedBox.shrink(),
               );
             },
           ),
@@ -2603,30 +2598,6 @@ class _InqueryState extends State<Inquery> {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // import 'package:flutter/material.dart';
 // import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -2702,7 +2673,6 @@ class _InqueryState extends State<Inquery> {
 //     );
 //   }
 // }
-
 
 //   @override
 //   Widget build(BuildContext context) {
@@ -3615,7 +3585,7 @@ class _InqueryState extends State<Inquery> {
 //                         //   fontWeight: FontWeight.w700,
 //                         //   color: appTextColor3,
 //                         // ),
-                        
+
 //                         // AppText(
 //                         //   text: "Edit",
 //                         //   size: 15,
@@ -3655,7 +3625,7 @@ class _InqueryState extends State<Inquery> {
 //                     //     ),
 //                     //   ],
 //                     // ),
-                
+
 //                     SizedBox(height: 20.h),
 //                                       _reviewRow(Icons.handshake, "Other Services", ctEnquiryData['otherServices'] ?? ''),
 //                     // Row(
@@ -3686,7 +3656,7 @@ class _InqueryState extends State<Inquery> {
 //                     //     ),
 //                     //   ],
 //                     // ),
-                
+
 //                     SizedBox(height: 20.h),
 //                     _reviewRow(Icons.people, "Number of Persons", "${ctEnquiryData['people'] ?? ''} Person"),
 //                     Row(
@@ -3754,7 +3724,7 @@ class _InqueryState extends State<Inquery> {
 //                     // ),
 //                     SizedBox(height: 20.h),
 //                   _reviewRow(Icons.wallet, "Expected amount per person", "${ctEnquiryData['amount'] ?? ''} Per person"),
-                   
+
 //                     // Row(
 //                     //   crossAxisAlignment: CrossAxisAlignment.start,
 //                     //   children: [

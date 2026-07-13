@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appfilterdropdown.dart';
 import 'package:fudikoclient/components/apptext.dart';
+import 'package:fudikoclient/core/responsive/breakpoints.dart';
 import 'package:fudikoclient/model/inquery/list-party-inquery-modal.dart';
 import 'package:fudikoclient/screens/tabs/inquery/common/inqueryBox.dart';
 import 'package:fudikoclient/service/inquery/inquery-service.dart';
@@ -110,8 +111,11 @@ class _ViewInqueryState extends State<ViewInquery> {
   }
 
   double _filterDropdownWidth(String label) {
-    final textWidth = (label.length * 7.5).w;
-    return (textWidth + 76.w).clamp(120.w, 210.w).toDouble();
+    final metrics = _ViewInqueryMetrics.fromContext(context);
+    final textWidth = label.length * metrics.filterTextUnitWidth;
+    return (textWidth + metrics.filterDropdownExtraWidth)
+        .clamp(metrics.filterDropdownMinWidth, metrics.filterDropdownMaxWidth)
+        .toDouble();
   }
 
   // ── Custom date range picker ──────────────────────────────
@@ -136,25 +140,36 @@ class _ViewInqueryState extends State<ViewInquery> {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            final metrics = _ViewInqueryMetrics.fromContext(context);
             final activeDate = selectingStart ? tempStart : tempEnd;
 
             return Dialog(
+              insetPadding: EdgeInsets.symmetric(
+                horizontal: metrics.dialogPaddingHorizontal,
+                vertical: metrics.dialogPaddingVertical,
+              ),
+              constraints: BoxConstraints.tightFor(
+                width: _rangeDialogWidth(context, metrics),
+              ),
               backgroundColor: const Color(0xFFF5F5F5),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.r),
+                borderRadius: BorderRadius.circular(metrics.dialogRadius),
               ),
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+                padding: EdgeInsets.symmetric(
+                  horizontal: metrics.dialogPaddingHorizontal,
+                  vertical: metrics.dialogPaddingVertical,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     AppText(
                       text: "Select Date Range",
-                      size: 16,
+                      size: metrics.dialogTitleSize,
                       fontWeight: FontWeight.w600,
                       color: appTextColor3,
                     ),
-                    SizedBox(height: 14.h),
+                    SizedBox(height: metrics.dialogGap),
                     Row(
                       children: [
                         Expanded(
@@ -166,7 +181,7 @@ class _ViewInqueryState extends State<ViewInquery> {
                                 setDialogState(() => selectingStart = true),
                           ),
                         ),
-                        SizedBox(width: 10.w),
+                        SizedBox(width: metrics.rangeButtonGap),
                         Expanded(
                           child: _rangeDateButton(
                             label: "End",
@@ -178,7 +193,7 @@ class _ViewInqueryState extends State<ViewInquery> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 14.h),
+                    SizedBox(height: metrics.dialogGap),
                     _buildCustomCalendar(
                       key: ValueKey(
                         '${selectingStart ? 'start' : 'end'}-${activeDate.year}-${activeDate.month}',
@@ -200,9 +215,11 @@ class _ViewInqueryState extends State<ViewInquery> {
                         });
                       },
                     ),
-                    SizedBox(height: 16.h),
+                    SizedBox(height: metrics.dialogGap),
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10.w),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: metrics.dialogActionHorizontalPadding,
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -212,7 +229,7 @@ class _ViewInqueryState extends State<ViewInquery> {
                               'Cancel',
                               style: TextStyle(
                                 color: Colors.black54,
-                                fontSize: 14.sp,
+                                fontSize: metrics.dialogActionTextSize,
                               ),
                             ),
                           ),
@@ -225,7 +242,7 @@ class _ViewInqueryState extends State<ViewInquery> {
                               'Apply',
                               style: TextStyle(
                                 color: const Color(0xFF3954DB),
-                                fontSize: 14.sp,
+                                fontSize: metrics.dialogActionTextSize,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -243,19 +260,29 @@ class _ViewInqueryState extends State<ViewInquery> {
     );
   }
 
+  double _rangeDialogWidth(BuildContext context, _ViewInqueryMetrics metrics) {
+    final calendarWidth = _CalendarMetrics.fromContext(context).calendarWidth;
+    return calendarWidth + (metrics.dialogPaddingHorizontal * 2);
+  }
+
   Widget _rangeDateButton({
     required String label,
     required DateTime date,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final metrics = _ViewInqueryMetrics.fromContext(context);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 9.h),
+        padding: EdgeInsets.symmetric(
+          horizontal: metrics.rangeButtonHorizontalPadding,
+          vertical: metrics.rangeButtonVerticalPadding,
+        ),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFf87b0d) : Colors.white,
-          borderRadius: BorderRadius.circular(10.r),
+          borderRadius: BorderRadius.circular(metrics.rangeButtonRadius),
           border: Border.all(
             color: isSelected ? const Color(0xFFf87b0d) : Colors.black12,
           ),
@@ -264,15 +291,15 @@ class _ViewInqueryState extends State<ViewInquery> {
           children: [
             AppText(
               text: label,
-              size: 11,
+              size: metrics.rangeLabelSize,
               fontWeight: FontWeight.w500,
               color: isSelected ? Colors.white : appTextColor2,
               isCentered: true,
             ),
-            SizedBox(height: 3.h),
+            SizedBox(height: metrics.rangeTextGap),
             AppText(
               text: DateFormat('MMM d, yyyy').format(date),
-              size: 12,
+              size: metrics.rangeDateSize,
               fontWeight: FontWeight.w600,
               color: isSelected ? Colors.white : appTextColor3,
               isCentered: true,
@@ -285,6 +312,7 @@ class _ViewInqueryState extends State<ViewInquery> {
 
   // ── Filter option tile — matches Reservation pattern exactly ─
   Widget _buildFilterOption(String label, {bool isCustom = false}) {
+    final metrics = _ViewInqueryMetrics.fromContext(context);
     final bool isSelected = selectedFilter == label;
     return GestureDetector(
       onTap: () async {
@@ -302,7 +330,10 @@ class _ViewInqueryState extends State<ViewInquery> {
       },
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
+        padding: EdgeInsets.symmetric(
+          vertical: metrics.filterOptionVerticalPadding,
+          horizontal: metrics.filterOptionHorizontalPadding,
+        ),
         decoration: BoxDecoration(
           gradient: isSelected
               ? const LinearGradient(
@@ -310,7 +341,7 @@ class _ViewInqueryState extends State<ViewInquery> {
                 )
               : null,
           color: isSelected ? null : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(metrics.filterOptionRadius),
         ),
         child: AppText(
           text: isCustom
@@ -320,7 +351,7 @@ class _ViewInqueryState extends State<ViewInquery> {
                     ? "${DateFormat('MMM d').format(_customStart!)} – ${DateFormat('MMM d, yyyy').format(_customEnd!)}"
                     : "Custom Range")
               : label,
-          size: 15,
+          size: metrics.filterOptionTextSize,
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
           color: isSelected ? Colors.white : Colors.black,
           isCentered: true,
@@ -330,35 +361,41 @@ class _ViewInqueryState extends State<ViewInquery> {
   }
 
   void _openFilterSheet() {
+    final metrics = _ViewInqueryMetrics.fromContext(context);
+
     showModalBottomSheet(
       backgroundColor: Colors.white,
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(metrics.sheetRadius),
+        ),
       ),
       builder: (context) {
         return Padding(
-          padding: EdgeInsets.all(30.w),
+          padding: EdgeInsets.all(metrics.sheetPadding),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 40,
-                height: 5,
+                width: metrics.sheetHandleWidth,
+                height: metrics.sheetHandleHeight,
                 decoration: BoxDecoration(
                   color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(
+                    metrics.sheetHandleRadius,
+                  ),
                 ),
               ),
-              SizedBox(height: 16.h),
+              SizedBox(height: metrics.sheetHandleGap),
               Container(
                 width: MediaQuery.of(context).size.width,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(metrics.sheetInnerRadius),
                 ),
-                padding: EdgeInsets.all(16.w),
+                padding: EdgeInsets.all(metrics.sheetInnerPadding),
                 child: Column(
                   children: [
                     _buildFilterOption("All"),
@@ -383,18 +420,23 @@ class _ViewInqueryState extends State<ViewInquery> {
   // ── Build ─────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    final metrics = _ViewInqueryMetrics.fromContext(context);
     final filtered = _filteredList;
 
     return Column(
       children: [
         // ── Header ─────────────────────────────────────────
         Padding(
-          padding: EdgeInsets.only(left: 30.w, right: 30.w, top: 30.h),
+          padding: EdgeInsets.only(
+            left: metrics.headerHorizontalPadding,
+            right: metrics.headerHorizontalPadding,
+            top: metrics.headerTopPadding,
+          ),
           child: Row(
             children: [
               GestureDetector(
                 onTap: () => widget.onEnquiryTap(false),
-                child: Image.asset(backOrange, width: 30.w),
+                child: Image.asset(backOrange, width: metrics.backIconSize),
               ),
               Expanded(
                 child: Center(
@@ -413,10 +455,10 @@ class _ViewInqueryState extends State<ViewInquery> {
                         ],
                       ),
                       child: AppFilterDropDown(
-                        height: 32.h,
+                        height: metrics.filterHeight,
                         hint: _filterLabel,
                         imageIconPath: filterIcon, // ← same as Reservation
-                        imageIconSize: 15.sp,
+                        imageIconSize: metrics.filterIconSize,
                         toggleDropdown: _openFilterSheet,
                       ),
                     ),
@@ -424,11 +466,11 @@ class _ViewInqueryState extends State<ViewInquery> {
                 ),
               ),
               // Balance spacer so dropdown stays centred
-              SizedBox(width: 28.w),
+              SizedBox(width: metrics.backIconSize),
             ],
           ),
         ),
-        SizedBox(height: 20.h),
+        SizedBox(height: metrics.headerBottomGap),
 
         // ── Content ────────────────────────────────────────
         Expanded(
@@ -448,23 +490,23 @@ class _ViewInqueryState extends State<ViewInquery> {
                           children: [
                             Icon(
                               Icons.error_outline,
-                              size: 48.w,
-                              color: appTextColor3.withOpacity(0.4),
+                              size: metrics.emptyIconSize,
+                              color: appTextColor3.withValues(alpha: 0.4),
                             ),
-                            SizedBox(height: 12.h),
+                            SizedBox(height: metrics.emptyGap),
                             AppText(
                               text: _error!,
-                              size: 15,
+                              size: metrics.emptyTextSize,
                               fontWeight: FontWeight.w500,
                               color: appTextColor3,
                               isCentered: true,
                             ),
-                            SizedBox(height: 16.h),
+                            SizedBox(height: metrics.retryTopGap),
                             GestureDetector(
                               onTap: _fetchList,
                               child: AppText(
                                 text: "Retry",
-                                size: 14,
+                                size: metrics.retryTextSize,
                                 fontWeight: FontWeight.w600,
                                 color: const Color(0xFFEC7B2D),
                                 isCentered: true,
@@ -486,15 +528,15 @@ class _ViewInqueryState extends State<ViewInquery> {
                           children: [
                             Icon(
                               Icons.inbox_outlined,
-                              size: 48.w,
-                              color: appTextColor3.withOpacity(0.4),
+                              size: metrics.emptyIconSize,
+                              color: appTextColor3.withValues(alpha: 0.4),
                             ),
-                            SizedBox(height: 12.h),
+                            SizedBox(height: metrics.emptyGap),
                             AppText(
                               text: selectedFilter == "All"
                                   ? "No enquiries found"
                                   : "No enquiries for $_filterLabel",
-                              size: 15,
+                              size: metrics.emptyTextSize,
                               fontWeight: FontWeight.w500,
                               color: appTextColor3,
                               isCentered: true,
@@ -505,13 +547,18 @@ class _ViewInqueryState extends State<ViewInquery> {
                     ),
                   )
                 : ListView.builder(
-                    padding: EdgeInsets.only(bottom: 24.h),
-                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.only(bottom: metrics.listBottomPadding),
+                    physics: const AlwaysScrollableScrollPhysics(
+                      parent: ClampingScrollPhysics(),
+                    ),
                     itemCount: filtered.length,
                     itemBuilder: (ctx, index) {
                       final item = filtered[index];
                       return Padding(
-                        padding: EdgeInsets.only(left: 30.w, right: 30.w),
+                        padding: EdgeInsets.only(
+                          left: metrics.listHorizontalPadding,
+                          right: metrics.listHorizontalPadding,
+                        ),
                         child: InqueryBox(
                           uuid: item.uuid,
                           enquiryId: item.enquiryId,
@@ -540,6 +587,498 @@ class _ViewInqueryState extends State<ViewInquery> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ViewInqueryMetrics {
+  const _ViewInqueryMetrics({
+    required this.headerHorizontalPadding,
+    required this.headerTopPadding,
+    required this.headerBottomGap,
+    required this.backIconSize,
+    required this.filterHeight,
+    required this.filterIconSize,
+    required this.filterTextUnitWidth,
+    required this.filterDropdownExtraWidth,
+    required this.filterDropdownMinWidth,
+    required this.filterDropdownMaxWidth,
+    required this.listHorizontalPadding,
+    required this.listBottomPadding,
+    required this.emptyIconSize,
+    required this.emptyGap,
+    required this.emptyTextSize,
+    required this.retryTopGap,
+    required this.retryTextSize,
+    required this.dialogPaddingHorizontal,
+    required this.dialogPaddingVertical,
+    required this.dialogRadius,
+    required this.dialogTitleSize,
+    required this.dialogGap,
+    required this.dialogActionHorizontalPadding,
+    required this.dialogActionTextSize,
+    required this.rangeButtonGap,
+    required this.rangeButtonHorizontalPadding,
+    required this.rangeButtonVerticalPadding,
+    required this.rangeButtonRadius,
+    required this.rangeLabelSize,
+    required this.rangeDateSize,
+    required this.rangeTextGap,
+    required this.filterOptionVerticalPadding,
+    required this.filterOptionHorizontalPadding,
+    required this.filterOptionRadius,
+    required this.filterOptionTextSize,
+    required this.sheetPadding,
+    required this.sheetRadius,
+    required this.sheetHandleWidth,
+    required this.sheetHandleHeight,
+    required this.sheetHandleRadius,
+    required this.sheetHandleGap,
+    required this.sheetInnerPadding,
+    required this.sheetInnerRadius,
+  });
+
+  final double headerHorizontalPadding;
+  final double headerTopPadding;
+  final double headerBottomGap;
+  final double backIconSize;
+  final double filterHeight;
+  final double filterIconSize;
+  final double filterTextUnitWidth;
+  final double filterDropdownExtraWidth;
+  final double filterDropdownMinWidth;
+  final double filterDropdownMaxWidth;
+  final double listHorizontalPadding;
+  final double listBottomPadding;
+  final double emptyIconSize;
+  final double emptyGap;
+  final double emptyTextSize;
+  final double retryTopGap;
+  final double retryTextSize;
+  final double dialogPaddingHorizontal;
+  final double dialogPaddingVertical;
+  final double dialogRadius;
+  final double dialogTitleSize;
+  final double dialogGap;
+  final double dialogActionHorizontalPadding;
+  final double dialogActionTextSize;
+  final double rangeButtonGap;
+  final double rangeButtonHorizontalPadding;
+  final double rangeButtonVerticalPadding;
+  final double rangeButtonRadius;
+  final double rangeLabelSize;
+  final double rangeDateSize;
+  final double rangeTextGap;
+  final double filterOptionVerticalPadding;
+  final double filterOptionHorizontalPadding;
+  final double filterOptionRadius;
+  final double filterOptionTextSize;
+  final double sheetPadding;
+  final double sheetRadius;
+  final double sheetHandleWidth;
+  final double sheetHandleHeight;
+  final double sheetHandleRadius;
+  final double sheetHandleGap;
+  final double sheetInnerPadding;
+  final double sheetInnerRadius;
+
+  factory _ViewInqueryMetrics.fromContext(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final isTablet = Breakpoints.isTablet(size.width);
+    final isWideShortPhone =
+        !isTablet && size.width >= 500 && size.height <= 760;
+    final isCompactPhone = size.width < 390 || size.height < 700;
+
+    if (isTablet) {
+      final scale = (size.width / 768).clamp(1.0, 1.18).toDouble();
+      final verticalScale = (size.height / 1024).clamp(1.0, 1.2).toDouble();
+      double s(double value) => value * scale;
+      double v(double value) => value * verticalScale;
+
+      return _ViewInqueryMetrics(
+        headerHorizontalPadding: s(48),
+        headerTopPadding: v(36),
+        headerBottomGap: v(24),
+        backIconSize: s(34),
+        filterHeight: v(38),
+        filterIconSize: s(17),
+        filterTextUnitWidth: s(7.5),
+        filterDropdownExtraWidth: s(84),
+        filterDropdownMinWidth: s(140),
+        filterDropdownMaxWidth: s(260),
+        listHorizontalPadding: s(48),
+        listBottomPadding: v(34),
+        emptyIconSize: s(56),
+        emptyGap: v(14),
+        emptyTextSize: 16,
+        retryTopGap: v(18),
+        retryTextSize: 15,
+        dialogPaddingHorizontal: s(16),
+        dialogPaddingVertical: v(16),
+        dialogRadius: s(10),
+        dialogTitleSize: 16,
+        dialogGap: v(14),
+        dialogActionHorizontalPadding: s(10),
+        dialogActionTextSize: 14,
+        rangeButtonGap: s(10),
+        rangeButtonHorizontalPadding: s(10),
+        rangeButtonVerticalPadding: v(9),
+        rangeButtonRadius: s(10),
+        rangeLabelSize: 11,
+        rangeDateSize: 12,
+        rangeTextGap: v(3),
+        filterOptionVerticalPadding: v(13),
+        filterOptionHorizontalPadding: s(10),
+        filterOptionRadius: s(10),
+        filterOptionTextSize: 16,
+        sheetPadding: s(34),
+        sheetRadius: s(25),
+        sheetHandleWidth: s(44),
+        sheetHandleHeight: v(5),
+        sheetHandleRadius: s(10),
+        sheetHandleGap: v(18),
+        sheetInnerPadding: s(18),
+        sheetInnerRadius: s(20),
+      );
+    }
+
+    if (isWideShortPhone) {
+      return const _ViewInqueryMetrics(
+        headerHorizontalPadding: 24,
+        headerTopPadding: 20,
+        headerBottomGap: 14,
+        backIconSize: 26,
+        filterHeight: 30,
+        filterIconSize: 13,
+        filterTextUnitWidth: 7.0,
+        filterDropdownExtraWidth: 68,
+        filterDropdownMinWidth: 115,
+        filterDropdownMaxWidth: 190,
+        listHorizontalPadding: 24,
+        listBottomPadding: 20,
+        emptyIconSize: 42,
+        emptyGap: 10,
+        emptyTextSize: 13.5,
+        retryTopGap: 14,
+        retryTextSize: 13,
+        dialogPaddingHorizontal: 14,
+        dialogPaddingVertical: 14,
+        dialogRadius: 10,
+        dialogTitleSize: 15,
+        dialogGap: 12,
+        dialogActionHorizontalPadding: 8,
+        dialogActionTextSize: 13,
+        rangeButtonGap: 8,
+        rangeButtonHorizontalPadding: 8,
+        rangeButtonVerticalPadding: 8,
+        rangeButtonRadius: 10,
+        rangeLabelSize: 10.5,
+        rangeDateSize: 11,
+        rangeTextGap: 3,
+        filterOptionVerticalPadding: 10,
+        filterOptionHorizontalPadding: 8,
+        filterOptionRadius: 10,
+        filterOptionTextSize: 13.5,
+        sheetPadding: 24,
+        sheetRadius: 22,
+        sheetHandleWidth: 38,
+        sheetHandleHeight: 5,
+        sheetHandleRadius: 10,
+        sheetHandleGap: 14,
+        sheetInnerPadding: 14,
+        sheetInnerRadius: 18,
+      );
+    }
+
+    if (isCompactPhone) {
+      final scale = (size.width / 390).clamp(0.88, 1.0).toDouble();
+      double s(double value) => value * scale;
+
+      return _ViewInqueryMetrics(
+        headerHorizontalPadding: s(24),
+        headerTopPadding: s(22),
+        headerBottomGap: s(16),
+        backIconSize: s(26),
+        filterHeight: s(30),
+        filterIconSize: s(13),
+        filterTextUnitWidth: s(7.0),
+        filterDropdownExtraWidth: s(68),
+        filterDropdownMinWidth: s(115),
+        filterDropdownMaxWidth: s(190),
+        listHorizontalPadding: s(24),
+        listBottomPadding: s(20),
+        emptyIconSize: s(42),
+        emptyGap: s(10),
+        emptyTextSize: s(13.5),
+        retryTopGap: s(14),
+        retryTextSize: s(13),
+        dialogPaddingHorizontal: s(12),
+        dialogPaddingVertical: s(12),
+        dialogRadius: s(10),
+        dialogTitleSize: s(15),
+        dialogGap: s(10),
+        dialogActionHorizontalPadding: s(6),
+        dialogActionTextSize: s(12.5),
+        rangeButtonGap: s(8),
+        rangeButtonHorizontalPadding: s(8),
+        rangeButtonVerticalPadding: s(7),
+        rangeButtonRadius: s(10),
+        rangeLabelSize: s(10),
+        rangeDateSize: s(10.5),
+        rangeTextGap: s(3),
+        filterOptionVerticalPadding: s(10),
+        filterOptionHorizontalPadding: s(8),
+        filterOptionRadius: s(10),
+        filterOptionTextSize: s(13.5),
+        sheetPadding: s(22),
+        sheetRadius: s(22),
+        sheetHandleWidth: s(38),
+        sheetHandleHeight: s(5),
+        sheetHandleRadius: s(10),
+        sheetHandleGap: s(14),
+        sheetInnerPadding: s(14),
+        sheetInnerRadius: s(18),
+      );
+    }
+
+    return _ViewInqueryMetrics(
+      headerHorizontalPadding: 30.w,
+      headerTopPadding: 30.h,
+      headerBottomGap: 20.h,
+      backIconSize: 30.w,
+      filterHeight: 32.h,
+      filterIconSize: 15.sp,
+      filterTextUnitWidth: 7.5.w,
+      filterDropdownExtraWidth: 76.w,
+      filterDropdownMinWidth: 120.w,
+      filterDropdownMaxWidth: 210.w,
+      listHorizontalPadding: 30.w,
+      listBottomPadding: 24.h,
+      emptyIconSize: 48.w,
+      emptyGap: 12.h,
+      emptyTextSize: 15,
+      retryTopGap: 16.h,
+      retryTextSize: 14,
+      dialogPaddingHorizontal: 16.w,
+      dialogPaddingVertical: 16.h,
+      dialogRadius: 10.r,
+      dialogTitleSize: 16,
+      dialogGap: 14.h,
+      dialogActionHorizontalPadding: 10.w,
+      dialogActionTextSize: 14.sp,
+      rangeButtonGap: 10.w,
+      rangeButtonHorizontalPadding: 10.w,
+      rangeButtonVerticalPadding: 9.h,
+      rangeButtonRadius: 10.r,
+      rangeLabelSize: 11,
+      rangeDateSize: 12,
+      rangeTextGap: 3.h,
+      filterOptionVerticalPadding: 12.h,
+      filterOptionHorizontalPadding: 8.w,
+      filterOptionRadius: 10,
+      filterOptionTextSize: 15,
+      sheetPadding: 30.w,
+      sheetRadius: 25,
+      sheetHandleWidth: 40,
+      sheetHandleHeight: 5,
+      sheetHandleRadius: 10,
+      sheetHandleGap: 16.h,
+      sheetInnerPadding: 16.w,
+      sheetInnerRadius: 20,
+    );
+  }
+}
+
+class _CalendarMetrics {
+  const _CalendarMetrics({
+    required this.calendarWidth,
+    required this.headerIconButtonSize,
+    required this.headerIconSize,
+    required this.headerTextSize,
+    required this.headerTextGap,
+    required this.dropdownIconSize,
+    required this.sectionGap,
+    required this.yearIconSize,
+    required this.yearTextSize,
+    required this.monthGridMainSpacing,
+    required this.monthGridCrossSpacing,
+    required this.monthGridAspectRatio,
+    required this.monthCellHeight,
+    required this.monthCellRadius,
+    required this.monthTextSize,
+    required this.yearSheetHeight,
+    required this.yearSheetRadius,
+    required this.yearItemTextSize,
+    required this.weekdayCellWidth,
+    required this.weekdayTextSize,
+    required this.dayMainSpacing,
+    required this.dayCellSize,
+    required this.dayRadius,
+    required this.dayTextSize,
+    required this.todayDotSize,
+    required this.todayDotGap,
+  });
+
+  final double calendarWidth;
+  final double headerIconButtonSize;
+  final double headerIconSize;
+  final double headerTextSize;
+  final double headerTextGap;
+  final double dropdownIconSize;
+  final double sectionGap;
+  final double yearIconSize;
+  final double yearTextSize;
+  final double monthGridMainSpacing;
+  final double monthGridCrossSpacing;
+  final double monthGridAspectRatio;
+  final double monthCellHeight;
+  final double monthCellRadius;
+  final double monthTextSize;
+  final double yearSheetHeight;
+  final double yearSheetRadius;
+  final double yearItemTextSize;
+  final double weekdayCellWidth;
+  final double weekdayTextSize;
+  final double dayMainSpacing;
+  final double dayCellSize;
+  final double dayRadius;
+  final double dayTextSize;
+  final double todayDotSize;
+  final double todayDotGap;
+
+  factory _CalendarMetrics.fromContext(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final isTablet = Breakpoints.isTablet(size.width);
+    final isWideShortPhone =
+        !isTablet && size.width >= 500 && size.height <= 760;
+    final isCompactPhone = size.width < 390 || size.height < 700;
+
+    if (isTablet) {
+      final scale = (size.width / 768).clamp(1.0, 1.18).toDouble();
+      double s(double value) => value * scale;
+
+      return _CalendarMetrics(
+        calendarWidth: (size.width * 0.36).clamp(310.0, 380.0).toDouble(),
+        headerIconButtonSize: s(38),
+        headerIconSize: s(22),
+        headerTextSize: s(16),
+        headerTextGap: s(4),
+        dropdownIconSize: s(20),
+        sectionGap: s(7),
+        yearIconSize: s(20),
+        yearTextSize: s(15),
+        monthGridMainSpacing: s(8),
+        monthGridCrossSpacing: s(8),
+        monthGridAspectRatio: 2.25,
+        monthCellHeight: s(42),
+        monthCellRadius: s(8),
+        monthTextSize: s(12.5),
+        yearSheetHeight: s(280),
+        yearSheetRadius: s(16),
+        yearItemTextSize: s(15),
+        weekdayCellWidth: s(36),
+        weekdayTextSize: s(12),
+        dayMainSpacing: s(4),
+        dayCellSize: s(32),
+        dayRadius: s(9),
+        dayTextSize: s(13),
+        todayDotSize: s(5),
+        todayDotGap: s(2),
+      );
+    }
+
+    if (isWideShortPhone) {
+      return const _CalendarMetrics(
+        calendarWidth: 270,
+        headerIconButtonSize: 34,
+        headerIconSize: 21,
+        headerTextSize: 15,
+        headerTextGap: 4,
+        dropdownIconSize: 19,
+        sectionGap: 5,
+        yearIconSize: 19,
+        yearTextSize: 14,
+        monthGridMainSpacing: 7,
+        monthGridCrossSpacing: 7,
+        monthGridAspectRatio: 2.35,
+        monthCellHeight: 38,
+        monthCellRadius: 8,
+        monthTextSize: 11.5,
+        yearSheetHeight: 220,
+        yearSheetRadius: 14,
+        yearItemTextSize: 14,
+        weekdayCellWidth: 32,
+        weekdayTextSize: 11,
+        dayMainSpacing: 3,
+        dayCellSize: 28,
+        dayRadius: 8,
+        dayTextSize: 12,
+        todayDotSize: 4,
+        todayDotGap: 2,
+      );
+    }
+
+    if (isCompactPhone) {
+      final scale = (size.width / 390).clamp(0.86, 1.0).toDouble();
+      double s(double value) => value * scale;
+
+      return _CalendarMetrics(
+        calendarWidth: s(270),
+        headerIconButtonSize: s(34),
+        headerIconSize: s(21),
+        headerTextSize: s(15),
+        headerTextGap: s(4),
+        dropdownIconSize: s(19),
+        sectionGap: s(5),
+        yearIconSize: s(19),
+        yearTextSize: s(14),
+        monthGridMainSpacing: s(7),
+        monthGridCrossSpacing: s(7),
+        monthGridAspectRatio: 2.25,
+        monthCellHeight: s(38),
+        monthCellRadius: s(8),
+        monthTextSize: s(11.5),
+        yearSheetHeight: s(220),
+        yearSheetRadius: s(14),
+        yearItemTextSize: s(14),
+        weekdayCellWidth: s(32),
+        weekdayTextSize: s(11),
+        dayMainSpacing: s(3),
+        dayCellSize: s(28),
+        dayRadius: s(8),
+        dayTextSize: s(12),
+        todayDotSize: s(4),
+        todayDotGap: s(2),
+      );
+    }
+
+    return _CalendarMetrics(
+      calendarWidth: (size.width * 0.68).clamp(260.0, 300.0).toDouble(),
+      headerIconButtonSize: 40.w,
+      headerIconSize: 24.sp,
+      headerTextSize: 16.sp,
+      headerTextGap: 4.w,
+      dropdownIconSize: 20.sp,
+      sectionGap: 6.h,
+      yearIconSize: 20,
+      yearTextSize: 15.sp,
+      monthGridMainSpacing: 8,
+      monthGridCrossSpacing: 8,
+      monthGridAspectRatio: 2.2,
+      monthCellHeight: 50.h,
+      monthCellRadius: 8.r,
+      monthTextSize: 12.sp,
+      yearSheetHeight: 250.h,
+      yearSheetRadius: 16.r,
+      yearItemTextSize: 15.sp,
+      weekdayCellWidth: 36.w,
+      weekdayTextSize: 12.sp,
+      dayMainSpacing: 4,
+      dayCellSize: 32.w,
+      dayRadius: 10.r,
+      dayTextSize: 13.sp,
+      todayDotSize: 5.w,
+      todayDotGap: 2.h,
     );
   }
 }
@@ -607,69 +1146,90 @@ class _CustomCalendarState extends State<_CustomCalendar> {
 
   @override
   Widget build(BuildContext context) {
+    final metrics = _CalendarMetrics.fromContext(context);
     final today = DateTime.now();
     final monthName = _monthName(_displayMonth.month);
 
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left),
-              onPressed: _showMonthYearPicker ? null : _prevMonth,
-            ),
-            GestureDetector(
-              onTap: _togglePicker,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '$monthName  ${_displayMonth.year}',
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
-                  ),
-                  SizedBox(width: 4.w),
-                  Icon(
-                    _showMonthYearPicker
-                        ? Icons.arrow_drop_up
-                        : Icons.arrow_drop_down,
-                    color: Colors.black54,
-                    size: 20.sp,
-                  ),
-                ],
+    return SizedBox(
+      width: metrics.calendarWidth,
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: Icon(Icons.chevron_left, size: metrics.headerIconSize),
+                constraints: BoxConstraints.tightFor(
+                  width: metrics.headerIconButtonSize,
+                  height: metrics.headerIconButtonSize,
+                ),
+                padding: EdgeInsets.zero,
+                onPressed: _showMonthYearPicker ? null : _prevMonth,
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.chevron_right),
-              onPressed: _showMonthYearPicker ? null : _nextMonth,
-            ),
+              GestureDetector(
+                onTap: _togglePicker,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '$monthName  ${_displayMonth.year}',
+                      style: TextStyle(
+                        fontSize: metrics.headerTextSize,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                    ),
+                    SizedBox(width: metrics.headerTextGap),
+                    Icon(
+                      _showMonthYearPicker
+                          ? Icons.arrow_drop_up
+                          : Icons.arrow_drop_down,
+                      color: Colors.black54,
+                      size: metrics.dropdownIconSize,
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.chevron_right, size: metrics.headerIconSize),
+                constraints: BoxConstraints.tightFor(
+                  width: metrics.headerIconButtonSize,
+                  height: metrics.headerIconButtonSize,
+                ),
+                padding: EdgeInsets.zero,
+                onPressed: _showMonthYearPicker ? null : _nextMonth,
+              ),
+            ],
+          ),
+          if (_showMonthYearPicker) ...[
+            SizedBox(height: metrics.sectionGap),
+            _buildMonthYearPicker(),
+          ] else ...[
+            SizedBox(height: metrics.sectionGap),
+            _buildWeekdayLabels(),
+            SizedBox(height: metrics.sectionGap),
+            _buildDayGrid(today),
           ],
-        ),
-        if (_showMonthYearPicker) ...[
-          SizedBox(height: 6.h),
-          _buildMonthYearPicker(),
-        ] else ...[
-          SizedBox(height: 6.h),
-          _buildWeekdayLabels(),
-          SizedBox(height: 6.h),
-          _buildDayGrid(today),
         ],
-      ],
+      ),
     );
   }
 
   Widget _buildMonthYearPicker() {
+    final metrics = _CalendarMetrics.fromContext(context);
+
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             IconButton(
-              icon: const Icon(Icons.chevron_left, size: 20),
+              icon: Icon(Icons.chevron_left, size: metrics.yearIconSize),
+              constraints: BoxConstraints.tightFor(
+                width: metrics.headerIconButtonSize,
+                height: metrics.headerIconButtonSize,
+              ),
+              padding: EdgeInsets.zero,
               onPressed: () => setState(() => _pickerYear--),
             ),
             GestureDetector(
@@ -677,28 +1237,33 @@ class _CustomCalendarState extends State<_CustomCalendar> {
               child: Text(
                 '$_pickerYear',
                 style: TextStyle(
-                  fontSize: 15.sp,
+                  fontSize: metrics.yearTextSize,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFFf87b0d),
                 ),
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.chevron_right, size: 20),
+              icon: Icon(Icons.chevron_right, size: metrics.yearIconSize),
+              constraints: BoxConstraints.tightFor(
+                width: metrics.headerIconButtonSize,
+                height: metrics.headerIconButtonSize,
+              ),
+              padding: EdgeInsets.zero,
               onPressed: () => setState(() => _pickerYear++),
             ),
           ],
         ),
-        SizedBox(height: 8.h),
+        SizedBox(height: metrics.sectionGap),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: 12,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            childAspectRatio: 2.2,
+            mainAxisSpacing: metrics.monthGridMainSpacing,
+            crossAxisSpacing: metrics.monthGridCrossSpacing,
+            childAspectRatio: metrics.monthGridAspectRatio,
           ),
           itemBuilder: (context, index) {
             final month = index + 1;
@@ -708,12 +1273,12 @@ class _CustomCalendarState extends State<_CustomCalendar> {
             return GestureDetector(
               onTap: () => _selectMonthYear(month, _pickerYear),
               child: Container(
-                height: 50.h,
+                height: metrics.monthCellHeight,
                 decoration: BoxDecoration(
                   color: isSelected
                       ? const Color(0xFFFE943A)
                       : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8.r),
+                  borderRadius: BorderRadius.circular(metrics.monthCellRadius),
                   border: Border.all(
                     color: isSelected
                         ? const Color(0xFFFE943A)
@@ -724,7 +1289,7 @@ class _CustomCalendarState extends State<_CustomCalendar> {
                   child: Text(
                     _shortMonth(month),
                     style: TextStyle(
-                      fontSize: 12.sp,
+                      fontSize: metrics.monthTextSize,
                       fontWeight: FontWeight.w500,
                       color: isSelected ? Colors.white : Colors.black87,
                     ),
@@ -734,12 +1299,13 @@ class _CustomCalendarState extends State<_CustomCalendar> {
             );
           },
         ),
-        SizedBox(height: 8.h),
+        SizedBox(height: metrics.sectionGap),
       ],
     );
   }
 
   void _showYearScrollPicker(BuildContext context) {
+    final metrics = _CalendarMetrics.fromContext(context);
     const firstYear = 2020;
     final lastYear = DateTime.now().year + 20;
     final years = List.generate(lastYear - firstYear + 1, (i) => firstYear + i);
@@ -747,10 +1313,12 @@ class _CustomCalendarState extends State<_CustomCalendar> {
       context: context,
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(metrics.yearSheetRadius),
+        ),
       ),
       builder: (_) => SizedBox(
-        height: 250.h,
+        height: metrics.yearSheetHeight,
         child: ListView.builder(
           itemCount: years.length,
           itemBuilder: (context, index) {
@@ -765,7 +1333,7 @@ class _CustomCalendarState extends State<_CustomCalendar> {
                 child: Text(
                   '$year',
                   style: TextStyle(
-                    fontSize: 15.sp,
+                    fontSize: metrics.yearItemTextSize,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
                     color: isSelected
                         ? const Color(0xFFf87b0d)
@@ -781,6 +1349,8 @@ class _CustomCalendarState extends State<_CustomCalendar> {
   }
 
   Widget _buildWeekdayLabels() {
+    final metrics = _CalendarMetrics.fromContext(context);
+
     return Container(
       color: const Color(0xFFF5F7FA),
       child: Row(
@@ -788,12 +1358,12 @@ class _CustomCalendarState extends State<_CustomCalendar> {
         children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
             .map(
               (d) => SizedBox(
-                width: 36.w,
+                width: metrics.weekdayCellWidth,
                 child: Center(
                   child: Text(
                     d,
                     style: TextStyle(
-                      fontSize: 12.sp,
+                      fontSize: metrics.weekdayTextSize,
                       color: Colors.black54,
                       fontWeight: FontWeight.w500,
                     ),
@@ -807,6 +1377,7 @@ class _CustomCalendarState extends State<_CustomCalendar> {
   }
 
   Widget _buildDayGrid(DateTime today) {
+    final metrics = _CalendarMetrics.fromContext(context);
     final daysInMonth = DateUtils.getDaysInMonth(
       _displayMonth.year,
       _displayMonth.month,
@@ -818,9 +1389,9 @@ class _CustomCalendarState extends State<_CustomCalendar> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: firstWeekday + daysInMonth,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
-        mainAxisSpacing: 4,
+        mainAxisSpacing: metrics.dayMainSpacing,
         crossAxisSpacing: 0,
         childAspectRatio: 1,
       ),
@@ -837,19 +1408,19 @@ class _CustomCalendarState extends State<_CustomCalendar> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 32.w,
-                height: 32.w,
+                width: metrics.dayCellSize,
+                height: metrics.dayCellSize,
                 decoration: isSelected
                     ? BoxDecoration(
                         color: const Color(0xFFf87b0d),
-                        borderRadius: BorderRadius.circular(10.r),
+                        borderRadius: BorderRadius.circular(metrics.dayRadius),
                       )
                     : null,
                 child: Center(
                   child: Text(
                     '$day',
                     style: TextStyle(
-                      fontSize: 13.sp,
+                      fontSize: metrics.dayTextSize,
                       fontWeight: isSelected || isToday
                           ? FontWeight.w600
                           : FontWeight.w400,
@@ -858,17 +1429,17 @@ class _CustomCalendarState extends State<_CustomCalendar> {
                   ),
                 ),
               ),
-              SizedBox(height: 2.h),
+              SizedBox(height: metrics.todayDotGap),
               isToday
                   ? Container(
-                      width: 5.w,
-                      height: 5.w,
+                      width: metrics.todayDotSize,
+                      height: metrics.todayDotSize,
                       decoration: const BoxDecoration(
                         color: Colors.blue,
                         shape: BoxShape.circle,
                       ),
                     )
-                  : SizedBox(height: 5.w),
+                  : SizedBox(height: metrics.todayDotSize),
             ],
           ),
         );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/apptext.dart';
+import 'package:fudikoclient/core/responsive/breakpoints.dart';
 
 class AppFilterDropDown extends StatefulWidget {
   final String hint;
@@ -34,63 +35,75 @@ class _AppFilterDropDownState extends State<AppFilterDropDown> {
   String? selectedValue;
   bool isOpen = false;
 
-
-
   @override
   Widget build(BuildContext context) {
+    final metrics = _AppFilterDropDownMetrics.fromContext(context);
+    final height = widget.height ?? metrics.height;
+    final iconSize = widget.imageIconSize ?? metrics.iconSize;
+    final textSize = widget.textSize ?? metrics.textSize;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GestureDetector(
           onTap: widget.toggleDropdown,
           child: Container(
-            height: widget.height ?? 45,
+            height: height,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(10.r),
-               boxShadow: [
-      BoxShadow(
-        color: Colors.black.withOpacity(0.10),
-        offset: const Offset(0, 0),
-        blurRadius: 10,
-        spreadRadius: 2,
-      ),
-    ],
+              borderRadius: BorderRadius.circular(metrics.radius),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.10),
+                  offset: const Offset(0, 0),
+                  blurRadius: metrics.shadowBlur,
+                  spreadRadius: metrics.shadowSpread,
+                ),
+              ],
             ),
             child: Stack(
               alignment: Alignment.center,
               children: [
-                if (widget.imageIconPath != null|| widget.icon != null)
+                if (widget.imageIconPath != null || widget.icon != null)
                   Positioned(
-                    left: 12,
-                    child: Image.asset(
-                      widget.imageIconPath!,
-                      width: widget.imageIconSize ?? 20,
-                      fit: BoxFit.cover,
-                      height: widget.imageIconSize?? 20,
-                    )?? Icon(
-                      widget.icon,
-                      size: 20,
-                      color: Colors.black87,
-                    ),
+                    left: metrics.sideInset,
+                    child: widget.imageIconPath != null
+                        ? Image.asset(
+                            widget.imageIconPath!,
+                            width: iconSize,
+                            fit: BoxFit.cover,
+                            height: iconSize,
+                          )
+                        : Icon(
+                            widget.icon,
+                            size: iconSize,
+                            color: Colors.black87,
+                          ),
                   ),
 
                 Center(
-                  child: AppText(
-                    text:selectedValue ?? widget.hint,
-                     size: widget.textSize ?? 14,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: metrics.centerHorizontalPadding,
+                    ),
+                    child: AppText(
+                      text: selectedValue ?? widget.hint,
+                      size: textSize,
                       color: widget.textColor ?? Colors.black87,
                       fontWeight: FontWeight.w500,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                  ),
                 ),
 
                 Positioned(
-                  right: 12,
+                  right: metrics.sideInset,
                   child: Icon(
                     isOpen
                         ? Icons.keyboard_arrow_up
                         : Icons.keyboard_arrow_down,
-                    size: 24,
+                    size: metrics.arrowSize,
                     color: Colors.black87,
                   ),
                 ),
@@ -98,9 +111,100 @@ class _AppFilterDropDownState extends State<AppFilterDropDown> {
             ),
           ),
         ),
-        //tazhenn varunnath
-
       ],
     );
   }
+}
+
+class _AppFilterDropDownMetrics {
+  const _AppFilterDropDownMetrics({
+    required this.height,
+    required this.radius,
+    required this.shadowBlur,
+    required this.shadowSpread,
+    required this.sideInset,
+    required this.centerHorizontalPadding,
+    required this.iconSize,
+    required this.arrowSize,
+    required this.textSize,
+  });
+
+  final double height;
+  final double radius;
+  final double shadowBlur;
+  final double shadowSpread;
+  final double sideInset;
+  final double centerHorizontalPadding;
+  final double iconSize;
+  final double arrowSize;
+  final double textSize;
+
+  factory _AppFilterDropDownMetrics.fromContext(BuildContext context) {
+  final size = MediaQuery.sizeOf(context);
+
+  // Device classification should use shortestSide, not width.
+  final isTablet = Breakpoints.isTabletDevice(size);
+
+  final isCompactPhone = size.width < 390 || size.height < 700;
+
+  // Short landscape phones (e.g. 844×390)
+  final isShortLandscape =
+      !isTablet &&
+      size.width > size.height &&
+      size.height < 450;
+
+  if (isTablet) {
+    return const _AppFilterDropDownMetrics(
+      height: 52,
+      radius: 12,
+      shadowBlur: 12,
+      shadowSpread: 2,
+      sideInset: 16,
+      centerHorizontalPadding: 48,
+      iconSize: 22,
+      arrowSize: 28,
+      textSize: 16,
+    );
+  }
+
+  if (isShortLandscape) {
+    return const _AppFilterDropDownMetrics(
+      height: 36,
+      radius: 9,
+      shadowBlur: 8,
+      shadowSpread: 1,
+      sideInset: 10,
+      centerHorizontalPadding: 34,
+      iconSize: 16,
+      arrowSize: 20,
+      textSize: 12,
+    );
+  }
+
+  if (isCompactPhone) {
+    return const _AppFilterDropDownMetrics(
+      height: 38,
+      radius: 9,
+      shadowBlur: 8,
+      shadowSpread: 1.5,
+      sideInset: 10,
+      centerHorizontalPadding: 34,
+      iconSize: 17,
+      arrowSize: 21,
+      textSize: 12.5,
+    );
+  }
+
+  return _AppFilterDropDownMetrics(
+    height: 45,
+    radius: 10.r,
+    shadowBlur: 10,
+    shadowSpread: 2,
+    sideInset: 12,
+    centerHorizontalPadding: 40,
+    iconSize: 20,
+    arrowSize: 24,
+    textSize: 14,
+  );
+}
 }

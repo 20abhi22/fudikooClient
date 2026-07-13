@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/apptext.dart';
+import 'package:fudikoclient/core/responsive/breakpoints.dart';
 import 'package:fudikoclient/model/inquery/delete-inquery-model.dart';
 import 'package:fudikoclient/model/inquery/list-party-inquery-modal.dart';
 import 'package:fudikoclient/screens/tabs/inquery/inquery/updateinquery.dart';
@@ -63,6 +64,7 @@ class _InqueryBoxState extends State<InqueryBox> {
   String countdown = '';
   Timer? timer;
   bool isExpired = false;
+  bool _isWithdrawLoading = false;
 
   @override
   void initState() {
@@ -138,12 +140,21 @@ class _InqueryBoxState extends State<InqueryBox> {
   }
 
   void onEdit() {
+    final metrics = _InqueryBoxMetrics.fromContext(context);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: metrics.editDialogInsetHorizontal,
+          vertical: metrics.editDialogInsetVertical,
+        ),
         backgroundColor: Colors.white,
         content: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 600),
+          constraints: BoxConstraints(
+            minWidth: metrics.editDialogMinWidth,
+            maxWidth: metrics.editDialogMaxWidth,
+          ),
           child: UpdateInquery(
             uuid: widget.enquiry.uuid,
             enquiryId: widget.enquiry.enquiryId,
@@ -182,8 +193,6 @@ class _InqueryBoxState extends State<InqueryBox> {
 
     if (!mounted) return;
 
-    Navigator.pop(context);
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -200,19 +209,35 @@ class _InqueryBoxState extends State<InqueryBox> {
     if (response.status) widget.onDeleted();
   }
 
+  Future<void> _withdrawInquery() async {
+    if (_isWithdrawLoading) return;
+
+    setState(() => _isWithdrawLoading = true);
+    await deleteInquery();
+
+    if (!mounted) return;
+    setState(() => _isWithdrawLoading = false);
+  }
+
   Widget buildInfoRow(
     String imageIcon,
     String text, {
     FontWeight fontWeight = FontWeight.w500,
     Color? color,
   }) {
+    final metrics = _InqueryBoxMetrics.fromContext(context);
+
     return Padding(
-      padding: EdgeInsets.only(bottom: 10.h),
+      padding: EdgeInsets.only(bottom: metrics.infoRowBottomGap),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Image.asset(imageIcon, width: 18.w, height: 18.w),
-          SizedBox(width: 5.w),
+          Image.asset(
+            imageIcon,
+            width: metrics.infoIconSize,
+            height: metrics.infoIconSize,
+          ),
+          SizedBox(width: metrics.infoIconGap),
           Expanded(
             child: Text(
               text,
@@ -220,7 +245,7 @@ class _InqueryBoxState extends State<InqueryBox> {
               maxLines: null,
               overflow: TextOverflow.visible,
               style: TextStyle(
-                fontSize: 15.sp,
+                fontSize: metrics.infoTextSize,
                 fontWeight: fontWeight,
                 color: color ?? appTextColor5,
               ),
@@ -233,32 +258,32 @@ class _InqueryBoxState extends State<InqueryBox> {
 
   @override
   Widget build(BuildContext context) {
+    final metrics = _InqueryBoxMetrics.fromContext(context);
     bool isConfirmed = widget.enquiry.status.toLowerCase() == "confirmed";
     final estimatedAmount = double.parse(
       widget.enquiry.estimatedAmount,
     ).toInt();
-    final radius = double.parse(widget.enquiry.searchRadius).toInt();
     final DateTime enquiryDate =
         DateTime.tryParse(widget.enquiry.date) ?? DateTime.now();
     final String formattedEnquiryDate = DateFormat('MMM d').format(enquiryDate);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: EdgeInsets.only(bottom: metrics.cardBottomGap),
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(metrics.cardRadius),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 10,
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: metrics.cardShadowBlur,
               offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Padding(
-          padding: EdgeInsets.all(20.w),
+          padding: EdgeInsets.all(metrics.cardPadding),
           child: Column(
             children: [
               Row(
@@ -271,11 +296,11 @@ class _InqueryBoxState extends State<InqueryBox> {
                       children: [
                         AppText(
                           text: widget.enquiry.enquiryId,
-                          size: 20,
+                          size: metrics.idTextSize,
                           fontWeight: FontWeight.bold,
                           color: appTextColor3,
                         ),
-                        SizedBox(height: 10.h),
+                        SizedBox(height: metrics.idBottomGap),
                         buildInfoRow(
                           walletIcon,
                           "$estimatedAmount Per Person",
@@ -310,20 +335,20 @@ class _InqueryBoxState extends State<InqueryBox> {
                       ],
                     ),
                   ),
-                  SizedBox(width: 10.w),
+                  SizedBox(width: metrics.expiryColumnGap),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       AppText(
                         text: DateFormat('d MMM').format(expiryDateTime),
-                        size: 10,
+                        size: metrics.expiryTextSize,
                         fontWeight: FontWeight.w600,
                         color: appTextColor3,
                       ),
-                      const SizedBox(height: 5),
+                      SizedBox(height: metrics.expiryTextGap),
                       AppText(
                         text: widget.enquiry.expirationTime,
-                        size: 10,
+                        size: metrics.expiryTextSize,
                         fontWeight: FontWeight.w600,
                         color: appTextColor3,
                       ),
@@ -331,7 +356,7 @@ class _InqueryBoxState extends State<InqueryBox> {
                   ),
                 ],
               ),
-              SizedBox(height: 20.h),
+              SizedBox(height: metrics.statusTopGap),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -340,22 +365,30 @@ class _InqueryBoxState extends State<InqueryBox> {
                       (isConfirmed == true)
                           ? Icon(
                               Icons.check_circle,
-                              size: 15.w,
+                              size: metrics.statusIconSize,
                               color: Colors.green,
                             )
                           : Image.asset(
                               stopwatchIcon,
-                              width: 15.w,
-                              height: 15.w,
+                              width: metrics.statusIconSize,
+                              height: metrics.statusIconSize,
                             ),
 
-                      SizedBox(width: 5.w),
+                      SizedBox(width: metrics.statusIconGap),
 
-                      AppText(
-                        text: isConfirmed ? "Confirmed" : countdown,
-                        size: 11,
-                        fontWeight: FontWeight.w600,
-                        color: isConfirmed ? Colors.green : Colors.red,
+                      SizedBox(
+                        width: metrics.statusTextWidth,
+                        child: Text(
+                          isConfirmed ? "Confirmed" : countdown,
+                          maxLines: 1,
+                          overflow: TextOverflow.visible,
+                          style: TextStyle(
+                            fontSize: metrics.statusTextSize,
+                            fontWeight: FontWeight.w600,
+                            color: isConfirmed ? Colors.green : Colors.red,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -364,84 +397,129 @@ class _InqueryBoxState extends State<InqueryBox> {
                   if (!isConfirmed && !isExpired)
                     Row(
                       children: [
-                        SizedBox(width: 5.w),
+                        SizedBox(width: metrics.actionLeadingGap),
 
                         SizedBox(
-                          width: 80.w,
-                          height: 35.h,
-                          child: AppButton(
+                          width: metrics.withdrawButtonWidth,
+                          height: metrics.withdrawButtonHeight,
+                          child: _ConfirmActionButton(
+                            isLoading: _isWithdrawLoading,
                             text: "Withdraw",
-                            onPressed: () {
+                            textSize: metrics.withdrawButtonTextSize,
+                            radius: metrics.withdrawButtonRadius,
+                            color: const Color(0xFFCE3F3F),
+                            onTap: () {
                               showDialog(
                                 context: context,
-                                builder: (context) => Dialog(
+                                builder: (dialogContext) => Dialog(
+                                  insetPadding: EdgeInsets.symmetric(
+                                    horizontal:
+                                        metrics.confirmDialogInsetHorizontal,
+                                    vertical:
+                                        metrics.confirmDialogInsetVertical,
+                                  ),
+                                  elevation: 18,
+                                  shadowColor: Colors.black.withValues(
+                                    alpha: 0.18,
+                                  ),
                                   backgroundColor: Colors.white,
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 30.w,
-                                      vertical: 20.h,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      metrics.confirmDialogRadius,
                                     ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        AppText(
-                                          text:
-                                              "Are you sure you want to withdraw this enquiry?",
-                                          isCentered: true,
-                                          lineSpacing: 1.5,
-                                          size: 12,
-                                          fontWeight: FontWeight.w500,
-                                          color: appTextColor2,
-                                        ),
-
-                                        SizedBox(height: 20.h),
-
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: SizedBox(
-                                                height: 30.h,
-                                                child: AppButton(
-                                                  text: "Yes",
-                                                  onPressed: () {
-                                                    deleteInquery();
-                                                  },
-                                                  size: 11,
-                                                  bgColor1: Color(0xFFF73B256),
-                                                  bgColor2: Color(0xFFF73B256),
-                                                  borderRadius: 10,
+                                    side: BorderSide(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.08,
+                                      ),
+                                    ),
+                                  ),
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxWidth: metrics.confirmDialogMaxWidth,
+                                    ),
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: metrics
+                                            .confirmDialogHorizontalPadding,
+                                        vertical: metrics
+                                            .confirmDialogVerticalPadding,
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          AppText(
+                                            text:
+                                                "Are you sure you want to withdraw this enquiry?",
+                                            isCentered: true,
+                                            lineSpacing:
+                                                metrics.confirmTextLineSpacing,
+                                            size: metrics.confirmTextSize,
+                                            fontWeight: FontWeight.w500,
+                                            color: appTextColor2,
+                                          ),
+                                          SizedBox(height: metrics.confirmGap),
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: SizedBox(
+                                                  height: metrics
+                                                      .confirmButtonHeight,
+                                                  child: AppButton(
+                                                    text: "Yes",
+                                                    onPressed: () {
+                                                      Navigator.pop(
+                                                        dialogContext,
+                                                      );
+                                                      _withdrawInquery();
+                                                    },
+                                                    size: metrics
+                                                        .confirmButtonTextSize,
+                                                    bgColor1: const Color(
+                                                      0xFF73B256,
+                                                    ),
+                                                    bgColor2: const Color(
+                                                      0xFF73B256,
+                                                    ),
+                                                    borderRadius: metrics
+                                                        .confirmButtonRadius,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-
-                                            SizedBox(width: 10.w),
-
-                                            Expanded(
-                                              child: SizedBox(
-                                                height: 30.h,
-                                                child: AppButton(
-                                                  text: "No",
-                                                  onPressed: () =>
-                                                      Navigator.pop(context),
-                                                  size: 11,
-                                                  bgColor1: Color(0xFFCE3F3F),
-                                                  bgColor2: Color(0xFFCE3F3F),
-                                                  borderRadius: 10,
+                                              SizedBox(
+                                                width: metrics.confirmButtonGap,
+                                              ),
+                                              Expanded(
+                                                child: SizedBox(
+                                                  height: metrics
+                                                      .confirmButtonHeight,
+                                                  child: AppButton(
+                                                    text: "No",
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                          dialogContext,
+                                                        ),
+                                                    size: metrics
+                                                        .confirmButtonTextSize,
+                                                    bgColor1: const Color(
+                                                      0xFFCE3F3F,
+                                                    ),
+                                                    bgColor2: const Color(
+                                                      0xFFCE3F3F,
+                                                    ),
+                                                    borderRadius: metrics
+                                                        .confirmButtonRadius,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
                               );
                             },
-                            size: 11,
-                            borderRadius: 5,
-                            bgColor1: Color(0xFFCE3F3F),
-                            bgColor2: Color(0xFFCE3F3F),
                           ),
                         ),
                       ],
@@ -452,6 +530,380 @@ class _InqueryBoxState extends State<InqueryBox> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ConfirmActionButton extends StatelessWidget {
+  const _ConfirmActionButton({
+    required this.text,
+    required this.textSize,
+    required this.radius,
+    required this.color,
+    required this.isLoading,
+    required this.onTap,
+  });
+
+  final String text;
+  final double textSize;
+  final double radius;
+  final Color color;
+  final bool isLoading;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color,
+      borderRadius: BorderRadius.circular(radius),
+      child: InkWell(
+        onTap: isLoading ? null : onTap,
+        borderRadius: BorderRadius.circular(radius),
+        child: Center(
+          child: isLoading
+              ? const _ThreeDotLoader()
+              : AppText(
+                  text: text,
+                  size: textSize,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                  maxLines: 1,
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThreeDotLoader extends StatefulWidget {
+  const _ThreeDotLoader();
+
+  @override
+  State<_ThreeDotLoader> createState() => _ThreeDotLoaderState();
+}
+
+class _ThreeDotLoaderState extends State<_ThreeDotLoader> {
+  Timer? _timer;
+  int _activeDot = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(milliseconds: 220), (_) {
+      if (!mounted) return;
+      setState(() => _activeDot = (_activeDot + 1) % 3);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(3, (index) {
+        final isActive = index == _activeDot;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          width: isActive ? 6 : 5,
+          height: isActive ? 6 : 5,
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: isActive ? 1 : 0.45),
+            shape: BoxShape.circle,
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _InqueryBoxMetrics {
+  const _InqueryBoxMetrics({
+    required this.cardBottomGap,
+    required this.cardRadius,
+    required this.cardShadowBlur,
+    required this.cardPadding,
+    required this.idTextSize,
+    required this.idBottomGap,
+    required this.infoRowBottomGap,
+    required this.infoIconSize,
+    required this.infoIconGap,
+    required this.infoTextSize,
+    required this.expiryColumnGap,
+    required this.expiryTextSize,
+    required this.expiryTextGap,
+    required this.statusTopGap,
+    required this.statusIconSize,
+    required this.statusIconGap,
+    required this.statusTextSize,
+    required this.statusTextWidth,
+    required this.actionLeadingGap,
+    required this.withdrawButtonWidth,
+    required this.withdrawButtonHeight,
+    required this.withdrawButtonTextSize,
+    required this.withdrawButtonRadius,
+    required this.confirmDialogInsetHorizontal,
+    required this.confirmDialogInsetVertical,
+    required this.confirmDialogMaxWidth,
+    required this.confirmDialogRadius,
+    required this.confirmDialogHorizontalPadding,
+    required this.confirmDialogVerticalPadding,
+    required this.confirmTextSize,
+    required this.confirmTextLineSpacing,
+    required this.confirmGap,
+    required this.confirmButtonHeight,
+    required this.confirmButtonGap,
+    required this.confirmButtonTextSize,
+    required this.confirmButtonRadius,
+    required this.editDialogInsetHorizontal,
+    required this.editDialogInsetVertical,
+    required this.editDialogMinWidth,
+    required this.editDialogMaxWidth,
+  });
+
+  final double cardBottomGap;
+  final double cardRadius;
+  final double cardShadowBlur;
+  final double cardPadding;
+  final double idTextSize;
+  final double idBottomGap;
+  final double infoRowBottomGap;
+  final double infoIconSize;
+  final double infoIconGap;
+  final double infoTextSize;
+  final double expiryColumnGap;
+  final double expiryTextSize;
+  final double expiryTextGap;
+  final double statusTopGap;
+  final double statusIconSize;
+  final double statusIconGap;
+  final double statusTextSize;
+  final double statusTextWidth;
+  final double actionLeadingGap;
+  final double withdrawButtonWidth;
+  final double withdrawButtonHeight;
+  final double withdrawButtonTextSize;
+  final double withdrawButtonRadius;
+  final double confirmDialogInsetHorizontal;
+  final double confirmDialogInsetVertical;
+  final double confirmDialogMaxWidth;
+  final double confirmDialogRadius;
+  final double confirmDialogHorizontalPadding;
+  final double confirmDialogVerticalPadding;
+  final double confirmTextSize;
+  final double confirmTextLineSpacing;
+  final double confirmGap;
+  final double confirmButtonHeight;
+  final double confirmButtonGap;
+  final double confirmButtonTextSize;
+  final double confirmButtonRadius;
+  final double editDialogInsetHorizontal;
+  final double editDialogInsetVertical;
+  final double editDialogMinWidth;
+  final double editDialogMaxWidth;
+
+  factory _InqueryBoxMetrics.fromContext(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final isTablet = Breakpoints.isTablet(size.width);
+    final isWideShortPhone =
+        !isTablet && size.width >= 500 && size.height <= 760;
+    final isCompactPhone = size.width < 390 || size.height < 700;
+
+    if (isTablet) {
+      final scale = (size.width / 768).clamp(1.0, 1.16).toDouble();
+      final verticalScale = (size.height / 1024).clamp(1.0, 1.18).toDouble();
+      double s(double value) => value * scale;
+      double v(double value) => value * verticalScale;
+      final dialogMaxWidth = (size.width - s(72))
+          .clamp(420.0, 760.0)
+          .toDouble();
+
+      return _InqueryBoxMetrics(
+        cardBottomGap: v(24),
+        cardRadius: s(20),
+        cardShadowBlur: s(10),
+        cardPadding: s(24),
+        idTextSize: 21,
+        idBottomGap: v(12),
+        infoRowBottomGap: v(11),
+        infoIconSize: s(20),
+        infoIconGap: s(7),
+        infoTextSize: 16,
+        expiryColumnGap: s(14),
+        expiryTextSize: 11,
+        expiryTextGap: v(5),
+        statusTopGap: v(22),
+        statusIconSize: s(17),
+        statusIconGap: s(6),
+        statusTextSize: 12,
+        statusTextWidth: s(76),
+        actionLeadingGap: s(6),
+        withdrawButtonWidth: s(100),
+        withdrawButtonHeight: v(40),
+        withdrawButtonTextSize: 12,
+        withdrawButtonRadius: s(6),
+        confirmDialogInsetHorizontal: s(40),
+        confirmDialogInsetVertical: v(24),
+        confirmDialogMaxWidth: s(420),
+        confirmDialogRadius: s(12),
+        confirmDialogHorizontalPadding: s(34),
+        confirmDialogVerticalPadding: v(24),
+        confirmTextSize: 13,
+        confirmTextLineSpacing: 1.5,
+        confirmGap: v(24),
+        confirmButtonHeight: v(34),
+        confirmButtonGap: s(12),
+        confirmButtonTextSize: 12,
+        confirmButtonRadius: s(10),
+        editDialogInsetHorizontal: s(36),
+        editDialogInsetVertical: v(24),
+        editDialogMinWidth: (size.width * 0.58).clamp(420.0, 620.0).toDouble(),
+        editDialogMaxWidth: dialogMaxWidth,
+      );
+    }
+
+    if (isWideShortPhone) {
+      return const _InqueryBoxMetrics(
+        cardBottomGap: 16,
+        cardRadius: 16,
+        cardShadowBlur: 8,
+        cardPadding: 16,
+        idTextSize: 17,
+        idBottomGap: 8,
+        infoRowBottomGap: 8,
+        infoIconSize: 15,
+        infoIconGap: 5,
+        infoTextSize: 13,
+        expiryColumnGap: 8,
+        expiryTextSize: 9,
+        expiryTextGap: 4,
+        statusTopGap: 16,
+        statusIconSize: 13,
+        statusIconGap: 5,
+        statusTextSize: 10,
+        statusTextWidth: 58,
+        actionLeadingGap: 5,
+        withdrawButtonWidth: 72,
+        withdrawButtonHeight: 32,
+        withdrawButtonTextSize: 10,
+        withdrawButtonRadius: 5,
+        confirmDialogInsetHorizontal: 24,
+        confirmDialogInsetVertical: 18,
+        confirmDialogMaxWidth: 360,
+        confirmDialogRadius: 10,
+        confirmDialogHorizontalPadding: 24,
+        confirmDialogVerticalPadding: 18,
+        confirmTextSize: 11,
+        confirmTextLineSpacing: 1.4,
+        confirmGap: 16,
+        confirmButtonHeight: 28,
+        confirmButtonGap: 8,
+        confirmButtonTextSize: 10,
+        confirmButtonRadius: 8,
+        editDialogInsetHorizontal: 20,
+        editDialogInsetVertical: 18,
+        editDialogMinWidth: 300,
+        editDialogMaxWidth: 460,
+      );
+    }
+
+    if (isCompactPhone) {
+      final scale = (size.width / 390).clamp(0.88, 1.0).toDouble();
+      double s(double value) => value * scale;
+
+      return _InqueryBoxMetrics(
+        cardBottomGap: s(16),
+        cardRadius: s(16),
+        cardShadowBlur: s(8),
+        cardPadding: s(15),
+        idTextSize: s(17),
+        idBottomGap: s(8),
+        infoRowBottomGap: s(8),
+        infoIconSize: s(15),
+        infoIconGap: s(5),
+        infoTextSize: s(13),
+        expiryColumnGap: s(8),
+        expiryTextSize: s(9),
+        expiryTextGap: s(4),
+        statusTopGap: s(16),
+        statusIconSize: s(13),
+        statusIconGap: s(5),
+        statusTextSize: s(10),
+        statusTextWidth: s(58),
+        actionLeadingGap: s(5),
+        withdrawButtonWidth: s(72),
+        withdrawButtonHeight: s(32),
+        withdrawButtonTextSize: s(10),
+        withdrawButtonRadius: s(5),
+        confirmDialogInsetHorizontal: s(20),
+        confirmDialogInsetVertical: s(16),
+        confirmDialogMaxWidth: double.infinity,
+        confirmDialogRadius: s(10),
+        confirmDialogHorizontalPadding: s(22),
+        confirmDialogVerticalPadding: s(18),
+        confirmTextSize: s(11),
+        confirmTextLineSpacing: 1.4,
+        confirmGap: s(16),
+        confirmButtonHeight: s(28),
+        confirmButtonGap: s(8),
+        confirmButtonTextSize: s(10),
+        confirmButtonRadius: s(8),
+        editDialogInsetHorizontal: s(18),
+        editDialogInsetVertical: s(16),
+        editDialogMinWidth: s(280),
+        editDialogMaxWidth: size.width - s(36),
+      );
+    }
+
+    return _InqueryBoxMetrics(
+      cardBottomGap: 20,
+      cardRadius: 20.r,
+      cardShadowBlur: 10,
+      cardPadding: 20.w,
+      idTextSize: 20,
+      idBottomGap: 10.h,
+      infoRowBottomGap: 10.h,
+      infoIconSize: 18.w,
+      infoIconGap: 5.w,
+      infoTextSize: 15.sp,
+      expiryColumnGap: 10.w,
+      expiryTextSize: 10,
+      expiryTextGap: 5,
+      statusTopGap: 20.h,
+      statusIconSize: 15.w,
+      statusIconGap: 5.w,
+      statusTextSize: 11,
+      statusTextWidth: 64.w,
+      actionLeadingGap: 5.w,
+      withdrawButtonWidth: 80.w,
+      withdrawButtonHeight: 35.h,
+      withdrawButtonTextSize: 11,
+      withdrawButtonRadius: 5,
+      confirmDialogInsetHorizontal: 24.w,
+      confirmDialogInsetVertical: 20.h,
+      confirmDialogMaxWidth: double.infinity,
+      confirmDialogRadius: 10.r,
+      confirmDialogHorizontalPadding: 30.w,
+      confirmDialogVerticalPadding: 20.h,
+      confirmTextSize: 12,
+      confirmTextLineSpacing: 1.5,
+      confirmGap: 20.h,
+      confirmButtonHeight: 30.h,
+      confirmButtonGap: 10.w,
+      confirmButtonTextSize: 11,
+      confirmButtonRadius: 10,
+      editDialogInsetHorizontal: 24.w,
+      editDialogInsetVertical: 20.h,
+      editDialogMinWidth: (MediaQuery.sizeOf(context).width - 48.w)
+          .clamp(280.0, 600.0)
+          .toDouble(),
+      editDialogMaxWidth: 600,
     );
   }
 }

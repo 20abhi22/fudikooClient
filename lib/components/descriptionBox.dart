@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:fudikoclient/utils/translator_service.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class DescriptionTextArea extends StatefulWidget {
   final String hintText;
@@ -87,7 +86,10 @@ class _DescriptionTextAreaState extends State<DescriptionTextArea> {
           decoration: InputDecoration(
             counterText: "",
             hintText: _translatedHint,
-            hintStyle: TextStyle(color: Colors.grey, fontSize: 12.sp),
+            hintStyle: const TextStyle(
+              color: Colors.grey,
+              fontSize: 12,
+            ),
             border: InputBorder.none,
           ),
           textAlignVertical: TextAlignVertical.top,
@@ -106,7 +108,10 @@ class _DescriptionTextAreaState extends State<DescriptionTextArea> {
       decoration: InputDecoration(
         counterText: "",
         hintText: _translatedHint,
-        hintStyle: TextStyle(color: Colors.grey, fontSize: 12.sp),
+        hintStyle: const TextStyle(
+          color: Colors.grey,
+          fontSize: 12,
+        ),
         border: InputBorder.none,
       ),
     );
@@ -114,55 +119,88 @@ class _DescriptionTextAreaState extends State<DescriptionTextArea> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.sizeOf(context);
+    final width = screenSize.width;
+    final height = screenSize.height;
+    final isCompactPhone = width < 390 || height < 640;
+    final isTablet = width >= 600;
+
+    final containerPadding = isTablet ? 20.0 : isCompactPhone ? 14.0 : 16.0;
+    final radius = isTablet ? 14.0 : 10.0;
+    final iconSize = isTablet ? 22.0 : isCompactPhone ? 18.0 : 20.0;
+    final headerGap = isTablet ? 12.0 : isCompactPhone ? 8.0 : 10.0;
+    final topGap = isTablet ? 10.0 : 8.0;
+    final titleSize = isTablet ? 15.0 : 14.0;
+    final counterSize = isTablet ? 13.0 : 12.0;
+    final hintSize = isTablet ? 13.0 : 12.0;
+
     return Container(
       height: widget.height,
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(containerPadding),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10.r),
+        borderRadius: BorderRadius.circular(radius),
         boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.18),
-                blurRadius: 10,
-                spreadRadius: 1,
-                offset: const Offset(0, 0),
-              ),
-            ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              if (widget.imageIconPath != null)
-                Image.asset(
-                  widget.imageIconPath!,
-                  width: 20.w,
-                  height: 20.w,
-                  color: widget.iconColor ?? const Color(0xFFC95F05),
-                )
-              else
-                Icon(widget.icon, color: widget.iconColor ?? const Color(0xFFC95F05)),
-              SizedBox(width: 10.w),
-              if (_translatedTopHint != null)
-                AppText(
-                  text: _translatedTopHint!,
-                  size: 14,
-                  fontWeight: FontWeight.w600,
-                  color: appTextColor2,
-                )
-              else
-                const SizedBox(),
-              const Spacer(),
-              Text(
-                '$_charCount/${widget.maxLength}',
-                style: TextStyle(color: Colors.grey, fontSize: 12.sp),
-              ),
-            ],
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: isTablet ? 12 : 10,
+            spreadRadius: 1,
+            offset: const Offset(0, 0),
           ),
-          SizedBox(height: 8.h),
-          _buildTextField(),
         ],
+      ),
+      child: DefaultTextStyle.merge(
+        style: TextStyle(fontSize: hintSize),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                if (widget.imageIconPath != null)
+                  Image.asset(
+                    widget.imageIconPath!,
+                    width: iconSize,
+                    height: iconSize,
+                    color: widget.iconColor ?? const Color(0xFFC95F05),
+                  )
+                else
+                  Icon(
+                    widget.icon,
+                    size: iconSize,
+                    color: widget.iconColor ?? const Color(0xFFC95F05),
+                  ),
+                SizedBox(width: headerGap),
+                if (_translatedTopHint != null)
+                  Expanded(
+                    child: AppText(
+                      text: _translatedTopHint!,
+                      size: titleSize,
+                      fontWeight: FontWeight.w600,
+                      color: appTextColor2,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  )
+                else
+                  const Spacer(),
+                if (_translatedTopHint != null) SizedBox(width: headerGap / 2),
+                Text(
+                  '$_charCount/${widget.maxLength}',
+                  style: TextStyle(color: Colors.grey, fontSize: counterSize),
+                ),
+              ],
+            ),
+            SizedBox(height: topGap),
+            Theme(
+              data: Theme.of(context).copyWith(
+                inputDecorationTheme: InputDecorationTheme(
+                  hintStyle: TextStyle(color: Colors.grey, fontSize: hintSize),
+                ),
+              ),
+              child: _buildTextField(),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -7,40 +7,55 @@ class TakeAway extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: appSecondaryBackgroundColor,
-        body: Stack(
+    return Scaffold(
+      backgroundColor: appSecondaryBackgroundColor,
+      body: SafeArea(
+        child: Stack(
           children: [
-            GestureDetector(
-              onTap: () {
-                Navigator.pop(context);
-              },
-              child: Padding(
-                padding: const EdgeInsets.only(left: 30, top: 30),
-                child: Image.asset(backOrange, width: 30, height: 30,fit: BoxFit.cover,),
+            Positioned.fill(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset('assets/images/takeaway.png', width: 150),
+                  const SizedBox(height: 15),
+                  AppText(
+                    text: "Takeaway Coming Soon",
+                    size: 16,
+                    fontWeight: FontWeight.w600,
+                    color: const Color.fromARGB(255, 37, 36, 36),
+                  ),
+                  const SizedBox(height: 4),
+                  AppText(
+                    text: "This feature will be available shortly.",
+                    size: 16,
+                    fontWeight: FontWeight.w400,
+                    color: appTextColor2,
+                  ),
+                  const SizedBox(height: 4),
+                  AppText(
+                    text: "Stay tuned!",
+                    size: 16,
+                    fontWeight: FontWeight.w400,
+                    color: appTextColor2,
+                  ),
+                ],
               ),
             ),
-            Expanded(
-              child: SizedBox(
-                width: double.infinity,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Icon(Icons.timer, size: 150, color: Colors.black),
-                    Container(
-                      child: Image.asset('assets/images/takeaway.png', width: 150,)
-                      ),
-                    SizedBox(height: 15,),
-                    AppText(text: "Takeaway Coming Soon", size: 16, fontWeight: FontWeight.w600,color: const Color.fromARGB(255, 37, 36, 36),),
-                    SizedBox(height: 4,),
-                    AppText(text: "This feature will be available shortly.", size: 16, fontWeight: FontWeight.w400,color: appTextColor2,),
-                    SizedBox(height: 4,),
-                    AppText(text: "Stay tuned!", size: 16, fontWeight: FontWeight.w400,color: appTextColor2,),
-                  ],
+            Positioned(
+              left: 30,
+              top: 30,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
+                },
+                child: Image.asset(
+                  backOrange,
+                  width: 30,
+                  height: 30,
+                  fit: BoxFit.cover,
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),

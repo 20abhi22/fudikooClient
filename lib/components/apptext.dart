@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:fudikoclient/utils/translator_service.dart';
 
@@ -49,7 +48,6 @@ class _AppTextState extends State<AppText> {
   @override
   void didUpdateWidget(AppText oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // re-translate if language changed
     if (oldWidget.text != widget.text) _translate();
   }
 
@@ -60,32 +58,38 @@ class _AppTextState extends State<AppText> {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedSize = _clampFontSize(widget.size);
+
     return Text(
+      _translated.isEmpty ? widget.text : _translated,
       softWrap: widget.softWrap,
       overflow: widget.overflow,
-      _translated.isEmpty ? widget.text : _translated,
       maxLines: widget.maxLines ?? 2,
-
       textAlign:
           widget.textAlign ??
           (widget.isCentered ?? false ? TextAlign.center : TextAlign.start),
       style: TextStyle(
-        fontSize: widget.size.sp,
+        fontSize: resolvedSize,
         fontWeight: widget.fontWeight,
         color: widget.color ?? appTextColor,
         height: widget.lineSpacing ?? 1.2,
         shadows:
             widget.isboxShadow ??
             (widget.isShadow == true
-                ? [
+                ? const [
                     Shadow(
                       blurRadius: 4,
-                      color: Colors.black.withValues(alpha: 0.4),
+                      color: Color(0x66000000),
                       offset: Offset(1.5, 1.5),
                     ),
                   ]
                 : null),
       ),
     );
+  }
+
+  double _clampFontSize(double size) {
+    if (size <= 0) return 12;
+    return size.clamp(8, 64).toDouble();
   }
 }

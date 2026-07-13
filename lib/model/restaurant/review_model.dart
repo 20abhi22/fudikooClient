@@ -40,7 +40,7 @@ class RestaurantReviewModel {
     required this.profilePicture,
     required this.review,
     required this.postedDate,
-    this.stars = 4,
+    this.stars = 0,
   });
 
   factory RestaurantReviewModel.fromJson(Map<String, dynamic> json) {
@@ -49,13 +49,17 @@ class RestaurantReviewModel {
       profilePicture: (json['profile_picture'] ?? '').toString(),
       review: (json['review'] ?? '').toString(),
       postedDate: (json['posted_date'] ?? '').toString(),
-      stars:
-          int.tryParse(
-            (json['stars'] ?? json['rating'] ?? json['star'] ?? '4').toString(),
-          ) ??
-          4,
+      stars: _parseStars(json['stars'] ?? json['rating'] ?? json['star']),
     );
   }
+}
+
+int _parseStars(dynamic value) {
+  if (value is int) return value.clamp(0, 5);
+  if (value is num) return value.round().clamp(0, 5);
+
+  final parsed = double.tryParse((value ?? '0').toString());
+  return (parsed?.round() ?? 0).clamp(0, 5);
 }
 
 class RestaurantReviewListResponse {

@@ -8,7 +8,7 @@ import 'package:fudikoclient/screens/tabs/components/restaurantCard.dart';
 class RestaurantBottomSheet extends ConsumerWidget {
   const RestaurantBottomSheet({super.key, required this.restaurant});
 
-final RestaurantModel restaurant;  
+  final RestaurantModel restaurant;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DraggableScrollableSheet(
@@ -123,90 +123,95 @@ final RestaurantModel restaurant;
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   separatorBuilder: (_, __) => SizedBox(width: 10.w),
-                 itemCount: restaurant.offers.length,
-itemBuilder: (context, index) {
-  final offer = restaurant.offers[index];
-  return GestureDetector(
-    onTap: () {
-      showDialog(
-        context: context,
-        barrierColor: Colors.black.withOpacity(0.5),
-        builder: (_) => Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 40.h),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20.r),
-            child: SingleChildScrollView(
-              child: RestaurantCard(
-                uuid: restaurant.uuid,
-                name: restaurant.name,
-                type: restaurant.type,
-                address: restaurant.address,
-                phone: restaurant.phone,
-                lat: restaurant.lat,
-                lng: restaurant.lng,
-                description: restaurant.description,
-                availableDishes: restaurant.availableDishes,
-                takeAwayService: restaurant.takeAwayService,
-                deliveryService: restaurant.deliveryService,
-                deliveryServiceArea: restaurant.deliveryServiceArea,
-                averageReview: restaurant.averageReview,
-                distance: restaurant.distance,
-                restaurantType: restaurant.restaurantType,
-                status: restaurant.status,
-                isFavourite: restaurant.isFavorite,
-                image: restaurant.image,
-                offers: restaurant.offers,
-                onBoxClicked: (offerId) => Navigator.pop(context),
-                onRatingOnClick: () => Navigator.pop(context),
-              ),
-            ),
-          ),
-        ),
-      );
-    },
-    child: Container(
-      width: 128.w,
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E6B3B),
-        borderRadius: BorderRadius.circular(18.r),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            '-${offer.discountPercentage.toStringAsFixed(0)}%',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 26.sp,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          Text(
-            'for ${offer.applicableFor}',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          Text(
-            offer.startTime,
-            style: TextStyle(
-              color: Colors.white.withOpacity(.76),
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}, 
+                  itemCount: restaurant.offers.length,
+                  itemBuilder: (context, index) {
+                    final offer = restaurant.offers[index];
+                    return GestureDetector(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          barrierColor: Colors.black.withOpacity(0.5),
+                          builder: (_) => Dialog(
+                            backgroundColor: Colors.transparent,
+                            insetPadding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                              vertical: 40.h,
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20.r),
+                              child: SingleChildScrollView(
+                                child: RestaurantCard(
+                                  uuid: restaurant.uuid,
+                                  name: restaurant.name,
+                                  type: restaurant.type,
+                                  address: restaurant.address,
+                                  phone: restaurant.phone,
+                                  lat: restaurant.lat,
+                                  lng: restaurant.lng,
+                                  description: restaurant.description,
+                                  availableDishes: restaurant.availableDishes,
+                                  takeAwayService: restaurant.takeAwayService,
+                                  deliveryService: restaurant.deliveryService,
+                                  deliveryServiceArea:
+                                      restaurant.deliveryServiceArea,
+                                  averageReview: restaurant.averageReview,
+                                  distance: restaurant.distance,
+                                  restaurantType: restaurant.restaurantType,
+                                  status: restaurant.status,
+                                  isFavourite: restaurant.isFavorite,
+                                  image: restaurant.image,
+                                  offers: restaurant.offers,
+                                  onBoxClicked: (offerId, offer) =>
+                                      Navigator.pop(context),
+                                  onRatingOnClick: () => Navigator.pop(context),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 128.w,
+                        padding: EdgeInsets.all(12.w),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E6B3B),
+                          borderRadius: BorderRadius.circular(18.r),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '-${offer.discountPercentage.toStringAsFixed(0)}%',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 26.sp,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            Text(
+                              'for ${offer.applicableFor}',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              offer.startTime,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(.76),
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],

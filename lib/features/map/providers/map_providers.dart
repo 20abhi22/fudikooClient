@@ -8,6 +8,20 @@ final mapExpandedProvider = StateProvider<bool>((ref) => false);
 
 final selectedRestaurantProvider = StateProvider<RestaurantModel?>((ref) => null);
 final userLocationProvider = StateProvider<LatLng?>((ref) => null);
+
+class SelectedLocation {
+  const SelectedLocation({
+    required this.city,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  final String city;
+  final double? latitude;
+  final double? longitude;
+}
+
+final selectedLocationProvider = StateProvider<SelectedLocation?>((ref) => null);
 final mapZoomProvider = StateProvider<double>((ref) => 15.5);
 final userLocationIconProvider = StateProvider<BitmapDescriptor?>((ref) => null);
 

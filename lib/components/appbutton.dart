@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/apptext.dart';
-import 'package:fudikoclient/utils/translator_service.dart';
+import 'package:fudikoclient/core/responsive/app_dimensions.dart';
+import 'package:fudikoclient/core/responsive/breakpoints.dart';
 
-class AppButton extends StatefulWidget {
+class AppButton extends StatelessWidget {
   final String text;
   final Function()? onPressed;
   final Color? bgColor1;
@@ -36,116 +36,98 @@ class AppButton extends StatefulWidget {
   });
 
   @override
-  State<AppButton> createState() => _AppButtonState();
-}
-
-class _AppButtonState extends State<AppButton> {
-
-    String _translated = '';
-
-     @override
-  void initState() {
-    super.initState();
-    _translate();
-  }
-
-  @override
-  void didUpdateWidget(covariant AppButton oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (oldWidget.text != widget.text) {
-      _translate();
-    }
-  }
-
-  Future<void> _translate() async {
-    final result = await TranslatorService.translate(widget.text);
-
-    if (mounted) {
-      setState(() {
-        _translated = result;
-      });
-    }
-  }
-  @override
   Widget build(BuildContext context) {
-    return Container(
-      width: widget.buttonwidth,
-      height: widget.buttonheight ?? 60.h,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(  widget.borderRadius?.r ?? 20.r),
-        gradient: widget.bgColor1 == null && widget.bgColor2 == null
-            ? const LinearGradient(
-                colors: [Color(0xFFC95F05), Color(0xFFF97A0D)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              )
-            : LinearGradient(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.hasBoundedWidth
+            ? constraints.maxWidth
+            : MediaQuery.sizeOf(context).width;
+        final isMobile = Breakpoints.isMobile(availableWidth);
+        final resolvedHeight = buttonheight ?? (isMobile ? 60.76 : 60.0);
+        final resolvedRadius = borderRadius ?? 20.0;
+        final resolvedIconSize = iconSize ?? (isMobile ? 22.0 : 24.0);
+        final resolvedTextSize = size ?? AppDimensions.body(context);
+
+        return SizedBox(
+          width: buttonwidth ?? double.infinity,
+          height: resolvedHeight,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(resolvedRadius),
+              gradient: LinearGradient(
                 colors: [
-                  widget.bgColor1 ?? const Color(0xFFC95F05),
-                  widget.bgColor2 ?? const Color(0xFFF97A0D),
+                  bgColor1 ?? const Color(0xFFD3690E),
+                  bgColor2 ?? const Color(0xFFFE943A),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-        boxShadow: widget.isShadow == false
-            ? [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-      ),
-      child: TextButton(
-        onPressed: widget.isLoading ? null : widget.onPressed,
-        style: TextButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(widget.borderRadius?.r ?? 20.r),
-          ),
-        ),
-        child:  Row(
-  mainAxisAlignment: MainAxisAlignment.center,
-  children: [
-    if ((widget.icon != null || widget.imageIconPath != null) && !widget.isLoading) ...[
-      widget.imageIconPath != null
-          ? Image.asset(
-              widget.imageIconPath!,
-              width: (widget.iconSize ?? 24).w,
-              height: (widget.iconSize ?? 24).h,
-            )
-          : Icon(
-              widget.icon,
-              color: Colors.white,
-              size: widget.iconSize?.sp ?? 25.sp,
+              boxShadow: isShadow == true
+                  ? null
+                  : const [
+                      BoxShadow(
+                        color: Color(0x40000000),
+                        blurRadius: 25,
+                        spreadRadius: 2,
+                        offset: Offset(0, 0),
+                      ),
+                    ],
             ),
-
-      // SizedBox(width: 5.w),
-    ],
-
-    if (widget.isLoading)
-      SizedBox(
-        width: 20.w,
-        height: 20.h,
-        child: const CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-          strokeWidth: 2,
-        ),
-      ),
-
-    if (widget.isLoading) SizedBox(width: 12.w),
-
-    AppText(
-        text: widget.isLoading ? 'Please wait...' : widget.text,
-      size: widget.size?.sp ?? 13.sp,
-      fontWeight: FontWeight.w500,
-      color: Colors.white,
-    ),
-  ],
-),
-      ),
+            child: TextButton(
+              onPressed: isLoading ? null : onPressed,
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppDimensions.gap(context),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(resolvedRadius),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if ((icon != null || imageIconPath != null) &&
+                      !isLoading) ...[
+                    imageIconPath != null
+                        ? Image.asset(
+                            imageIconPath!,
+                            width: resolvedIconSize,
+                            height: resolvedIconSize,
+                          )
+                        : Icon(
+                            icon,
+                            color: Colors.white,
+                            size: resolvedIconSize,
+                          ),
+                    SizedBox(width: AppDimensions.gap(context) / 2),
+                  ],
+                  if (isLoading) ...[
+                    SizedBox(
+                      width: resolvedIconSize,
+                      height: resolvedIconSize,
+                      child: const CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        strokeWidth: 2,
+                      ),
+                    ),
+                    SizedBox(width: AppDimensions.gap(context) / 2),
+                  ],
+                  AppText(
+                    text: isLoading ? '' : text,
+                    size: resolvedTextSize,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/apptext.dart';
+import 'package:fudikoclient/core/responsive/breakpoints.dart';
 import 'package:fudikoclient/model/banquet/banquet_booking_modal.dart';
 import 'package:fudikoclient/routetransitions.dart';
 import 'package:fudikoclient/screens/tabs/reservation/qrcoupon.dart';
@@ -22,47 +23,48 @@ class SearchBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final metrics = _SearchBoxMetrics.fromContext(context);
     final bool isConfirmed = booking.status == "Confirmed";
     final bool isCancelled =
         booking.status == "Cancelled" || booking.status == "Canceled";
 
     final Color statusColor = booking.status == "Confirmed"
-        ? const Color(0xFF32BA7C).withOpacity(.9)
+        ? const Color(0xFF32BA7C).withValues(alpha: .9)
         : booking.status == "Processing"
-            ? const Color(0xFF3954DB).withOpacity(.9)
-            : booking.status == "Completed"
-                ? const Color.fromARGB(255, 1, 128, 5).withOpacity(.9)
-                : const Color(0xFFFB5858).withOpacity(.9);
+        ? const Color(0xFF3954DB).withValues(alpha: .9)
+        : booking.status == "Completed"
+        ? const Color.fromARGB(255, 1, 128, 5).withValues(alpha: .9)
+        : const Color(0xFFFB5858).withValues(alpha: .9);
 
-    final String eventDateStr =
-        DateFormat("MMM d").format(booking.eventDate);
+    final String eventDateStr = DateFormat("MMM d").format(booking.eventDate);
 
-    final String eventTimeStr =
-        DateFormat("h:mm a").format(booking.eventDate);
+    final String eventTimeStr = DateFormat("h:mm a").format(booking.eventDate);
 
-    final String bookingDateStr =
-        DateFormat("MMM d").format(booking.bookingDate);
+    final String bookingDateStr = DateFormat(
+      "MMM d",
+    ).format(booking.bookingDate);
 
-    final String bookingTimeStr =
-        DateFormat("h:mm a").format(booking.bookingDate);
+    final String bookingTimeStr = DateFormat(
+      "h:mm a",
+    ).format(booking.bookingDate);
 
     return Padding(
-      padding: EdgeInsets.only(bottom: 20.h),
+      padding: EdgeInsets.only(bottom: metrics.bottomMargin),
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(metrics.radius),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8.r,
-              offset: Offset(0, 2.r),
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: metrics.shadowBlur,
+              offset: Offset(0, metrics.shadowOffset),
             ),
           ],
         ),
         child: Padding(
-          padding: EdgeInsets.all(16.w),
+          padding: EdgeInsets.all(metrics.padding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -72,7 +74,7 @@ class SearchBox extends StatelessWidget {
                 children: [
                   AppText(
                     text: booking.couponId,
-                    size: 21.sp,
+                    size: metrics.couponTextSize,
                     fontWeight: FontWeight.w700,
                     color: appTextColor3,
                   ),
@@ -82,16 +84,16 @@ class SearchBox extends StatelessWidget {
                     children: [
                       AppText(
                         text: bookingDateStr,
-                        size: 11.sp,
+                        size: metrics.dateTextSize,
                         fontWeight: FontWeight.w600,
                         color: appTextColor3,
                       ),
 
-                      SizedBox(height: 2.h),
+                      SizedBox(height: metrics.smallGap),
 
                       AppText(
                         text: bookingTimeStr,
-                        size: 11.sp,
+                        size: metrics.dateTextSize,
                         fontWeight: FontWeight.w400,
                         color: appTextColor3,
                       ),
@@ -100,7 +102,7 @@ class SearchBox extends StatelessWidget {
                 ],
               ),
 
-              SizedBox(height: 14.h),
+              SizedBox(height: metrics.headerGap),
 
               // ── Restaurant name ───────────────────────
               _iconRow(
@@ -108,30 +110,36 @@ class SearchBox extends StatelessWidget {
                 booking.restaurantName,
                 Colors.black,
                 fontWeight: FontWeight.w500,
-                fontSize: 14.sp,
+                fontSize: metrics.bodyTextSize,
+                iconSize: metrics.iconSize,
+                iconGap: metrics.iconGap,
               ),
 
-              SizedBox(height: 10.h),
+              SizedBox(height: metrics.rowGap),
 
               // ── Discount info ─────────────────────────
               _iconRowWithEmphasis(
                 offerIcon,
                 booking.discount.toStringAsFixed(0),
                 '% offer for ${booking.applicableFor ?? 'entire menu'}',
-                fontSize: 14.sp,
+                fontSize: metrics.bodyTextSize,
+                iconSize: metrics.iconSize,
+                iconGap: metrics.iconGap,
               ),
 
-              SizedBox(height: 10.h),
+              SizedBox(height: metrics.rowGap),
 
               // ── Event date/time ───────────────────────
               _iconRowWithEmphasis(
                 calenderIcon,
                 eventDateStr,
                 ' - $eventTimeStr',
-                fontSize: 14.sp,
+                fontSize: metrics.bodyTextSize,
+                iconSize: metrics.iconSize,
+                iconGap: metrics.iconGap,
               ),
 
-              SizedBox(height: 10.h),
+              SizedBox(height: metrics.rowGap),
 
               // ── Persons ───────────────────────────────
               _iconRow(
@@ -139,10 +147,12 @@ class SearchBox extends StatelessWidget {
                 '${booking.persons} Person',
                 Colors.black,
                 fontWeight: FontWeight.w600,
-                fontSize: 14.sp,
+                fontSize: metrics.bodyTextSize,
+                iconSize: metrics.iconSize,
+                iconGap: metrics.iconGap,
               ),
 
-              SizedBox(height: 12.h),
+              SizedBox(height: metrics.statusTopGap),
 
               // ── Status ────────────────────────────────
               Row(
@@ -150,23 +160,23 @@ class SearchBox extends StatelessWidget {
                 children: [
                   Image.asset(
                     statusIcon,
-                    width: 18,
-                    height: 18,
+                    width: metrics.iconSize,
+                    height: metrics.iconSize,
                     fit: BoxFit.fill,
                   ),
 
-                  SizedBox(width: 5.w),
+                  SizedBox(width: metrics.iconGap),
 
                   AppText(
                     text: booking.status,
-                    size: 15.sp,
+                    size: metrics.statusTextSize,
                     fontWeight: FontWeight.w600,
                     color: statusColor,
                   ),
                 ],
               ),
 
-              SizedBox(height: 16.h),
+              SizedBox(height: metrics.actionTopGap),
 
               if (!isCancelled && booking.status != "Completed") ...[
                 // ── Action buttons ────────────────────────
@@ -177,50 +187,50 @@ class SearchBox extends StatelessWidget {
                       onTap: onCancelTap,
                       child: AppText(
                         text: "Cancel",
-                        size: 14.sp,
+                        size: metrics.cancelTextSize,
                         fontWeight: FontWeight.w500,
-                        color: const Color(0xFFCE3F3F).withOpacity(.9),
+                        color: const Color(0xFFCE3F3F).withValues(alpha: .9),
                       ),
                     ),
 
-                    SizedBox(width: 10.w),
+                    SizedBox(width: metrics.actionGap),
 
-                if (booking.status == "Completed") ...[
-                  SizedBox(height: 16.h),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      SizedBox(
-                        width: 121.w,
-                        height: 42.h,
-                        child: AppButton(
-                          bgColor1: const Color(0xFFFE943A),
-                          bgColor2: const Color(0xFFFE943A),
-                          imageIconPath: couponIcon,
-                          iconSize: 32,
-                          text: "Coupon",
-                          size: 18,
-                          borderRadius: 10.r,
-                          onPressed: () {
-                            final offerText =
-                                '${booking.discount.toStringAsFixed(0)}% offer for ${booking.applicableFor ?? 'entire menu'}';
-                            slideRightWidget(
-                              newPage: QrCoupon(
-                                booking: booking,
-                                offerText: offerText,
-                              ),
-                              context: context,
-                            );
-                          },
-                        ),
+                    if (booking.status == "Completed") ...[
+                      SizedBox(height: metrics.actionTopGap),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          SizedBox(
+                            width: metrics.couponButtonWidth,
+                            height: metrics.couponButtonHeight,
+                            child: AppButton(
+                              bgColor1: const Color(0xFFFE943A),
+                              bgColor2: const Color(0xFFFE943A),
+                              imageIconPath: couponIcon,
+                              iconSize: metrics.couponButtonIconSize,
+                              text: "Coupon",
+                              size: metrics.couponButtonTextSize,
+                              borderRadius: metrics.couponButtonRadius,
+                              onPressed: () {
+                                final offerText =
+                                    '${booking.discount.toStringAsFixed(0)}% offer for ${booking.applicableFor ?? 'entire menu'}';
+                                slideRightWidget(
+                                  newPage: QrCoupon(
+                                    booking: booking,
+                                    offerText: offerText,
+                                  ),
+                                  context: context,
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-                ],
 
                     SizedBox(
-                      width: 121.w,
-                      height: 42.h,
+                      width: metrics.couponButtonWidth,
+                      height: metrics.couponButtonHeight,
                       child: Opacity(
                         opacity: isConfirmed ? 1 : 0.45,
                         child: IgnorePointer(
@@ -229,18 +239,18 @@ class SearchBox extends StatelessWidget {
                             bgColor1: const Color(0xFFFE943A),
                             bgColor2: const Color(0xFFFE943A),
                             imageIconPath: couponIcon,
-                            iconSize: 32,
+                            iconSize: metrics.couponButtonIconSize,
                             text: "Coupon",
-                            size: 18,
-                            borderRadius: 10.r,
+                            size: metrics.couponButtonTextSize,
+                            borderRadius: metrics.couponButtonRadius,
                             onPressed: () {
                               final offerText =
                                   '${booking.discount.toStringAsFixed(0)}% offer for ${booking.applicableFor ?? 'entire menu'}';
                               slideRightWidget(
-                                  newPage: QrCoupon(
-                                    booking: booking,
-                                    offerText: offerText,
-                                  ),
+                                newPage: QrCoupon(
+                                  booking: booking,
+                                  offerText: offerText,
+                                ),
                                 context: context,
                               );
                             },
@@ -266,19 +276,21 @@ class SearchBox extends StatelessWidget {
     Color textColor, {
     FontWeight fontWeight = FontWeight.w500,
     double fontSize = 14,
+    double iconSize = 18,
+    double iconGap = 8,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Image.asset(
           imageIconPath,
-          width: 18,
-          height: 18,
+          width: iconSize,
+          height: iconSize,
           fit: BoxFit.cover,
-          color: const Color(0xFF000000).withOpacity(.9),
+          color: const Color(0xFF000000).withValues(alpha: .9),
         ),
 
-        SizedBox(width: 8.w),
+        SizedBox(width: iconGap),
 
         Flexible(
           child: AppText(
@@ -299,19 +311,21 @@ class SearchBox extends StatelessWidget {
     String boldText,
     String regularText, {
     double fontSize = 15,
+    double iconSize = 18,
+    double iconGap = 8,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Image.asset(
           imageIconPath,
-          width: 18,
-          height: 18,
+          width: iconSize,
+          height: iconSize,
           fit: BoxFit.cover,
-          color: const Color(0xFF000000).withOpacity(.9),
+          color: const Color(0xFF000000).withValues(alpha: .9),
         ),
 
-        SizedBox(width: 8.w),
+        SizedBox(width: iconGap),
 
         Flexible(
           child: Wrap(
@@ -334,6 +348,182 @@ class SearchBox extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _SearchBoxMetrics {
+  const _SearchBoxMetrics({
+    required this.isTablet,
+    required this.bottomMargin,
+    required this.radius,
+    required this.shadowBlur,
+    required this.shadowOffset,
+    required this.padding,
+    required this.couponTextSize,
+    required this.dateTextSize,
+    required this.smallGap,
+    required this.headerGap,
+    required this.rowGap,
+    required this.statusTopGap,
+    required this.actionTopGap,
+    required this.iconSize,
+    required this.iconGap,
+    required this.bodyTextSize,
+    required this.statusTextSize,
+    required this.cancelTextSize,
+    required this.actionGap,
+    required this.couponButtonWidth,
+    required this.couponButtonHeight,
+    required this.couponButtonIconSize,
+    required this.couponButtonTextSize,
+    required this.couponButtonRadius,
+  });
+
+  final bool isTablet;
+  final double bottomMargin;
+  final double radius;
+  final double shadowBlur;
+  final double shadowOffset;
+  final double padding;
+  final double couponTextSize;
+  final double dateTextSize;
+  final double smallGap;
+  final double headerGap;
+  final double rowGap;
+  final double statusTopGap;
+  final double actionTopGap;
+  final double iconSize;
+  final double iconGap;
+  final double bodyTextSize;
+  final double statusTextSize;
+  final double cancelTextSize;
+  final double actionGap;
+  final double couponButtonWidth;
+  final double couponButtonHeight;
+  final double couponButtonIconSize;
+  final double couponButtonTextSize;
+  final double couponButtonRadius;
+
+  factory _SearchBoxMetrics.fromContext(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final isTablet = Breakpoints.isTablet(size.width);
+    final isWideShortPhone =
+        !isTablet && size.width >= 500 && size.height <= 760;
+    final isCompactPhone = size.width < 390 || size.height < 700;
+
+    if (isTablet) {
+      return const _SearchBoxMetrics(
+        isTablet: true,
+        bottomMargin: 20,
+        radius: 8,
+        shadowBlur: 16,
+        shadowOffset: 4,
+        padding: 22,
+        couponTextSize: 19,
+        dateTextSize: 12,
+        smallGap: 3,
+        headerGap: 16,
+        rowGap: 11,
+        statusTopGap: 14,
+        actionTopGap: 30,
+        iconSize: 18,
+        iconGap: 8,
+        bodyTextSize: 14.5,
+        statusTextSize: 12,
+        cancelTextSize: 14,
+        actionGap: 14,
+        couponButtonWidth: 178,
+        couponButtonHeight: 40,
+        couponButtonIconSize: 26,
+        couponButtonTextSize: 13,
+        couponButtonRadius: 7,
+      );
+    }
+
+    if (isWideShortPhone) {
+      return const _SearchBoxMetrics(
+        isTablet: false,
+        bottomMargin: 16,
+        radius: 16,
+        shadowBlur: 7,
+        shadowOffset: 2,
+        padding: 14,
+        couponTextSize: 18,
+        dateTextSize: 10,
+        smallGap: 2,
+        headerGap: 11,
+        rowGap: 8,
+        statusTopGap: 10,
+        actionTopGap: 12,
+        iconSize: 16,
+        iconGap: 7,
+        bodyTextSize: 12.5,
+        statusTextSize: 13,
+        cancelTextSize: 12.5,
+        actionGap: 10,
+        couponButtonWidth: 132,
+        couponButtonHeight: 36,
+        couponButtonIconSize: 24,
+        couponButtonTextSize: 13,
+        couponButtonRadius: 8,
+      );
+    }
+
+    if (isCompactPhone) {
+      return const _SearchBoxMetrics(
+        isTablet: false,
+        bottomMargin: 14,
+        radius: 16,
+        shadowBlur: 7,
+        shadowOffset: 2,
+        padding: 12,
+        couponTextSize: 17,
+        dateTextSize: 9.5,
+        smallGap: 2,
+        headerGap: 10,
+        rowGap: 8,
+        statusTopGap: 10,
+        actionTopGap: 12,
+        iconSize: 15,
+        iconGap: 6,
+        bodyTextSize: 12,
+        statusTextSize: 13,
+        cancelTextSize: 12,
+        actionGap: 8,
+        couponButtonWidth: 104,
+        couponButtonHeight: 36,
+        couponButtonIconSize: 28,
+        couponButtonTextSize: 15,
+        couponButtonRadius: 8,
+      );
+    }
+
+    return _SearchBoxMetrics(
+      isTablet: false,
+      bottomMargin: 20.h,
+      radius: 20.r,
+      shadowBlur: 8.r,
+      shadowOffset: 2.r,
+      padding: 16.w,
+      couponTextSize: 21.sp,
+      dateTextSize: 11.sp,
+      smallGap: 2.h,
+      headerGap: 14.h,
+      rowGap: 10.h,
+      statusTopGap: 12.h,
+      actionTopGap: 16.h,
+      iconSize: 18,
+      iconGap: 8.w,
+      bodyTextSize: 14.sp,
+      statusTextSize: 15.sp,
+      cancelTextSize: 14.sp,
+      actionGap: 10.w,
+      couponButtonWidth: 121.w,
+      couponButtonHeight: 42.h,
+      couponButtonIconSize: 32,
+      couponButtonTextSize: 18,
+      couponButtonRadius: 10.r,
     );
   }
 }

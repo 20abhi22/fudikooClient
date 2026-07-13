@@ -4,10 +4,14 @@ import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/appfilterdropdown.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/components/apptextfeild.dart';
+import 'package:fudikoclient/components/cancel_circle_x.dart';
+import 'package:fudikoclient/core/responsive/breakpoints.dart';
 import 'package:fudikoclient/model/banquet/banquet_reservation_modal.dart';
 import 'package:fudikoclient/screens/banquet_tabs/reservartion/banquet_reservation_box.dart';
 import 'package:fudikoclient/service/inquery/banquet_reservation_service.dart';
 import 'package:fudikoclient/utils/constants.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:intl/intl.dart';
 
 class BanquetReservation extends StatefulWidget {
   const BanquetReservation({super.key});
@@ -33,14 +37,39 @@ class _BanquetReservationState extends State<BanquetReservation> {
   String _reservationError = '';
   String _reservationSearchError = '';
   String _selectedReservationId = '';
+  BanquetReservationModal? _selectedRequestReservation;
   int _reservationSearchRequestId = 0;
   List<BanquetReservationModal> _reservations = [];
   List<BanquetReservationModal> _searchedReservations = [];
+  final Map<String, String> _reservationPlaceNames = {};
   final TextEditingController _reservationSearchController =
       TextEditingController();
   final TextEditingController _acceptAnotherReasonController =
       TextEditingController();
   final FocusNode _reservationSearchFocusNode = FocusNode();
+
+  bool get _isAnyOverlayOpen =>
+      isDeletePressed ||
+      isSearchDeletePressed ||
+      isPartyRequestPressed ||
+      isCateringRequestPressed ||
+      isConfirmedPressed ||
+      isBookingCanceled;
+
+  bool get _shouldHandleBack => _isAnyOverlayOpen || _isReservationSearchActive;
+
+  void _closeAllOverlays() {
+    setState(() {
+      isDeletePressed = false;
+      isSearchDeletePressed = false;
+      isPartyRequestPressed = false;
+      isCateringRequestPressed = false;
+      isConfirmedPressed = false;
+      isBookingCanceled = false;
+      _selectedReservationId = '';
+      _selectedRequestReservation = null;
+    });
+  }
 
   List<BanquetReservationModal> get _filteredBookings {
     final source = _isReservationSearchActive
@@ -309,77 +338,135 @@ class _BanquetReservationState extends State<BanquetReservation> {
       },
     );
   }
+  final List<String> _cancelReasons = const [
+  "I changed my mind",
+  "I need to reschedule the event",
+  "Entered the wrong details",
+  "I booked by mistake",
+  "Other Reasons",
+];
+
+  Widget _responsiveDialog({required Widget child}) {
+    final size = MediaQuery.sizeOf(context);
+
+    final isTablet = Breakpoints.isTabletDevice(size);
+    final isLandscape = size.width > size.height;
+
+    double width;
+
+    if (isTablet) {
+      width = isLandscape ? 520 : 560;
+    } else if (isLandscape) {
+      width = size.width * 0.85;
+    } else {
+      width = size.width - 60;
+    }
+
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: width,
+            maxHeight: size.height * 0.82,
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: appSecondaryBackgroundColor,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            RefreshIndicator(
-              color: appButtonColor,
-              onRefresh: _fetchReservations,
-              child: SingleChildScrollView(child: _viewSearchWidget()),
-            ),
-        
-            if (isDeletePressed)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black38,
-                  child: _deleteSearchBox(),
+    return PopScope(
+      canPop: !_shouldHandleBack,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_isAnyOverlayOpen) {
+          _closeAllOverlays();
+        } else if (_isReservationSearchActive) {
+          _exitReservationSearch();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: appSecondaryBackgroundColor,
+        body: SafeArea(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              RefreshIndicator(
+                color: appButtonColor,
+                onRefresh: _fetchReservations,
+                child: SingleChildScrollView(child: _viewSearchWidget()),
+              ),
+
+              if (isDeletePressed)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black38,
+                    child: _deleteSearchBox(),
+                  ),
                 ),
-              ),
-            if (isPartyRequestPressed)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black38,
-                  child: _viewPartyRequestWidget(),
+              if (isPartyRequestPressed)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black38,
+                    child: _viewPartyRequestWidget(),
+                  ),
                 ),
-              ),
-            if (isCateringRequestPressed)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black38,
-                  child: _viewCateringRequestWidget(),
+              if (isCateringRequestPressed)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black38,
+                    child: _viewCateringRequestWidget(),
+                  ),
                 ),
-              ),
-            if (isSearchDeletePressed)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black38,
-                  child: _deleteSearchBox(),
+              if (isSearchDeletePressed)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black38,
+                    child: _deleteSearchBox(),
+                  ),
                 ),
-              ),
-            if (isConfirmedPressed)
-              Positioned.fill(
-                child: Container(color: Colors.black38, child: _confirmedBox()),
-              ),
-            if (isBookingCanceled)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black38,
-                  child: _bookingCanceledBox(),
+              if (isConfirmedPressed)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black38,
+                    child: _confirmedBox(),
+                  ),
                 ),
-              ),
-          ],
+              if (isBookingCanceled)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black38,
+                    child: _bookingCanceledBox(),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _viewSearchWidget() {
+    final metrics = _BanquetReservationMetrics.fromContext(context);
+
     return Column(
       children: [
         Padding(
-          padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h),
+          padding: EdgeInsets.only(
+            left: metrics.contentHorizontalPadding,
+            right: metrics.contentHorizontalPadding,
+            top: metrics.contentTopPadding,
+          ),
           child: AppTextFeild(
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05), // #000000 5%
-                offset: const Offset(0, 0), // X: 0, Y: 0
-                blurRadius: 10, // Blur: 10
-                spreadRadius: 5, // Spread: 5
+                color: Colors.black.withValues(alpha: 0.05),
+                offset: const Offset(0, 0),
+                blurRadius: metrics.searchShadowBlur,
+                spreadRadius: metrics.searchShadowSpread,
               ),
             ],
             controller: _reservationSearchController,
@@ -389,105 +476,66 @@ class _BanquetReservationState extends State<BanquetReservation> {
             isTextCenter: true,
             icon: _isReservationSearchActive ? Icons.close : null,
             iconColor: appTextColor3,
-            size: 13.sp,
+            size: metrics.searchTextSize,
             onboxTap: _activateReservationSearch,
             iconOnTap: _isReservationSearchActive
                 ? _exitReservationSearch
                 : null,
             onChanged: _onReservationSearchChanged,
-            fieldBorderRadius: 16,
+            fieldBorderRadius: metrics.searchRadius,
           ),
         ),
-        SizedBox(height: 20.h),
+        SizedBox(height: metrics.sectionGap),
 
         SizedBox(
-          width: 150.w,
+          width: metrics.filterWidth,
           child: AppFilterDropDown(
-            height: 30.h,
+            height: metrics.filterHeight,
             hint: selectedFilter, // ← shows selected option instead of "filter"
             imageIconPath: filterIcon,
-            imageIconSize: 18.sp,
-            textSize: 10.sp,
-            toggleDropdown: () {
-              showModalBottomSheet(
-                backgroundColor: Colors.white,
-                context: context,
-                isScrollControlled: true,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                ),
-                builder: (context) {
-                  return Padding(
-                    padding: EdgeInsets.all(30.w),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        SizedBox(height: 16.h),
-                        Container(
-                          width: MediaQuery.of(context).size.width,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          padding: EdgeInsets.all(16.w),
-                          child: Column(
-                            children: [
-                              _buildFilterOption("All Bookings"),
-                              Divider(color: Colors.grey[200]),
-                              _buildFilterOption("Confirmed"),
-                              Divider(color: Colors.grey[200]),
-                              _buildFilterOption("Cancelled"),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
+            imageIconSize: metrics.filterIconSize,
+            textSize: metrics.filterTextSize,
+            toggleDropdown: _showFilterBottomSheet,
           ),
         ),
-        SizedBox(height: 20.h),
+        SizedBox(height: metrics.sectionGap),
 
         // Padding(
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
+          padding: EdgeInsets.symmetric(
+            horizontal: metrics.contentHorizontalPadding,
+          ),
           child: _isActiveListLoading
               ? Padding(
-                  padding: EdgeInsets.symmetric(vertical: 60.h),
+                  padding: EdgeInsets.symmetric(
+                    vertical: metrics.stateVerticalPadding,
+                  ),
                   child: const Center(child: CircularProgressIndicator()),
                 )
               : _activeListError.isNotEmpty
               ? Padding(
-                  padding: EdgeInsets.symmetric(vertical: 60.h),
+                  padding: EdgeInsets.symmetric(
+                    vertical: metrics.stateVerticalPadding,
+                  ),
                   child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         AppText(
                           text: _activeListError,
-                          size: 15,
+                          size: metrics.stateTextSize,
                           fontWeight: FontWeight.w500,
                           color: appTextColor3,
                           isCentered: true,
                         ),
-                        SizedBox(height: 16.h),
+                        SizedBox(height: metrics.stateGap),
                         SizedBox(
-                          width: 120.w,
-                          height: 38.h,
+                          width: metrics.retryButtonWidth,
+                          height: metrics.retryButtonHeight,
                           child: AppButton(
                             text: "Retry",
-                            size: 14,
-                            borderRadius: 10.r,
+                            size: metrics.retryButtonTextSize,
+                            borderRadius: metrics.retryButtonRadius,
                             onPressed: _retryActiveListRequest,
                           ),
                         ),
@@ -497,11 +545,13 @@ class _BanquetReservationState extends State<BanquetReservation> {
                 )
               : _filteredBookings.isEmpty
               ? Padding(
-                  padding: EdgeInsets.symmetric(vertical: 60.h),
+                  padding: EdgeInsets.symmetric(
+                    vertical: metrics.stateVerticalPadding,
+                  ),
                   child: Center(
                     child: AppText(
                       text: _emptyListText,
-                      size: 15,
+                      size: metrics.stateTextSize,
                       fontWeight: FontWeight.w500,
                       color: appTextColor3,
                       isCentered: true,
@@ -522,9 +572,7 @@ class _BanquetReservationState extends State<BanquetReservation> {
                           isSearchDeletePressed = true;
                         });
                       },
-                      onRequestTap: () => setState(
-                        () => isPartyRequestPressed = !isPartyRequestPressed,
-                      ),
+                      onRequestTap: () => _openPartyRequest(booking),
                     );
                   },
                 ),
@@ -533,137 +581,308 @@ class _BanquetReservationState extends State<BanquetReservation> {
     );
   }
 
-  Widget _deleteSearchBox() {
-    return Stack(
-      children: [
-        Container(
-          height: MediaQuery.of(context).size.height,
-          width: MediaQuery.of(context).size.width,
-          decoration: BoxDecoration(color: Colors.black.withOpacity(0.5)),
-        ),
-        Center(
+  Future<void> _openPartyRequest(BanquetReservationModal reservation) async {
+    setState(() {
+      _selectedRequestReservation = reservation;
+      isPartyRequestPressed = true;
+    });
+
+    await _ensurePlaceNameFor(reservation);
+  }
+
+  Future<void> _ensurePlaceNameFor(BanquetReservationModal? reservation) async {
+    if (reservation == null) return;
+
+    final lat = reservation.lat.trim();
+    final lng = reservation.lng.trim();
+    if (lat.isEmpty || lng.isEmpty) return;
+
+    final key = '$lat,$lng';
+    if (_reservationPlaceNames.containsKey(key)) return;
+
+    try {
+      final latValue = double.parse(lat);
+      final lngValue = double.parse(lng);
+      final placemarks = await placemarkFromCoordinates(latValue, lngValue);
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        final name = [
+          place.subLocality,
+          place.locality,
+          place.country,
+        ].where((part) => part != null && part.isNotEmpty).join(', ');
+        _reservationPlaceNames[key] = name.isNotEmpty ? name : '$lat, $lng';
+      } else {
+        _reservationPlaceNames[key] = '$lat, $lng';
+      }
+    } catch (_) {
+      _reservationPlaceNames[key] = '$lat, $lng';
+    }
+
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  void _showFilterBottomSheet() {
+    final metrics = _BanquetReservationMetrics.fromContext(context);
+
+    // showModalBottomSheet(
+    //   backgroundColor: Colors.white,
+    //   context: context,
+    //   isScrollControlled: true,
+    //   shape: RoundedRectangleBorder(
+    //     borderRadius: BorderRadius.vertical(
+    //       top: Radius.circular(metrics.sheetTopRadius),
+    //     ),
+    //   ),
+    //
+    final size = MediaQuery.sizeOf(context);
+    final isTablet = Breakpoints.isTabletDevice(size);
+    final isLandscape = size.width > size.height;
+
+    // showModalBottomSheet(
+    //   context: context,
+    //   backgroundColor: Colors.white,
+    //   isScrollControlled: true,
+    //   useSafeArea: true,
+
+    //   constraints: isTablet
+    //       ? BoxConstraints(maxWidth: isLandscape ? 360 : 420)
+    //       : null,
+
+    //   shape: RoundedRectangleBorder(
+    //     borderRadius: BorderRadius.vertical(
+    //       top: Radius.circular(metrics.sheetTopRadius),
+    //     ),
+    //   ),
+    showModalBottomSheet(
+  context: context,
+  backgroundColor: Colors.white,
+  useSafeArea: true,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.vertical(
+      top: Radius.circular(metrics.sheetTopRadius),
+    ),
+  ),
+
+      builder: (_) {
+        return SafeArea(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 30.w),
-            child: Container(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              12,
+              20,
+              MediaQuery.of(context).viewInsets.bottom + 20,
+            ),
+            child: SizedBox(
               width: double.infinity,
-              padding: EdgeInsets.only(
-                left: 40.w,
-                right: 40.w,
-                top: 30.h,
-                bottom: 30.h,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10.r,
-                    offset: Offset(0, 4.r),
-                  ),
-                ],
-              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    // crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Spacer(),
-                      AppText(
-                        text: "Reason for Cancel",
-                        size: 14,
-                        fontWeight: FontWeight.w500,
-                        color: menuIconColor,
-                        isCentered: true,
+                  Container(
+                    width: metrics.sheetHandleWidth,
+                    height: metrics.sheetHandleHeight,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(
+                        metrics.sheetHandleRadius,
                       ),
-                      Spacer(),
-                      GestureDetector(
-                        onTap: _isCancellingReservation
-                            ? null
-                            : () {
-                                setState(() {
-                                  isSearchDeletePressed = false;
-                                  _selectedReservationId = '';
-                                });
-                              },
-                        child: Icon(
-                          Icons.close,
-                          size: 25,
-                          color: appTextColor3,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
 
-                  SizedBox(height: 20.h),
-                  SizedBox(
-                    height: 35.h,
-                    child: buildStatusButton("I changed my mind"),
+                  SizedBox(height: metrics.sheetGap),
+
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(
+                        metrics.sheetContainerRadius,
+                      ),
+                    ),
+                    padding: EdgeInsets.all(metrics.sheetContainerPadding),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildFilterOption("All Bookings"),
+                        Divider(height: 1),
+                        _buildFilterOption("Confirmed"),
+                        Divider(height: 1),
+                        _buildFilterOption("Cancelled"),
+                      ],
+                    ),
                   ),
-                  SizedBox(height: 10.h),
-                  SizedBox(
-                    height: 35.h,
-                    child: buildStatusButton("I need to reschedule the event"),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCancelHeader() {
+  return Row(
+    children: [
+      const Spacer(),
+      AppText(
+        text: "Reason for Cancel",
+        size: 14,
+        fontWeight: FontWeight.w500,
+        color: menuIconColor,
+        isCentered: true,
+      ),
+      const Spacer(),
+      GestureDetector(
+        onTap: _isCancellingReservation
+            ? null
+            : () {
+                setState(() {
+                  isSearchDeletePressed = false;
+                  _selectedReservationId = '';
+                });
+              },
+        child: Icon(
+          Icons.close,
+          size: 25,
+          color: appTextColor3,
+        ),
+      ),
+    ],
+  );
+}
+
+Widget _deleteSearchBox() {
+  return Stack(
+    children: [
+      Positioned.fill(
+        child: Container(
+          color: Colors.black.withOpacity(.5),
+        ),
+      ),
+
+      Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: _responsiveDialog(
+            child: Container(
+              width: double.infinity,
+
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * .80,
+              ),
+
+              padding: const EdgeInsets.symmetric(
+                horizontal: 28,
+                vertical: 24,
+              ),
+
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(.22),
+                    blurRadius: 32,
+                    spreadRadius: 4,
+                    offset: const Offset(0, 12),
                   ),
-                  SizedBox(height: 10.h),
-                  SizedBox(
-                    height: 35.h,
-                    child: buildStatusButton("Entered the wrong details"),
+                ],
+              ),
+
+              child: Column(
+                children: [
+
+                  _buildCancelHeader(),
+
+                  const SizedBox(height: 24),
+
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+
+                              final size = MediaQuery.sizeOf(context);
+                              final isLandscape =
+                                  size.width > size.height;
+
+                              return GridView.builder(
+                                shrinkWrap: true,
+                                physics:
+                                    const NeverScrollableScrollPhysics(),
+
+                                itemCount: _cancelReasons.length,
+
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount:
+                                      isLandscape ? 3 : 1,
+
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                  mainAxisExtent: 48,
+                                ),
+
+                                itemBuilder: (_, index) =>
+                                    buildStatusButton(
+                                        _cancelReasons[index]),
+                              );
+                            },
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          AppText(
+                            text:
+                                "Canceling a confirmed booking may negatively impact your reliability rating.",
+                            size: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black,
+                            isCentered: true,
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          AppText(
+                            text:
+                                "However, if you accept another response instead, the previous booking will be automatically replaced without affecting your rating.",
+                            size: 13,
+                            fontWeight: FontWeight.w400,
+                            color: appTextColor2,
+                            isCentered: true,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  SizedBox(height: 10.h),
-                  SizedBox(
-                    height: 35.h,
-                    child: buildStatusButton("I booked by mistake"),
-                  ),
-                  SizedBox(height: 10.h),
-                  SizedBox(
-                    height: 35.h,
-                    child: buildStatusButton("Other Reasons"),
-                  ),
-                  SizedBox(height: 35.h),
-                  AppText(
-                    text:
-                        "Canceling a confirmed booking may negatively impact your reliability rating.",
-                    size: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black,
-                    isCentered: true,
-                  ),
-                  SizedBox(height: 10.h),
-                  AppText(
-                    text:
-                        "However, if you accept another response instead, the previous booking will be automatically replaced without affecting your rating.",
-                    size: 13,
-                    fontWeight: FontWeight.w400,
-                    color: appTextColor2,
-                    isCentered: true,
-                    maxLines: 4,
-                  ),
-                  SizedBox(height: 15.h),
+
+                  const SizedBox(height: 16),
+
                   GestureDetector(
                     onTap: _showAcceptAnotherReasonPopup,
                     child: AppText(
                       text: "Accept another response",
                       size: 15,
                       fontWeight: FontWeight.w400,
-                      color: Color(0xFF3954DB).withOpacity(.9),
+                      color: const Color(0xFF3954DB),
                       isCentered: true,
                     ),
                   ),
-                  SizedBox(height: 20.h),
+
+                  const SizedBox(height: 20),
+
                   SizedBox(
-                    width: 120.w,
-                    height: 35.h,
+                    width: 160,
+                    height: 44,
                     child: AppButton(
-                      
                       text: _isCancellingReservation
                           ? "Cancelling..."
                           : "Cancel",
-                      bgColor1: Color(0xFFCE3F3F),
-                      bgColor2: Color(0xFFCE3F3F),
-                      size: 15,
-                      borderRadius: 8,
+                      bgColor1: const Color(0xFFCE3F3F),
+                      bgColor2: const Color(0xFFCE3F3F),
+                      borderRadius: 10,
                       onPressed: _isCancellingReservation
                           ? null
                           : _cancelSelectedReservation,
@@ -674,42 +893,46 @@ class _BanquetReservationState extends State<BanquetReservation> {
             ),
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
   Widget buildStatusButton(String text) {
     final bool isSelected = selectedStatus == text;
-
     return GestureDetector(
       onTap: () {
         setState(() {
           selectedStatus = text;
         });
       },
-      child: Container(
-        height: 35.h,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          gradient: isSelected
-              ? const LinearGradient(
-                  colors: [Color(0xFFF97A0D), Color(0xFFF97A0D)],
-                )
-              : null,
-          color: isSelected ? null : Colors.grey[200],
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              offset: const Offset(2, 2),
-            ),
-          ],
-        ),
-        child: AppText(
-          text: text,
-          size: 13,
-          fontWeight: FontWeight.w400,
-          color: isSelected ? Colors.white : Colors.black,
+      child: SizedBox(
+        width: double.infinity,
+        height: double.infinity,
+        child: Container(
+          // height: 35.h,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            gradient: isSelected
+                ? const LinearGradient(
+                    colors: [Color(0xFFF97A0D), Color(0xFFF97A0D)],
+                  )
+                : null,
+            color: isSelected ? null : Colors.grey[200],
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                offset: const Offset(2, 2),
+              ),
+            ],
+          ),
+          child: AppText(
+            text: text,
+            size: 13,
+            fontWeight: FontWeight.w400,
+            color: isSelected ? Colors.white : Colors.black,
+          ),
         ),
       ),
     );
@@ -762,8 +985,7 @@ class _BanquetReservationState extends State<BanquetReservation> {
           decoration: BoxDecoration(color: Colors.black.withOpacity(0.5)),
         ),
         Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 30.w),
+          child: _responsiveDialog(
             child: Container(
               width: double.infinity,
               padding: EdgeInsets.only(
@@ -802,12 +1024,7 @@ class _BanquetReservationState extends State<BanquetReservation> {
                       ),
                     ],
                   ),
-                  Image.asset(
-                    'assets/images/cancel.png',
-                    height: 60.h,
-                    width: 60.w,
-                    fit: BoxFit.contain,
-                  ),
+                  CancelCircleX(size: 86.w),
                   SizedBox(height: 20.h),
                   AppText(
                     text: "Booking Canceled!",
@@ -835,8 +1052,7 @@ class _BanquetReservationState extends State<BanquetReservation> {
           decoration: BoxDecoration(color: Colors.black.withOpacity(0.5)),
         ),
         Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 30.w),
+          child: _responsiveDialog(
             child: Container(
               width: double.infinity,
               padding: EdgeInsets.only(
@@ -924,97 +1140,98 @@ class _BanquetReservationState extends State<BanquetReservation> {
     );
   }
 
-  Widget _deleteBox() {
-    return Stack(
-      children: [
-        Container(
-          height: MediaQuery.of(context).size.height,
-          width: MediaQuery.of(context).size.width,
-          decoration: BoxDecoration(color: Colors.black.withOpacity(0.5)),
-        ),
-        Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 30.w),
-            child: Container(
-              width: double.infinity,
-              padding: EdgeInsets.only(
-                left: 40.w,
-                right: 40.w,
-                top: 30.h,
-                bottom: 30.h,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10.r,
-                    offset: Offset(0, 4.r),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AppText(
-                    text: "Are you sure you want to Cancel this Booking?",
-                    size: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black,
-                    isCentered: true,
-                    lineSpacing: 1.2,
-                  ),
-                  SizedBox(height: 10.h),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 35.h,
-                          child: AppButton(
-                            text: _isCancellingReservation
-                                ? "Cancelling..."
-                                : "Yes",
-                            onPressed: _isCancellingReservation
-                                ? null
-                                : _cancelSelectedReservation,
-                            borderRadius: 5.r,
-                            bgColor1: Colors.green,
-                            bgColor2: Colors.green,
-                            size: 12,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 20.w),
-                      Expanded(
-                        child: SizedBox(
-                          height: 35.h,
-                          child: AppButton(
-                            text: "No",
-                            onPressed: () {
-                              setState(() {
-                                isDeletePressed = !isDeletePressed;
-                              });
-                            },
-                            size: 12,
-                            borderRadius: 5.r,
-                            bgColor1: Colors.red,
-                            bgColor2: Colors.red,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  // Widget _deleteBox() {
+  //   return Stack(
+  //     children: [
+  //       Container(
+  //         height: MediaQuery.of(context).size.height,
+  //         width: MediaQuery.of(context).size.width,
+  //         decoration: BoxDecoration(color: Colors.black.withOpacity(0.5)),
+  //       ),
+  //       Center(
+  //         child: Padding(
+  //           padding: EdgeInsets.symmetric(horizontal: 30.w),
+  //           child: Container(
+  //             width: double.infinity,
+  //             padding: EdgeInsets.only(
+  //               left: 40.w,
+  //               right: 40.w,
+  //               top: 30.h,
+  //               bottom: 30.h,
+  //             ),
+  //             decoration: BoxDecoration(
+  //               color: Colors.white,
+  //               borderRadius: BorderRadius.circular(15.r),
+  //               boxShadow: [
+  //                 BoxShadow(
+  //                   color: Colors.black.withOpacity(0.1),
+  //                   blurRadius: 10.r,
+  //                   offset: Offset(0, 4.r),
+  //                 ),
+  //               ],
+  //             ),
+  //             child: Column(
+  //               mainAxisSize: MainAxisSize.min,
+  //               children: [
+  //                 AppText(
+  //                   text: "Are you sure you want to Cancel this Booking?",
+  //                   size: 13,
+  //                   fontWeight: FontWeight.w500,
+  //                   color: Colors.black,
+  //                   isCentered: true,
+  //                   lineSpacing: 1.2,
+  //                 ),
+  //                 SizedBox(height: 10.h),
+  //                 Row(
+  //                   children: [
+  //                     Expanded(
+  //                       child: SizedBox(
+  //                         height: 35.h,
+  //                         child: AppButton(
+  //                           text: _isCancellingReservation
+  //                               ? "Cancelling..."
+  //                               : "Yes",
+  //                           onPressed: _isCancellingReservation
+  //                               ? null
+  //                               : _cancelSelectedReservation,
+  //                           borderRadius: 5.r,
+  //                           bgColor1: Colors.green,
+  //                           bgColor2: Colors.green,
+  //                           size: 12,
+  //                         ),
+  //                       ),
+  //                     ),
+  //                     SizedBox(width: 20.w),
+  //                     Expanded(
+  //                       child: SizedBox(
+  //                         height: 35.h,
+  //                         child: AppButton(
+  //                           text: "No",
+  //                           onPressed: () {
+  //                             setState(() {
+  //                               isDeletePressed = !isDeletePressed;
+  //                             });
+  //                           },
+  //                           size: 12,
+  //                           borderRadius: 5.r,
+  //                           bgColor1: Colors.red,
+  //                           bgColor2: Colors.red,
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildFilterOption(String label) {
+    final metrics = _BanquetReservationMetrics.fromContext(context);
     final bool isSelected = selectedFilter == label;
 
     return GestureDetector(
@@ -1026,7 +1243,10 @@ class _BanquetReservationState extends State<BanquetReservation> {
       },
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
+        padding: EdgeInsets.symmetric(
+          vertical: metrics.filterOptionVerticalPadding,
+          horizontal: metrics.filterOptionHorizontalPadding,
+        ),
         decoration: BoxDecoration(
           gradient: isSelected
               ? const LinearGradient(
@@ -1034,11 +1254,11 @@ class _BanquetReservationState extends State<BanquetReservation> {
                 )
               : null,
           color: isSelected ? null : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(metrics.filterOptionRadius),
         ),
         child: AppText(
           text: label,
-          size: 15,
+          size: metrics.filterOptionTextSize,
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
           color: isSelected ? Colors.white : Colors.black,
           isCentered: true,
@@ -1288,212 +1508,539 @@ class _BanquetReservationState extends State<BanquetReservation> {
   }
 
   Widget _viewPartyRequestWidget() {
+    final reservation = _selectedRequestReservation;
+    final size = MediaQuery.sizeOf(context);
+    final isTablet = Breakpoints.isTabletDevice(size);
+    final isLandscape = size.width > size.height;
+    final couponId = reservation?.couponId.trim().isNotEmpty == true
+        ? reservation!.couponId
+        : 'Request details';
+    final menuItems = reservation?.menuItems.trim().isNotEmpty == true
+        ? reservation!.menuItems
+        : 'No menu details available';
+    final persons = reservation == null
+        ? 'No person count available'
+        : '${reservation.persons} Person';
+    final dateTime = reservation == null
+        ? 'No date available'
+        : '${DateFormat("MMM d").format(reservation.eventDate)} - ${DateFormat("h:mm a").format(reservation.eventDate)}';
+    final amount = reservation == null
+        ? 'No amount available'
+        : '${reservation.pricePerPerson} Per person';
+    final radius = _formatRequestRadius(reservation);
+
     return Positioned.fill(
       child: Container(
         color: Colors.black54,
         child: Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 30.w),
+          child: _responsiveDialog(
             child: Container(
               width: double.infinity,
+              //             constraints: BoxConstraints(
+              //   maxHeight: MediaQuery.of(context).size.height * 0.85,
+              // ),
               padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 30.h),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20.r),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      AppText(
-                        text: "Requested party",
-                        size: 15,
-                        fontWeight: FontWeight.w500,
-                        color: appTextColor2,
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            isPartyRequestPressed = !isPartyRequestPressed;
-                          });
-                        },
-                        child: Icon(
-                          Icons.close,
-                          color: appTextColor3,
-                          size: 25,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        AppText(
+                          text: "Requested party",
+                          size: 15,
+                          fontWeight: FontWeight.w500,
+                          color: appTextColor2,
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20.h),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: AppText(
-                      text: "P17854",
-                      size: 20,
-                      fontWeight: FontWeight.w700,
-                      color: appTextColor3,
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              isPartyRequestPressed = false;
+                              _selectedRequestReservation = null;
+                            });
+                          },
+                          child: Icon(
+                            Icons.close,
+                            color: appTextColor3,
+                            size: 25,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  SizedBox(height: 20.h),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.dashboard, size: 20, color: appTextColor2),
-                      SizedBox(width: 10.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppText(
-                              text: "Your Menu",
-                              size: 15,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey,
-                            ),
-                            SizedBox(height: 5.h),
-                            AppText(
-                              text:
-                                  "Chicken Biriyani , Porotta, Rotti ,Salad, Payasam, Butter Chicken , Ice cream. ",
-                              size: 15,
-                              fontWeight: FontWeight.w500,
-                              color: appTextColor2,
-                              lineSpacing: 1.5,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20.h),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.people, size: 20, color: appTextColor2),
-                      SizedBox(width: 10.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppText(
-                              text: "Number of Persons",
-                              size: 15,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey,
-                            ),
-                            SizedBox(height: 5.h),
-                            AppText(
-                              text: "12 Person ",
-                              size: 15,
-                              fontWeight: FontWeight.w500,
-                              color: appTextColor2,
-                              lineSpacing: 1.5,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20.h),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.calendar_today_sharp,
+                    SizedBox(height: 20.h),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: AppText(
+                        text: couponId,
                         size: 20,
-                        color: appTextColor2,
+                        fontWeight: FontWeight.w700,
+                        color: appTextColor3,
                       ),
-                      SizedBox(width: 10.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppText(
-                              text: "Date and Time ",
-                              size: 15,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey,
+                    ),
+                    SizedBox(height: 20.h),
+                    // _requestDetailRow(
+                    //   iconPath: menuIcon,
+                    //   title: "Your Menu",
+                    //   value: menuItems,
+                    // ),
+                    // SizedBox(height: 20.h),
+                    // _requestDetailRow(
+                    //   iconPath: peopleIcon,
+                    //   title: "Number of Persons",
+                    //   value: persons,
+                    // ),
+                    // SizedBox(height: 20.h),
+                    // _requestDetailRow(
+                    //   iconPath: calenderIcon,
+                    //   title: "Date and Time ",
+                    //   value: dateTime,
+                    // ),
+                    // SizedBox(height: 20.h),
+                    // _requestDetailRow(
+                    //   iconPath: walletIcon,
+                    //   title: "Expected amount per person",
+                    //   value: amount,
+                    // ),
+                    // SizedBox(height: 20.h),
+                    // _requestDetailRow(
+                    //   iconPath: radiusIcon,
+                    //   title: "Enquiry Radius ",
+                    //   value: radius,
+                    // ),
+                    if (isTablet && isLandscape) ...[
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _requestDetailRow(
+                              iconPath: menuIcon,
+                              title: "Your Menu",
+                              value: menuItems,
                             ),
-                            SizedBox(height: 5.h),
-                            AppText(
-                              text: "April 12 - 2:30 pm",
-                              size: 15,
-                              fontWeight: FontWeight.w500,
-                              color: appTextColor2,
-                              lineSpacing: 1.5,
+                          ),
+                          SizedBox(width: 24.w),
+                          Expanded(
+                            child: _requestDetailRow(
+                              iconPath: peopleIcon,
+                              title: "Number of Persons",
+                              value: persons,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 24.h),
+
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _requestDetailRow(
+                              iconPath: calenderIcon,
+                              title: "Date and Time",
+                              value: dateTime,
+                            ),
+                          ),
+                          SizedBox(width: 24.w),
+                          Expanded(
+                            child: _requestDetailRow(
+                              iconPath: walletIcon,
+                              title: "Expected amount",
+                              value: amount,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 24.h),
+
+                      _requestDetailRow(
+                        iconPath: radiusIcon,
+                        title: "Enquiry Radius",
+                        value: radius,
+                      ),
+                    ] else ...[
+                      _requestDetailRow(
+                        iconPath: menuIcon,
+                        title: "Your Menu",
+                        value: menuItems,
+                      ),
+
+                      SizedBox(height: 20.h),
+
+                      _requestDetailRow(
+                        iconPath: peopleIcon,
+                        title: "Number of Persons",
+                        value: persons,
+                      ),
+
+                      SizedBox(height: 20.h),
+
+                      _requestDetailRow(
+                        iconPath: calenderIcon,
+                        title: "Date and Time",
+                        value: dateTime,
+                      ),
+
+                      SizedBox(height: 20.h),
+
+                      _requestDetailRow(
+                        iconPath: walletIcon,
+                        title: "Expected amount per person",
+                        value: amount,
+                      ),
+
+                      SizedBox(height: 20.h),
+
+                      _requestDetailRow(
+                        iconPath: radiusIcon,
+                        title: "Enquiry Radius",
+                        value: radius,
                       ),
                     ],
-                  ),
-                  SizedBox(height: 20.h),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.wallet, size: 20, color: appTextColor2),
-                      SizedBox(width: 10.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppText(
-                              text: "Expected amount per person",
-                              size: 15,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey,
-                            ),
-                            SizedBox(height: 5.h),
-                            AppText(
-                              text: "1000 Per person",
-                              size: 15,
-                              fontWeight: FontWeight.w500,
-                              color: appTextColor2,
-                              lineSpacing: 1.5,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20.h),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.analytics, size: 20, color: appTextColor2),
-                      SizedBox(width: 10.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppText(
-                              text: "Enquiry Radius ",
-                              size: 15,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey,
-                            ),
-                            SizedBox(height: 5.h),
-                            AppText(
-                              text: "Moscow City - 20km Radius",
-                              size: 15,
-                              fontWeight: FontWeight.w500,
-                              color: appTextColor2,
-                              lineSpacing: 1.5,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20.h),
-                ],
+                    SizedBox(height: 20.h),
+                  ],
+                ),
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _requestDetailRow({
+    required String iconPath,
+    required String title,
+    required String value,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Image.asset(
+          iconPath,
+          width: 20.w,
+          height: 20.h,
+          color: const Color.fromARGB(255, 15, 15, 15),
+        ),
+        SizedBox(width: 10.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppText(
+                text: title,
+                size: 15,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+              SizedBox(height: 5.h),
+              AppText(
+                text: value,
+                size: 15,
+                fontWeight: FontWeight.w500,
+                color: appTextColor2,
+                lineSpacing: 1.5,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatRequestRadius(BanquetReservationModal? reservation) {
+    if (reservation == null) return 'No radius available';
+
+    final rawRadius = reservation.searchRadius.trim();
+    final lat = reservation.lat.trim();
+    final lng = reservation.lng.trim();
+    final key = '$lat,$lng';
+    final placeName = lat.isNotEmpty && lng.isNotEmpty
+        ? _reservationPlaceNames[key]
+        : null;
+
+    if (rawRadius.isEmpty && (placeName == null || placeName.isEmpty)) {
+      return 'No radius available';
+    }
+
+    String radius = rawRadius;
+    final parsed = double.tryParse(rawRadius);
+    if (parsed != null) {
+      radius = parsed % 1 == 0 ? parsed.toInt().toString() : rawRadius;
+    }
+
+    final radiusText = radius.isEmpty ? '' : '${radius}km Radius';
+
+    if (placeName != null && placeName.isNotEmpty && radiusText.isNotEmpty) {
+      return '$placeName - $radiusText';
+    }
+
+    if (placeName != null && placeName.isNotEmpty) return placeName;
+    if (lat.isNotEmpty && lng.isNotEmpty && radiusText.isNotEmpty) {
+      return '$lat, $lng - $radiusText';
+    }
+    if (lat.isNotEmpty && lng.isNotEmpty) return '$lat, $lng';
+    return radiusText;
+  }
+}
+
+class _BanquetReservationMetrics {
+  const _BanquetReservationMetrics({
+    required this.contentHorizontalPadding,
+    required this.contentTopPadding,
+    required this.searchShadowBlur,
+    required this.searchShadowSpread,
+    required this.searchTextSize,
+    required this.searchRadius,
+    required this.sectionGap,
+    required this.filterWidth,
+    required this.filterHeight,
+    required this.filterIconSize,
+    required this.filterTextSize,
+    required this.stateVerticalPadding,
+    required this.stateTextSize,
+    required this.stateGap,
+    required this.retryButtonWidth,
+    required this.retryButtonHeight,
+    required this.retryButtonTextSize,
+    required this.retryButtonRadius,
+    required this.sheetTopRadius,
+    required this.sheetPadding,
+    required this.sheetHandleWidth,
+    required this.sheetHandleHeight,
+    required this.sheetHandleRadius,
+    required this.sheetGap,
+    required this.sheetContainerRadius,
+    required this.sheetContainerPadding,
+    required this.filterOptionVerticalPadding,
+    required this.filterOptionHorizontalPadding,
+    required this.filterOptionRadius,
+    required this.filterOptionTextSize,
+  });
+
+  final double contentHorizontalPadding;
+  final double contentTopPadding;
+  final double searchShadowBlur;
+  final double searchShadowSpread;
+  final double searchTextSize;
+  final double searchRadius;
+  final double sectionGap;
+  final double filterWidth;
+  final double filterHeight;
+  final double filterIconSize;
+  final double filterTextSize;
+  final double stateVerticalPadding;
+  final double stateTextSize;
+  final double stateGap;
+  final double retryButtonWidth;
+  final double retryButtonHeight;
+  final double retryButtonTextSize;
+  final double retryButtonRadius;
+  final double sheetTopRadius;
+  final double sheetPadding;
+  final double sheetHandleWidth;
+  final double sheetHandleHeight;
+  final double sheetHandleRadius;
+  final double sheetGap;
+  final double sheetContainerRadius;
+  final double sheetContainerPadding;
+  final double filterOptionVerticalPadding;
+  final double filterOptionHorizontalPadding;
+  final double filterOptionRadius;
+  final double filterOptionTextSize;
+
+  factory _BanquetReservationMetrics.fromContext(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+
+    final isTablet = Breakpoints.isTabletDevice(size);
+    final isLandscape = size.width > size.height;
+
+    final isWideShortPhone = !isTablet && isLandscape && size.height <= 500;
+
+    final isCompactPhone = !isTablet && (size.width < 390 || size.height < 700);
+
+    if (isTablet) {
+      final horizontalScale = (size.width / 768).clamp(1.0, 1.16).toDouble();
+
+      final verticalScale = (size.height / 1024).clamp(1.0, 1.18).toDouble();
+
+      double s(double value) => value * horizontalScale;
+      double v(double value) => value * verticalScale;
+
+      return _BanquetReservationMetrics(
+        contentHorizontalPadding: s(38),
+        contentTopPadding: v(30),
+
+        searchShadowBlur: s(12),
+        searchShadowSpread: s(4),
+        searchTextSize: 15,
+        searchRadius: s(18),
+
+        sectionGap: v(20),
+
+        filterWidth: s(170),
+        filterHeight: v(38),
+        filterIconSize: s(18),
+        filterTextSize: 12,
+
+        stateVerticalPadding: v(70),
+        stateTextSize: 16,
+        stateGap: v(10),
+
+        retryButtonWidth: s(132),
+        retryButtonHeight: v(42),
+        retryButtonTextSize: 14,
+        retryButtonRadius: s(10),
+
+        // Bottom Sheet
+        sheetTopRadius: s(28),
+        sheetPadding: s(18),
+        sheetHandleWidth: s(42),
+        sheetHandleHeight: s(4),
+        sheetHandleRadius: s(10),
+        sheetGap: v(10),
+        sheetContainerRadius: s(18),
+        sheetContainerPadding: s(10),
+
+        filterOptionVerticalPadding: v(10),
+        filterOptionHorizontalPadding: s(10),
+        filterOptionRadius: s(8),
+        filterOptionTextSize: 15,
+      );
+    }
+
+    if (isWideShortPhone) {
+      return const _BanquetReservationMetrics(
+        contentHorizontalPadding: 26,
+        contentTopPadding: 18,
+
+        searchShadowBlur: 9,
+        searchShadowSpread: 3,
+        searchTextSize: 12.5,
+        searchRadius: 14,
+
+        sectionGap: 14,
+
+        filterWidth: 132,
+        filterHeight: 30,
+        filterIconSize: 15,
+        filterTextSize: 10,
+
+        stateVerticalPadding: 48,
+        stateTextSize: 13,
+        stateGap: 12,
+
+        retryButtonWidth: 110,
+        retryButtonHeight: 34,
+        retryButtonTextSize: 12,
+        retryButtonRadius: 9,
+
+        sheetTopRadius: 20,
+        sheetPadding: 18,
+        sheetHandleWidth: 36,
+        sheetHandleHeight: 4,
+        sheetHandleRadius: 8,
+        sheetGap: 8,
+        sheetContainerRadius: 16,
+        sheetContainerPadding: 10,
+
+        filterOptionVerticalPadding: 9,
+        filterOptionHorizontalPadding: 8,
+        filterOptionRadius: 8,
+        filterOptionTextSize: 12,
+      );
+    }
+
+    if (isCompactPhone) {
+      final scale = (size.width / 390).clamp(0.88, 1.0).toDouble();
+
+      double s(double value) => value * scale;
+
+      return _BanquetReservationMetrics(
+        contentHorizontalPadding: s(18),
+        contentTopPadding: s(18),
+
+        searchShadowBlur: s(8),
+        searchShadowSpread: s(3),
+        searchTextSize: s(12),
+        searchRadius: s(14),
+
+        sectionGap: s(14),
+
+        filterWidth: s(126),
+        filterHeight: s(30),
+        filterIconSize: s(14),
+        filterTextSize: s(10),
+
+        stateVerticalPadding: s(48),
+        stateTextSize: s(13),
+        stateGap: s(12),
+
+        retryButtonWidth: s(108),
+        retryButtonHeight: s(34),
+        retryButtonTextSize: s(12),
+        retryButtonRadius: s(9),
+
+        sheetTopRadius: s(20),
+        sheetPadding: s(18),
+        sheetHandleWidth: s(34),
+        sheetHandleHeight: s(4),
+        sheetHandleRadius: s(8),
+        sheetGap: s(8),
+        sheetContainerRadius: s(16),
+        sheetContainerPadding: s(10),
+
+        filterOptionVerticalPadding: s(9),
+        filterOptionHorizontalPadding: s(8),
+        filterOptionRadius: s(8),
+        filterOptionTextSize: s(12),
+      );
+    }
+
+    return _BanquetReservationMetrics(
+      contentHorizontalPadding: 20,
+      contentTopPadding: 20,
+
+      searchShadowBlur: 10,
+      searchShadowSpread: 5,
+      searchTextSize: 13,
+      searchRadius: 16,
+
+      sectionGap: 20,
+
+      filterWidth: 150,
+      filterHeight: 30,
+      filterIconSize: 18,
+      filterTextSize: 10,
+
+      stateVerticalPadding: 60,
+      stateTextSize: 15,
+      stateGap: 14,
+
+      retryButtonWidth: 120,
+      retryButtonHeight: 38,
+      retryButtonTextSize: 14,
+      retryButtonRadius: 10,
+
+      sheetTopRadius: 24,
+      sheetPadding: 20,
+      sheetHandleWidth: 38,
+      sheetHandleHeight: 4,
+      sheetHandleRadius: 8,
+      sheetGap: 10,
+      sheetContainerRadius: 18,
+      sheetContainerPadding: 10,
+
+      filterOptionVerticalPadding: 10,
+      filterOptionHorizontalPadding: 8,
+      filterOptionRadius: 8,
+      filterOptionTextSize: 14,
     );
   }
 }

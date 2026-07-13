@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/screens/splashscreen/splashscreen.dart';
 import 'package:fudikoclient/utils/constants.dart';
@@ -7,179 +6,52 @@ import 'package:fudikoclient/utils/tokens.dart';
 
 class About4 extends StatelessWidget {
   const About4({super.key});
-  
+
+  Future<void> _finishOnboarding(BuildContext context) async {
+    await saveIsFirstUse(false);
+    if (!context.mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const SplashScreen()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    Size screenSize= MediaQuery.of(context).size;
-    return Scaffold(
-      body: SizedBox(
-        height: screenSize.height,
-        width: double.infinity,
-        child: Stack(
-          children: [
-            Stack(
-              children: [
-                
-                Positioned(
-                  top: screenSize.height * 0.48,
-                  right: screenSize.width * -0.22,
-                  child: Image.asset(
-                    'assets/images/pizza4.png',
-                    width: 300.w,
-                    height: 300.w,
-                  ),
-                ),
+    final size = MediaQuery.sizeOf(context);
 
-                Positioned(
-                  top: screenSize.height * 0.498,
-                  right: screenSize.width * -0.29,
-                  child: Container(
-                    width: 268.w,
-                    height: 268.w,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.grey.shade300,
-                        width: 25.w,
-                      ),
-                    ),
-                    clipBehavior: Clip.hardEdge,
-                  ),
-                ),
-              ],
-            ),
-            Positioned(
-              top: 0,
-              right: 0,
-              child: Padding(
-                padding:  EdgeInsets.symmetric(
-                  horizontal: 20.w,
-                  vertical: 40.w,
-                ),
-                child: GestureDetector(
-                  onTap: () async {
-                    await saveIsFirstUse(false);
-                    if (!context.mounted) return;
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SplashScreen(),
-                      ),
-                    );
-                  },
-                  child: AppText(
-                    text: "Next",
-                    size: 15,
-                    fontWeight: FontWeight.w400,
-                    color: abtNextColor2,
-                  ),
-                ),
+    return Stack(
+      children: [
+        SizedBox.expand(
+          child: Image.asset(
+            'assets/images/abt4.png',
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          ),
+        ),
+        Positioned(
+          top: size.height * 0.04,
+          right: size.width * 0.05,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => _finishOnboarding(context),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: size.width * 0.03,
+                vertical: size.height * 0.012,
               ),
-            ),
-            Positioned(
-              top: 220,
-              left: 50,
-              right: 20,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppText(
-                    text: "Endless Food ",
-                    size: 35,
-                    fontWeight: FontWeight.w700,
-                    color: abtTextColor2,
-                  ),
-                  AppText(
-                    text: "Possibilities!",
-                    size: 35,
-                    fontWeight: FontWeight.w700,
-                    color: abtTextColor2,
-                  ),
-                  SizedBox(height: 20.h),
-                  AppText(
-                    text: "Discounts, bookings, catering",
-                    size: 20,
-                    fontWeight: FontWeight.w500,
-                    color: abtTextColor2.withOpacity(.58),
-                  ),
-                  AppText(
-                    text: "& more—right at your",
-                    size: 20,
-                    fontWeight: FontWeight.w500,
-                    color: abtTextColor2.withOpacity(.58) ,
-                  ),
-                  AppText(
-                    text: "fingertips",
-                    size: 20,
-                    fontWeight: FontWeight.w500,
-                    color: abtTextColor2.withOpacity(.58),
-                  ),
-                ],
+              child: AppText(
+                text: "Next",
+                size: 15,
+                fontWeight: FontWeight.w400,
+                color: abtNextColor2,
               ),
-            ),
-             Transform.translate(
-      offset: Offset(
-        -screenSize.width * 0.67,
-        -screenSize.height * 0.094,
-      ),
-      child: Align(
-        alignment: Alignment.topRight,
-        child: Container(
-          width: screenSize.width * 0.55,
-          height: screenSize.width * 0.55,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: const Color(0xFFF97A0D).withOpacity(0.58),
-              width: screenSize.width * 0.55 * 0.02,
             ),
           ),
         ),
-      ),
-    ),
-
-    // 🔶 Bottom circle
-    Transform.translate(
-      offset: Offset(
-        -screenSize.width * 0.42,
-        screenSize.height * 0.071,
-      ),
-      child: Align(
-        alignment: Alignment.bottomRight,
-        child: Container(
-          width: screenSize.width * 0.7,
-          height: screenSize.width * 0.7,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: const Color(0xFFF97A0D).withOpacity(0.58),
-              width: screenSize.width * 0.7 * 0.02,
-            ),
-          ),
-        ),
-      ),
-    ),
-            Positioned(
-              top: 150,
-              right: -50,
-              child: Container(
-                width: 90.w,
-                height: 90.w,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Color(0xFFF97A0D).withOpacity(0.58),
-                    width: 10.w   ,
-                  ),
-                ),
-                clipBehavior: Clip.hardEdge,
-              ),
-            ),
-          ],
-        ),
-      ),
+      ],
     );
   }
 }

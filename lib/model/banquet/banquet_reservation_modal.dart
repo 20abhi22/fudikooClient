@@ -6,13 +6,19 @@ class BanquetReservationModal {
   final String couponId; // reservation_id
   final String restaurantName;
   final int pricePerPerson; // amount
-  final double discount; // extra_offer
+  final double discount;
+  final String extraOffer;
   final String message; // comments
   final DateTime eventDate; // date + time
   final DateTime bookingDate; // created_at
   final int persons;
   final String status;
   final String? applicableFor;
+  final String menuItems;
+  final String otherServices;
+  final String searchRadius;
+  final String lat;
+  final String lng;
 
   BanquetReservationModal({
     this.id = '',
@@ -21,12 +27,18 @@ class BanquetReservationModal {
     required this.restaurantName,
     required this.pricePerPerson,
     required this.discount,
+    this.extraOffer = '',
     required this.message,
     required this.eventDate,
     required this.bookingDate,
     required this.persons,
     required this.status,
     this.applicableFor,
+    this.menuItems = '',
+    this.otherServices = '',
+    this.searchRadius = '',
+    this.lat = '',
+    this.lng = '',
   });
 
   factory BanquetReservationModal.fromJson(Map<String, dynamic> json) {
@@ -48,6 +60,7 @@ class BanquetReservationModal {
       pricePerPerson: _toInt(json['amount']) ?? 0,
       discount:
           _toDouble(offer?['discount_percentage'] ?? json['extra_offer']) ?? 0,
+      extraOffer: (json['extra_offer'] ?? '').toString(),
       message: (json['comments'] ?? '').toString(),
       eventDate:
           _parseDateTime(
@@ -60,6 +73,11 @@ class BanquetReservationModal {
       persons: _toInt(json['people']) ?? 0,
       status: (json['status'] ?? '').toString(),
       applicableFor: applicableFor?.isEmpty == true ? null : applicableFor,
+      menuItems: (json['menu_items'] ?? '').toString(),
+      otherServices: (json['other_services'] ?? '').toString(),
+      searchRadius: (json['search_radius'] ?? '').toString(),
+      lat: (json['lat'] ?? '').toString(),
+      lng: (json['lng'] ?? '').toString(),
     );
   }
 

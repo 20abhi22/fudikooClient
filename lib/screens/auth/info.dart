@@ -1,13 +1,18 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/apptextfeild.dart';
+import 'package:fudikoclient/core/responsive/app_dimensions.dart';
+import 'package:fudikoclient/core/responsive/breakpoints.dart';
 import 'package:fudikoclient/model/auth/complete-registration.dart';
+import 'package:fudikoclient/model/auth/mapplace-model.dart';
 import 'package:fudikoclient/routetransitions.dart';
-import 'package:fudikoclient/screens/auth/otp.dart';
+import 'package:fudikoclient/screens/home/homepage.dart';
+import 'package:fudikoclient/screens/auth/login.dart';
 import 'package:fudikoclient/service/auth/registration-service.dart';
+import 'package:fudikoclient/service/auth/map-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:fudikoclient/utils/tokens.dart';
 import 'package:geocoding/geocoding.dart';
@@ -16,31 +21,26 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 
 class InfoPage extends StatefulWidget {
-  const InfoPage({super.key});
+  const InfoPage({super.key, this.authToken});
+
+  final String? authToken;
 
   @override
   State<InfoPage> createState() => _InfoPageState();
 }
 
 class _InfoPageState extends State<InfoPage> {
-  RegistrationAuthService registrationAuthService = RegistrationAuthService();
-  bool isLoading = false;
+  final RegistrationAuthService registrationAuthService =
+      RegistrationAuthService();
   final ImagePicker _imagePicker = ImagePicker();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController locationController = TextEditingController();
+
+  bool isLoading = false;
   File? _profilePhoto;
-
-  TextEditingController phoneController = TextEditingController();
-  TextEditingController locationController =
-      TextEditingController(); // shows place name
-
   double? _selectedLat;
   double? _selectedLng;
   String _selectedPlaceName = '';
-
-  @override
-  void initState() {
-    super.initState();
-    print(getToken());
-  }
 
   @override
   void dispose() {
@@ -57,7 +57,7 @@ class _InfoPageState extends State<InfoPage> {
       imageQuality: 65,
     );
 
-    if (pickedImage == null) return;
+    if (pickedImage == null || !mounted) return;
 
     setState(() {
       _profilePhoto = File(pickedImage.path);
@@ -68,13 +68,16 @@ class _InfoPageState extends State<InfoPage> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return SafeArea(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+            padding: EdgeInsets.symmetric(
+              horizontal: AppDimensions.padding(context),
+              vertical: AppDimensions.gap(context),
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -107,14 +110,15 @@ class _InfoPageState extends State<InfoPage> {
       context,
       MaterialPageRoute(builder: (_) => const _MapPickerPage()),
     );
-    if (result != null) {
-      setState(() {
-        _selectedLat = result['lat'];
-        _selectedLng = result['lng'];
-        _selectedPlaceName = result['place'];
-        locationController.text = _selectedPlaceName;
-      });
-    }
+
+    if (result == null || !mounted) return;
+
+    setState(() {
+      _selectedLat = result['lat'] as double?;
+      _selectedLng = result['lng'] as double?;
+      _selectedPlaceName = (result['place'] ?? '').toString();
+      locationController.text = _selectedPlaceName;
+    });
   }
 
   Future<void> completeRegistration() async {
@@ -124,6 +128,7 @@ class _InfoPageState extends State<InfoPage> {
       );
       return;
     }
+
     if (_selectedLat == null || _selectedLng == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a location on the map')),
@@ -133,116 +138,142 @@ class _InfoPageState extends State<InfoPage> {
 
     setState(() => isLoading = true);
 
-    CompleteRegistrationModel details = CompleteRegistrationModel(
+    final details = CompleteRegistrationModel(
       phone: phoneController.text,
       lat: _selectedLat.toString(),
       lng: _selectedLng.toString(),
       profilePicturePath: _profilePhoto?.path,
     );
 
-    CompleteRegistrationModelResponse response = await registrationAuthService
-        .completeRegistration(details);
+    final response = await registrationAuthService.completeRegistration(
+      details,
+      tokenOverride: widget.authToken,
+    );
 
     if (!mounted) return;
     setState(() => isLoading = false);
 
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(response.message)));
+
     if (response.status) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(response.message)));
-      pushWidgetWhileRemove(newPage: const Otp(), context: context);
-      // Navigator.pushAndRemoveUntil(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => const Otp()),
-      //   (route) => false,
-      // );
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(response.message)));
+      if (widget.authToken != null && widget.authToken!.isNotEmpty) {
+        await saveToken(widget.authToken!);
+        if (!mounted) return;
+        pushWidgetWhileRemove(newPage: const HomePage(), context: context);
+        return;
+      }
+      pushWidgetWhileRemove(newPage: const Login(), context: context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 30.w),
+      body: SafeArea(
+        child: OrientationBuilder(
+          builder: (context, orientation) {
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                final size = MediaQuery.sizeOf(context);
+                final height = size.height;
+                final isMobileDevice = Breakpoints.isMobileDevice(size);
+                final isMobile = isMobileDevice && Breakpoints.isMobile(width);
+                final isTablet = Breakpoints.isTabletDevice(size);
+                final isWideShortPhone =
+                    isMobileDevice &&
+                    orientation == Orientation.landscape &&
+                    width >= 500 &&
+                    height <= 760;
+
+                final form = _InfoForm(
+                  phoneController: phoneController,
+                  locationController: locationController,
+                  selectedPlaceName: _selectedPlaceName,
+                  isLoading: isLoading,
+                  isMobile: isMobile,
+                  isWideShortPhone: isWideShortPhone,
+                  onLocationTap: _openMapPicker,
+                  onContinue: completeRegistration,
+                );
+
+                final avatar = _ProfilePhotoPicker(
+                  photo: _profilePhoto,
+                  isMobile: isMobile,
+                  isWideShortPhone: isWideShortPhone,
+                  onTap: _showProfilePhotoOptions,
+                );
+
+                if (isTablet && orientation == Orientation.landscape) {
+                  return _TabletLandscapeInfoLayout(avatar: avatar, form: form);
+                }
+
+                return _StackedInfoLayout(
+                  avatar: avatar,
+                  form: form,
+                  isMobile: isMobile,
+                  isWideShortPhone: isWideShortPhone,
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _StackedInfoLayout extends StatelessWidget {
+  const _StackedInfoLayout({
+    required this.avatar,
+    required this.form,
+    required this.isMobile,
+    required this.isWideShortPhone,
+  });
+
+  final Widget avatar;
+  final Widget form;
+  final bool isMobile;
+  final bool isWideShortPhone;
+
+  @override
+  Widget build(BuildContext context) {
+    final padding = AppDimensions.pagePadding(context);
+    final safeHeight =
+        MediaQuery.sizeOf(context).height -
+        MediaQuery.paddingOf(context).vertical;
+    final formWidth = isWideShortPhone
+        ? 0.58
+        : isMobile
+        ? 0.84
+        : 0.52;
+    final avatarFormGap = isWideShortPhone
+        ? 10.0
+        : isMobile
+        ? 20.0
+        : AppDimensions.margin(context);
+
+    return SingleChildScrollView(
+      padding: padding,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: (safeHeight - padding.vertical)
+              .clamp(0.0, double.infinity)
+              .toDouble(),
+          minWidth: double.infinity,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(height: 60.h),
-            GestureDetector(
-              onTap: _showProfilePhotoOptions,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  ClipOval(
-                    child: _profilePhoto == null
-                        ? Image.asset(
-                            'assets/images/avatar.png',
-                            width: 150.w,
-                            height: 150.h,
-                            fit: BoxFit.cover,
-                          )
-                        : Image.file(
-                            _profilePhoto!,
-                            width: 150.w,
-                            height: 150.h,
-                            fit: BoxFit.cover,
-                          ),
-                  ),
-                  Positioned(
-                    right: 4.w,
-                    bottom: 4.h,
-                    child: Container(
-                      width: 36.r,
-                      height: 36.r,
-                      decoration: BoxDecoration(
-                        color: appButtonColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2.r),
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            avatar,
+            SizedBox(height: avatarFormGap),
+            Align(
+              alignment: Alignment.center,
+              child: FractionallySizedBox(widthFactor: formWidth, child: form),
             ),
-            SizedBox(height: 20.h),
-            AppTextFeild(
-              text: "Contact Number",
-              iconImagePath: phoneIcon,
-              controller: phoneController,
-              keyboardType: TextInputType.phone,
-            ),
-            SizedBox(height: 20.h),
-
-            // Location field — tap to open map
-            GestureDetector(
-              onTap: _openMapPicker,
-              child: AbsorbPointer(
-                child: AppTextFeild(
-                  text: _selectedPlaceName.isEmpty
-                      ? "Location"
-                      : _selectedPlaceName,
-                  // text: "Tap to select location",
-                  iconImagePath: mappingIcon,
-                  controller: locationController,
-                  suffixIcon: Icons.map_outlined,
-                ),
-              ),
-            ),
-
-            SizedBox(height: 40.h),
-            isLoading
-                ? const CircularProgressIndicator()
-                : AppButton(text: 'Continue', onPressed: completeRegistration),
-            SizedBox(height: 60.h),
           ],
         ),
       ),
@@ -250,7 +281,207 @@ class _InfoPageState extends State<InfoPage> {
   }
 }
 
-// ─── Map Picker Page ───────────────────────────────────────────────
+class _TabletLandscapeInfoLayout extends StatelessWidget {
+  const _TabletLandscapeInfoLayout({required this.avatar, required this.form});
+
+  final Widget avatar;
+  final Widget form;
+
+  @override
+  Widget build(BuildContext context) {
+    final padding = AppDimensions.pagePadding(context);
+
+    return SingleChildScrollView(
+      padding: padding,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight:
+              (MediaQuery.sizeOf(context).height -
+                      MediaQuery.paddingOf(context).vertical -
+                      padding.vertical)
+                  .clamp(0.0, double.infinity)
+                  .toDouble(),
+          minWidth: double.infinity,
+        ),
+        child: Row(
+          children: [
+            Expanded(flex: 5, child: Center(child: avatar)),
+            SizedBox(width: AppDimensions.margin(context)),
+            Expanded(
+              flex: 5,
+              child: Center(
+                child: FractionallySizedBox(widthFactor: 0.8, child: form),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfilePhotoPicker extends StatelessWidget {
+  const _ProfilePhotoPicker({
+    required this.photo,
+    required this.isMobile,
+    required this.isWideShortPhone,
+    required this.onTap,
+  });
+
+  final File? photo;
+  final bool isMobile;
+  final bool isWideShortPhone;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatarSize = isWideShortPhone
+        ? 96.0
+        : isMobile
+        ? 150.0
+        : 170.0;
+    final cameraSize = isWideShortPhone
+        ? 28.0
+        : isMobile
+        ? 36.0
+        : 42.0;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ClipOval(
+            child: photo == null
+                ? Image.asset(
+                    'assets/images/avatar.png',
+                    width: avatarSize,
+                    height: avatarSize,
+                    fit: BoxFit.cover,
+                  )
+                : Image.file(
+                    photo!,
+                    width: avatarSize,
+                    height: avatarSize,
+                    fit: BoxFit.cover,
+                  ),
+          ),
+          Positioned(
+            right: 4,
+            bottom: 4,
+            child: Container(
+              width: cameraSize,
+              height: cameraSize,
+              decoration: BoxDecoration(
+                color: appButtonColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: Icon(
+                Icons.camera_alt,
+                color: Colors.white,
+                size: isWideShortPhone
+                    ? 15
+                    : isMobile
+                    ? 18
+                    : 20,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoForm extends StatelessWidget {
+  const _InfoForm({
+    required this.phoneController,
+    required this.locationController,
+    required this.selectedPlaceName,
+    required this.isLoading,
+    required this.isMobile,
+    required this.isWideShortPhone,
+    required this.onLocationTap,
+    required this.onContinue,
+  });
+
+  final TextEditingController phoneController;
+  final TextEditingController locationController;
+  final String selectedPlaceName;
+  final bool isLoading;
+  final bool isMobile;
+  final bool isWideShortPhone;
+  final VoidCallback onLocationTap;
+  final VoidCallback onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    final gap = isWideShortPhone
+        ? 10.0
+        : isMobile
+        ? 20.0
+        : AppDimensions.gap(context) * 1.25;
+    final fieldHeight = isWideShortPhone
+        ? 48.0
+        : isMobile
+        ? 55.0
+        : 60.0;
+    final textSize = isWideShortPhone
+        ? 13.0
+        : isMobile
+        ? 15.0
+        : AppDimensions.body(context);
+    final sectionGap = isWideShortPhone
+        ? 16.0
+        : isMobile
+        ? 40.0
+        : AppDimensions.margin(context);
+    final buttonHeight = isWideShortPhone
+        ? 50.0
+        : isMobile
+        ? 60.0
+        : 62.0;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppTextFeild(
+          text: "Contact Number",
+          iconImagePath: phoneIcon,
+          controller: phoneController,
+          keyboardType: TextInputType.phone,
+          height: fieldHeight,
+          size: textSize,
+        ),
+        SizedBox(height: gap),
+        GestureDetector(
+          onTap: onLocationTap,
+          child: AbsorbPointer(
+            child: AppTextFeild(
+              text: selectedPlaceName.isEmpty ? "Location" : selectedPlaceName,
+              iconImagePath: mappingIcon,
+              controller: locationController,
+              suffixIcon: Icons.map_outlined,
+              height: fieldHeight,
+              size: textSize,
+            ),
+          ),
+        ),
+        SizedBox(height: sectionGap),
+        AppButton(
+          text: 'Continue',
+          isLoading: isLoading,
+          onPressed: isLoading ? null : onContinue,
+          buttonheight: buttonHeight,
+          size: textSize,
+        ),
+      ],
+    );
+  }
+}
+
 class _MapPickerPage extends StatefulWidget {
   const _MapPickerPage();
 
@@ -259,11 +490,17 @@ class _MapPickerPage extends StatefulWidget {
 }
 
 class _MapPickerPageState extends State<_MapPickerPage> {
+  final MapService _mapService = MapService();
+  final TextEditingController _searchController = TextEditingController();
   GoogleMapController? _mapController;
-  LatLng _pickedLocation = const LatLng(55.7558, 37.6173); // default Moscow
-  String _placeName = 'Fetching location...';
+  LatLng _pickedLocation = const LatLng(10.8505, 76.2711);
+  String _placeName = 'Kerala, India';
   bool _isGeocoding = false;
+  bool _isFetchingCurrentLocation = false;
+  bool _isSearching = false;
   Set<Marker> _markers = {};
+  List<MapPlacesResponse> _searchResults = [];
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -271,47 +508,188 @@ class _MapPickerPageState extends State<_MapPickerPage> {
     _getCurrentLocation();
   }
 
-  Future<void> _getCurrentLocation() async {
-    try {
-      LocationPermission permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever)
-        return;
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    _mapController?.dispose();
+    super.dispose();
+  }
 
-      Position pos = await Geolocator.getCurrentPosition(
+  Future<void> _getCurrentLocation() async {
+    if (_isFetchingCurrentLocation) return;
+    if (mounted) setState(() => _isFetchingCurrentLocation = true);
+
+    try {
+      final isLocationServiceEnabled =
+          await Geolocator.isLocationServiceEnabled();
+      if (!isLocationServiceEnabled) {
+        _showLocationSnackBar(
+          'Turn on location services to use your current location',
+          actionLabel: 'Settings',
+          onAction: Geolocator.openLocationSettings,
+        );
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied) {
+        _showLocationSnackBar('Location permission was denied');
+        return;
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        _showLocationSnackBar(
+          'Location permission is permanently denied',
+          actionLabel: 'Settings',
+          onAction: Geolocator.openAppSettings,
+        );
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      final latLng = LatLng(pos.latitude, pos.longitude);
+      final latLng = LatLng(position.latitude, position.longitude);
+      if (!mounted) return;
       setState(() => _pickedLocation = latLng);
       _mapController?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 15));
       await _reverseGeocode(latLng);
       _updateMarker(latLng);
-    } catch (e) {
-      print('Location error: $e');
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _placeName = 'Unable to fetch current location');
+    } finally {
+      if (mounted) setState(() => _isFetchingCurrentLocation = false);
+    }
+  }
+
+  void _showLocationSnackBar(
+    String message, {
+    String? actionLabel,
+    Future<bool> Function()? onAction,
+  }) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: actionLabel == null || onAction == null
+            ? null
+            : SnackBarAction(
+                label: actionLabel,
+                onPressed: () {
+                  onAction();
+                },
+              ),
+      ),
+    );
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    final query = value.trim();
+
+    if (query.isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
+      return;
+    }
+
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      _searchPlaces(query);
+    });
+  }
+
+  Future<void> _searchPlaces(String query) async {
+    if (!mounted || query != _searchController.text.trim()) return;
+    setState(() => _isSearching = true);
+
+    try {
+      final places = await _mapService.listPlaces(
+        query,
+        lat: _pickedLocation.latitude,
+        lng: _pickedLocation.longitude,
+      );
+      if (!mounted || query != _searchController.text.trim()) return;
+      setState(() => _searchResults = places);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _searchResults = []);
+    } finally {
+      if (mounted && query == _searchController.text.trim()) {
+        setState(() => _isSearching = false);
+      }
+    }
+  }
+
+  Future<void> _selectPlace(MapPlacesResponse place) async {
+    final placeId = place.placeId;
+    if (placeId == null || placeId.isEmpty) return;
+
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _isSearching = true;
+      _searchResults = [];
+    });
+
+    try {
+      final coordinates = await _mapService.getPlace(placeId);
+      final lat = coordinates.lat;
+      final lng = coordinates.lng;
+      if (!mounted || lat == null || lng == null) return;
+
+      final location = LatLng(lat, lng);
+      setState(() => _pickedLocation = location);
+      await _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(location, 16),
+      );
+      _updateMarker(location);
+      await _reverseGeocode(location);
+    } finally {
+      if (mounted) setState(() => _isSearching = false);
     }
   }
 
   Future<void> _reverseGeocode(LatLng latLng) async {
+    if (!mounted) return;
     setState(() => _isGeocoding = true);
+
     try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(
+      final placemarks = await placemarkFromCoordinates(
         latLng.latitude,
         latLng.longitude,
       );
+
+      if (!mounted) return;
+
       if (placemarks.isNotEmpty) {
-        final p = placemarks.first;
+        final place = placemarks.first;
         final parts = [
-          p.street,
-          p.subLocality,
-          p.locality,
-          p.administrativeArea,
-        ].where((s) => s != null && s.isNotEmpty).toList();
-        setState(() => _placeName = parts.join(', '));
+          place.street,
+          place.subLocality,
+          place.locality,
+          place.administrativeArea,
+        ].where((part) => part != null && part.isNotEmpty).toList();
+
+        setState(() {
+          _placeName = parts.isEmpty
+              ? '${latLng.latitude}, ${latLng.longitude}'
+              : parts.join(', ');
+        });
       }
-    } catch (e) {
+    } catch (_) {
+      if (!mounted) return;
       setState(() => _placeName = '${latLng.latitude}, ${latLng.longitude}');
     }
+
+    if (!mounted) return;
     setState(() => _isGeocoding = false);
   }
 
@@ -322,10 +700,10 @@ class _MapPickerPageState extends State<_MapPickerPage> {
           markerId: const MarkerId('picked'),
           position: latLng,
           draggable: true,
-          onDragEnd: (newPos) async {
-            setState(() => _pickedLocation = newPos);
-            await _reverseGeocode(newPos);
-            _updateMarker(newPos);
+          onDragEnd: (newPosition) async {
+            setState(() => _pickedLocation = newPosition);
+            await _reverseGeocode(newPosition);
+            _updateMarker(newPosition);
           },
         ),
       };
@@ -360,219 +738,329 @@ class _MapPickerPageState extends State<_MapPickerPage> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: _pickedLocation,
-              zoom: 14,
-            ),
-            onMapCreated: (controller) => _mapController = controller,
-            markers: _markers,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
-            onTap: (latLng) async {
-              setState(() => _pickedLocation = latLng);
-              _updateMarker(latLng);
-              await _reverseGeocode(latLng);
-            },
-          ),
+      body: OrientationBuilder(
+        builder: (context, orientation) {
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final size = MediaQuery.sizeOf(context);
+              final isTablet = Breakpoints.isTabletDevice(size);
+              final map = _MapCanvas(
+                pickedLocation: _pickedLocation,
+                markers: _markers,
+                onMapCreated: (controller) {
+                  _mapController = controller;
+                  controller.animateCamera(
+                    CameraUpdate.newLatLngZoom(_pickedLocation, 15),
+                  );
+                },
+                onLocationPicked: (latLng) async {
+                  setState(() => _pickedLocation = latLng);
+                  _updateMarker(latLng);
+                  await _reverseGeocode(latLng);
+                },
+              );
 
-          // Location name bar at bottom
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
-              ),
-              child: Row(
+              if (isTablet && orientation == Orientation.landscape) {
+                return Row(
+                  children: [
+                    Expanded(child: _buildMapWithSearch(map)),
+                    SizedBox(
+                      width: 280,
+                      child: _MapLocationPanel(
+                        placeName: _placeName,
+                        isGeocoding: _isGeocoding,
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              return Stack(
                 children: [
-                  const Icon(Icons.location_on, color: Colors.orange),
-                  SizedBox(width: 10.w),
-                  Expanded(
-                    child: _isGeocoding
-                        ? const SizedBox(
-                            height: 16,
-                            width: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(
-                            _placeName,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
+                  _buildMapWithSearch(map),
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: SafeArea(
+                      top: false,
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: FractionallySizedBox(
+                          widthFactor: isTablet ? 0.72 : 1,
+                          child: _MapLocationBar(
+                            placeName: _placeName,
+                            isGeocoding: _isGeocoding,
                           ),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
-              ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildMapWithSearch(Widget map) {
+    return Stack(
+      children: [
+        map,
+        Positioned(
+          top: 12,
+          left: 16,
+          right: 16,
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+              children: [
+                TextField(
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
+                  textInputAction: TextInputAction.search,
+                  decoration: InputDecoration(
+                    hintText: 'Search for a place',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _isSearching
+                        ? const Padding(
+                            padding: EdgeInsets.all(14),
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : _searchController.text.isNotEmpty
+                        ? IconButton(
+                            onPressed: () {
+                              _searchController.clear();
+                              _onSearchChanged('');
+                            },
+                            icon: const Icon(Icons.clear),
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.orange),
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Material(
+                      color: Colors.white,
+                      shape: const CircleBorder(),
+                      elevation: 3,
+                      child: Tooltip(
+                        message: 'Use current location',
+                        child: IconButton(
+                          onPressed: _isFetchingCurrentLocation
+                              ? null
+                              : _getCurrentLocation,
+                          icon: _isFetchingCurrentLocation
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.my_location),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (_searchResults.isNotEmpty)
+                  Container(
+                    constraints: const BoxConstraints(maxHeight: 240),
+                    margin: const EdgeInsets.only(top: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black26, blurRadius: 8),
+                      ],
+                    ),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      itemCount: _searchResults.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final place = _searchResults[index];
+                        return ListTile(
+                          leading: const Icon(Icons.location_on_outlined),
+                          title: Text(
+                            place.mainText ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: place.secondaryText?.isNotEmpty == true
+                              ? Text(
+                                  place.secondaryText!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                )
+                              : null,
+                          onTap: () => _selectPlace(place),
+                        );
+                      },
+                    ),
+                  ),
+              ],
             ),
           ),
-        ],
+        ),
+      ],
+    );
+  }
+}
+
+class _MapCanvas extends StatelessWidget {
+  const _MapCanvas({
+    required this.pickedLocation,
+    required this.markers,
+    required this.onMapCreated,
+    required this.onLocationPicked,
+  });
+
+  final LatLng pickedLocation;
+  final Set<Marker> markers;
+  final ValueChanged<GoogleMapController> onMapCreated;
+  final Future<void> Function(LatLng latLng) onLocationPicked;
+
+  @override
+  Widget build(BuildContext context) {
+    return GoogleMap(
+      initialCameraPosition: CameraPosition(target: pickedLocation, zoom: 14),
+      onMapCreated: onMapCreated,
+      markers: markers,
+      myLocationEnabled: true,
+      myLocationButtonEnabled: true,
+      onTap: onLocationPicked,
+    );
+  }
+}
+
+class _MapLocationBar extends StatelessWidget {
+  const _MapLocationBar({required this.placeName, required this.isGeocoding});
+
+  final String placeName;
+  final bool isGeocoding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(
+        left: AppDimensions.padding(context),
+        right: AppDimensions.padding(context),
+        bottom: AppDimensions.gap(context),
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppDimensions.padding(context),
+        vertical: AppDimensions.gap(context),
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
+      ),
+      child: _MapLocationContent(
+        placeName: placeName,
+        isGeocoding: isGeocoding,
       ),
     );
   }
 }
 
-// import 'package:flutter/material.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
-// import 'package:fudikoclient/components/appbutton.dart';
-// import 'package:fudikoclient/components/apptextfeild.dart';
-// import 'package:fudikoclient/components/locationDropDown.dart';
-// import 'package:fudikoclient/model/auth/complete-registration.dart';
-// import 'package:fudikoclient/model/auth/mapplace-model.dart';
-// import 'package:fudikoclient/screens/auth/otp.dart';
-// import 'package:fudikoclient/service/auth/map-service.dart';
-// import 'package:fudikoclient/service/auth/registration-service.dart';
-// import 'package:fudikoclient/utils/constants.dart';
-// import 'package:fudikoclient/utils/tokens.dart';
+class _MapLocationPanel extends StatelessWidget {
+  const _MapLocationPanel({required this.placeName, required this.isGeocoding});
 
-// class InfoPage extends StatefulWidget {
-//   const InfoPage({super.key});
+  final String placeName;
+  final bool isGeocoding;
 
-//   @override
-//   State<InfoPage> createState() => _InfoPageState();
-// }
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          left: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(AppDimensions.padding(context)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Selected location',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontSize: AppDimensions.title(context),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              SizedBox(height: AppDimensions.gap(context)),
+              _MapLocationContent(
+                placeName: placeName,
+                isGeocoding: isGeocoding,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-// class _InfoPageState extends State<InfoPage> {
-//   MapService mapService = MapService();
-//   RegistrationAuthService registrationAuthService = RegistrationAuthService();
-//   late List<String> places = [];
-//   late List<MapPlacesResponse> locations = [];
-//   bool isLoading = false;
+class _MapLocationContent extends StatelessWidget {
+  const _MapLocationContent({
+    required this.placeName,
+    required this.isGeocoding,
+  });
 
-//   TextEditingController phoneController = TextEditingController();
-//   TextEditingController locationController = TextEditingController();
+  final String placeName;
+  final bool isGeocoding;
 
-//   void test() async{
-//     print(await getToken());
-//   }
-
-//   @override
-//   initState() {
-//     super.initState();
-//     test();
-//   }
-
-//   Future<void> listMapPlace(String text) async {
-//     setState(() {
-//       isLoading = true;
-//     });
-//     List<MapPlacesResponse> response = await mapService.listPlaces(text);
-
-//     setState(() {
-//       places = response.map((place) => place.mainText ?? '').toList();
-//       locations = response;
-//       isLoading = false;
-//     });
-
-//     print(places);
-//   }
-
-//   Future<void> completeRegistration() async {
-//     if (phoneController.text.isNotEmpty && locationController.text.isNotEmpty) {
-//       MapCoordinatesResponse location = await mapService.getPlace(
-//         locationController.text,
-//       );
-//       print(location.lat.toString());
-//       print(location.lng.toString());
-//       CompleteRegistrationModel details = CompleteRegistrationModel(
-//         phone: phoneController.text,
-//         lat: location.lat.toString(),
-//         lng: location.lng.toString(),
-//       );
-
-//       CompleteRegistrationModelResponse response = await registrationAuthService
-//           .completeRegistration(details);
-//       if (response.status) {
-//         if (!mounted) return;
-//         ScaffoldMessenger.of(
-//           context,
-//         ).showSnackBar(SnackBar(content: Text(response.message)));
-//         Navigator.pushAndRemoveUntil(
-//           context,
-//           MaterialPageRoute(builder: (context) => Otp()),
-//           (route) => false,
-//         );
-//       } else {
-//         if (!mounted) return;
-//         ScaffoldMessenger.of(
-//           context,
-//         ).showSnackBar(SnackBar(content: Text(response.message)));
-//       }
-
-//     } else {
-//       ScaffoldMessenger.of(
-//         context,
-//       ).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: LayoutBuilder(
-//         builder: (context, constraints) {
-//           return Padding(
-//             padding: EdgeInsets.symmetric(horizontal: 30.w),
-//             child: Column(
-//               mainAxisAlignment: MainAxisAlignment.center,
-//               children: [
-//                 SizedBox(height: 60.h),
-//                 ClipOval(
-//                   child: Image.asset(
-//                     'assets/images/avatar.png',
-//                     width: 150.w,
-//                     height: 150.h,
-//                     fit: BoxFit.cover,
-//                   ),
-//                 ),
-//                 SizedBox(height: 20.h),
-//                 AppTextFeild(
-//                   text: "Contact Number",
-//                   icon: Icons.phone,
-//                   controller: phoneController,
-//                 ),
-//                 SizedBox(height: 20.h),
-//                 LocationDropdown(
-//                   icon: Icons.location_on,
-//                   fontSize: 16,
-//                   hintText: "Location",
-//                   locations: places,
-//                   type: 'loc',
-//                   isLoading: isLoading,
-//                   onLocationSelected: (location) {
-//                     print("Selected: $location");
-//                     setState(() {
-//                       locationController.text =
-//                           locations[places.indexOf(location)].placeId ?? '';
-//                     });
-//                   },
-//                   onChange: (loc) {
-//                     listMapPlace(loc);
-//                   },
-//                 ),
-//                 SizedBox(height: 40.h),
-//                 AppButton(
-//                   text: 'Continue',
-//                   onPressed: () {
-//                     completeRegistration();
-//                     // Navigator.push(
-//                     //   context,
-//                     //   MaterialPageRoute(builder: (context) => Otp()),
-//                     // );
-//                   },
-//                 ),
-//                 SizedBox(height: 60.h),
-//               ],
-//             ),
-//           );
-//         },
-//       ),
-//     );
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Icon(Icons.location_on, color: Colors.orange),
+        SizedBox(width: AppDimensions.gap(context)),
+        Expanded(
+          child: isGeocoding
+              ? const SizedBox(
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(
+                  placeName,
+                  style: TextStyle(
+                    fontSize: AppDimensions.body(context),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+}

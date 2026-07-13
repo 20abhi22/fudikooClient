@@ -1,31 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/api/dio_client.dart';
 import 'package:fudikoclient/screens/about/aboutLayout.dart';
 import 'package:fudikoclient/screens/splashscreen/splashscreen.dart';
 import 'package:fudikoclient/utils/constants.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fudikoclient/utils/tokens.dart';
 import 'package:fudikoclient/utils/translator_service.dart';
 
 void main() async {
   debugPaintSizeEnabled = false;
   WidgetsFlutterBinding.ensureInitialized();
-   await TranslatorService.loadSavedLanguage(); // ← add this
 
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await TranslatorService.loadSavedLanguage();
   DioClient.addInterceptor();
-  runApp(
-    ProviderScope(
-      child: ScreenUtilInit(
-        designSize: const Size(402, 874),
-        minTextAdapt: true,
-        builder: (context, child) => const MyApp(),
-      ),
-    ),
-  );
+
+  runApp(const ProviderScope(child: _ResponsiveAppBootstrap()));
+}
+
+class _ResponsiveAppBootstrap extends StatelessWidget {
+  const _ResponsiveAppBootstrap();
+
+  @override
+  Widget build(BuildContext context) {
+    return OrientationBuilder(
+      builder: (context, orientation) {
+        final designSize = orientation == Orientation.landscape
+            ? const Size(874, 402)
+            : const Size(402, 874);
+
+        return ScreenUtilInit(
+          designSize: designSize,
+          minTextAdapt: true,
+          splitScreenMode: true,
+          builder: (context, child) => const MyApp(),
+        );
+      },
+    );
+  }
 }
 
 class MyApp extends StatefulWidget {
@@ -47,6 +60,7 @@ class _MyAppState extends State<MyApp> {
   Future<void> setup() async {
     final firstUse = await getIsFirstUse() ?? true;
     if (!mounted) return;
+
     setState(() {
       isFirstUse = firstUse;
     });
@@ -58,7 +72,8 @@ class _MyAppState extends State<MyApp> {
       title: 'Fudiko',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        scaffoldBackgroundColor: Colors.white,
+        useMaterial3: true,
+        scaffoldBackgroundColor: appSecondaryBackgroundColor,
         colorScheme: ColorScheme.fromSeed(seedColor: appTextColor),
         fontFamily: 'Inter',
       ),

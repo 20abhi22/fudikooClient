@@ -12,17 +12,24 @@ class CustomerProfileService {
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
 
-      print('Profile response: ${response.data}');
-      print('Response type: ${response.data.runtimeType}');
-
       final data = response.data is Map && response.data.containsKey('data')
           ? response.data['data']
           : response.data;
 
-      return CustomerProfileModel.fromJson(data);
-    } catch (e) {
-      print('Profile fetch error: $e');
-      throw UnimplementedError();
+      if (data is! Map) {
+        throw const FormatException('Invalid customer profile response');
+      }
+
+      return CustomerProfileModel.fromJson(Map<String, dynamic>.from(data));
+    } on DioException {
+      rethrow;
+    } on FormatException {
+      rethrow;
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        FormatException('Unable to parse customer profile: $error'),
+        stackTrace,
+      );
     }
   }
 
