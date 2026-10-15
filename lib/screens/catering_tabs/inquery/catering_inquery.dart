@@ -552,6 +552,11 @@ class CateringInqueryState extends State<CateringInquery> {
     return _ctEnquiryFilter;
   }
 
+  double _filterDropdownWidth(String label) {
+    final textWidth = (label.length * 7.5).w;
+    return (textWidth + 76.w).clamp(120.w, 190.w).toDouble();
+  }
+
   // ── Date pickers ──────────────────────────────────────────
   Future<void> _pickCtResponseCustomDate() async {
     final DateTime? picked = await _pickCustomCalendarDatePopup(
@@ -1065,6 +1070,70 @@ class CateringInqueryState extends State<CateringInquery> {
                       ),
                     ],
                   ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<DateTime?> _pickCustomCalendarDatePopup(DateTime? selectedDate) {
+    DateTime tempDate = selectedDate ?? DateTime.now();
+
+    return showDialog<DateTime>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              backgroundColor: const Color(0xFFF5F5F5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildCustomCalendar(
+                      tempDate: tempDate,
+                      onDateChanged: (date) =>
+                          setDialogState(() => tempDate = date),
+                    ),
+                    SizedBox(height: 16.h),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10.w),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogContext),
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: Colors.black54,
+                                fontSize: 14.sp,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.pop(dialogContext, tempDate),
+                            child: Text(
+                              'Apply',
+                              style: TextStyle(
+                                color: const Color(0xFF3954DB),
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -2549,7 +2618,6 @@ class CateringInqueryState extends State<CateringInquery> {
   Widget _viewCtEnquiryWidget() {
     final metrics = _CateringInqueryMetrics.fromContext(context);
     final enquiries = _filteredCtEnquiries;
-
     return Column(
       children: [
         Padding(

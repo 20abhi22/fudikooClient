@@ -254,8 +254,9 @@ class CateringReservationBox extends StatelessWidget {
     _CateringReservationBoxMetrics metrics,
     String imageIconPath,
     String boldText,
-    String regularText,
-  ) {
+    String regularText, {
+    FontWeight boldWeight = FontWeight.w700,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
