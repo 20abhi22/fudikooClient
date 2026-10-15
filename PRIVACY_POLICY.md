@@ -47,4 +47,4 @@ The app is intended for business users and is not directed at children.
 We may update this policy; the effective date above will change when we do.
 
 ## Contact
-Email: 20abhi22@gmail.com
+Email: admin@kernalscape.com
