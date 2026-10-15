@@ -42,4 +42,4 @@ The app is not directed at children under 13, and we do not knowingly collect th
 We may update this policy; the effective date above will change when we do.
 
 ## Contact
-Email: claude.kernalscape@gmail.com
+Email: 20abhi22@gmail.com
