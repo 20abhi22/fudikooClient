@@ -11,6 +11,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:fudikoclient/service/inquery/inquery-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:intl/intl.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class InqueryBox extends StatefulWidget {
   final VoidCallback onDeleted;
@@ -193,17 +194,10 @@ class _InqueryBoxState extends State<InqueryBox> {
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          response.status
-              ? "Inquery deleted successfully"
-              : "Something went wrong",
-          style: const TextStyle(color: Colors.white),
-        ),
-        backgroundColor: response.status ? Colors.green : Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
+    showStatusSnack(
+      context,
+      response.status,
+      response.status ? "Inquery deleted successfully" : "Something went wrong",
     );
 
     if (response.status) widget.onDeleted();
@@ -224,6 +218,7 @@ class _InqueryBoxState extends State<InqueryBox> {
     String text, {
     FontWeight fontWeight = FontWeight.w500,
     Color? color,
+    int? maxLines,
   }) {
     final metrics = _InqueryBoxMetrics.fromContext(context);
 
@@ -239,16 +234,15 @@ class _InqueryBoxState extends State<InqueryBox> {
           ),
           SizedBox(width: metrics.infoIconGap),
           Expanded(
-            child: Text(
-              text,
-              softWrap: true,
-              maxLines: null,
-              overflow: TextOverflow.visible,
-              style: TextStyle(
-                fontSize: metrics.infoTextSize,
-                fontWeight: fontWeight,
-                color: color ?? appTextColor5,
-              ),
+            child: AppText(
+              text: text,
+              size: metrics.infoTextSize,
+              fontWeight: fontWeight,
+              color: color ?? appTextColor5,
+              maxLines: maxLines,
+              overflow: maxLines == null
+                  ? TextOverflow.visible
+                  : TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -318,8 +312,12 @@ class _InqueryBoxState extends State<InqueryBox> {
                         ),
                         buildInfoRow(
                           menuIcon,
+                          // The menu field is multi-line, so items arrive
+                          // separated by newlines as well as commas. Split on
+                          // both so the list reads as one comma-separated run
+                          // instead of breaking onto a line per item.
                           widget.enquiry.menuItems
-                              .split(',')
+                              .split(RegExp(r'[,\n\r]+'))
                               .map((item) => item.trim())
                               .where((item) => item.isNotEmpty)
                               .join(', '),

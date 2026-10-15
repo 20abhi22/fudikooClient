@@ -8,6 +8,7 @@ import 'package:fudikoclient/core/responsive/breakpoints.dart';
 import 'package:fudikoclient/screens/tabs/inquery/common/locationselect.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class PlanAParty extends StatefulWidget {
   final Function(Map<String, String> data) onReviewTap;
@@ -81,7 +82,7 @@ class _PlanAPartyState extends State<PlanAParty> {
   }
 
   void _showSnack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    showErrorSnack(context, msg);
   }
 
   // â”€â”€ validation + submit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -166,6 +167,8 @@ class _PlanAPartyState extends State<PlanAParty> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            final dialogWidth = _dateDialogWidth(context, metrics);
+
             return PopScope(
               canPop: true,
               child: Dialog(
@@ -173,14 +176,16 @@ class _PlanAPartyState extends State<PlanAParty> {
                   horizontal: metrics.dialogPaddingHorizontal,
                   vertical: metrics.dialogPaddingVertical,
                 ),
-                constraints: BoxConstraints.tightFor(
-                  width: _dateDialogWidth(context, metrics),
+                constraints: BoxConstraints(
+                  minWidth: dialogWidth,
+                  maxWidth: dialogWidth,
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.9,
                 ),
                 backgroundColor: const Color(0xFFF5F5F5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(metrics.dialogRadius),
                 ),
-                child: Padding(
+                child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(
                     horizontal: metrics.dialogPaddingHorizontal,
                     vertical: metrics.dialogPaddingVertical,
@@ -369,6 +374,8 @@ class _PlanAPartyState extends State<PlanAParty> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            final dialogWidth = _dateDialogWidth(context, metrics);
+
             return PopScope(
               canPop: true,
               child: Dialog(
@@ -376,14 +383,16 @@ class _PlanAPartyState extends State<PlanAParty> {
                   horizontal: metrics.dialogPaddingHorizontal,
                   vertical: metrics.dialogPaddingVertical,
                 ),
-                constraints: BoxConstraints.tightFor(
-                  width: _dateDialogWidth(context, metrics),
+                constraints: BoxConstraints(
+                  minWidth: dialogWidth,
+                  maxWidth: dialogWidth,
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.9,
                 ),
                 backgroundColor: const Color(0xFFF5F5F5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(metrics.dialogRadius),
                 ),
-                child: Padding(
+                child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(
                     horizontal: metrics.dialogPaddingHorizontal,
                     vertical: metrics.dialogPaddingVertical,
@@ -770,10 +779,15 @@ class _PlanAPartyState extends State<PlanAParty> {
             onTap: () async {
               FocusManager.instance.primaryFocus?.unfocus();
 
-              await Navigator.push(
-                context,
+              // Root navigator, not the tab's nested one — see ctInquery.dart:
+              // the tab shell's Scaffold shrinks its body for the keyboard,
+              // which would drag the picker's bottom-pinned radius panel up.
+              await Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(
                   builder: (context) => LocationSelect(
+                    initialLat: double.tryParse(lat),
+                    initialLng: double.tryParse(lng),
+                    initialDistance: double.tryParse(searchRadius),
                     returndata: (newLat, newLng, distance) async {
                       setState(() {
                         lat = newLat.toString();
@@ -902,13 +916,12 @@ class _PlanAPartyState extends State<PlanAParty> {
                     padding: EdgeInsets.symmetric(
                       horizontal: metrics.expiryLabelHorizontalPadding,
                     ),
-                    child: Text(
-                      'Enquiry valid for',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: metrics.expiryLabelSize,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    child: AppText(
+                      text: 'Enquiry valid for',
+                      size: metrics.expiryLabelSize,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.red,
+                      maxLines: 1,
                     ),
                   ),
                 ),
@@ -1381,6 +1394,10 @@ class _CalendarMetrics {
   factory _CalendarMetrics.fromContext(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final isTablet = Breakpoints.isTablet(size.width);
+    // Phones rotated to landscape with very little vertical room —
+    // needs its own, tighter sizing rather than reusing isWideShortPhone.
+    final isShortLandscape =
+        !isTablet && size.width > size.height && size.height < 450;
     final isWideShortPhone =
         !isTablet && size.width >= 500 && size.height <= 760;
     final isCompactPhone = size.width < 390 || size.height < 700;
@@ -1416,6 +1433,37 @@ class _CalendarMetrics {
         dayTextSize: s(13),
         todayDotSize: s(5),
         todayDotGap: s(2),
+      );
+    }
+
+    if (isShortLandscape) {
+      return const _CalendarMetrics(
+        calendarWidth: 230,
+        headerIconButtonSize: 28,
+        headerIconSize: 18,
+        headerTextSize: 13,
+        headerTextGap: 3,
+        dropdownIconSize: 16,
+        sectionGap: 3,
+        yearIconSize: 16,
+        yearTextSize: 12,
+        monthGridMainSpacing: 5,
+        monthGridCrossSpacing: 5,
+        monthGridAspectRatio: 2.5,
+        monthCellHeight: 28,
+        monthCellRadius: 6,
+        monthTextSize: 10,
+        yearSheetHeight: 170,
+        yearSheetRadius: 12,
+        yearItemTextSize: 12,
+        weekdayCellWidth: 24,
+        weekdayTextSize: 9.5,
+        dayMainSpacing: 2,
+        dayCellSize: 21,
+        dayRadius: 6,
+        dayTextSize: 10.5,
+        todayDotSize: 3,
+        todayDotGap: 1,
       );
     }
 

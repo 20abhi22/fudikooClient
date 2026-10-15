@@ -14,7 +14,7 @@ class AppDropDown extends StatefulWidget {
     required this.hint,
     this.icon,
     this.suffixIcon,
-    this.textColor
+    this.textColor,
   });
 
   @override
@@ -74,7 +74,7 @@ class _AppDropDownState extends State<AppDropDown> {
                       style: TextStyle(
                         fontSize: 16,
                         color: selectedValue == null
-                            ?  Colors.grey
+                            ? Colors.grey
                             : Colors.black,
                         fontWeight: selectedValue == null
                             ? FontWeight.w400
@@ -125,7 +125,9 @@ class _AppDropDownState extends State<AppDropDown> {
                             vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: isSelected ? appTextColor : Colors.transparent,
+                            color: isSelected
+                                ? appTextColor
+                                : Colors.transparent,
                             borderRadius: BorderRadius.vertical(
                               top: index == 0
                                   ? const Radius.circular(12)
@@ -140,7 +142,9 @@ class _AppDropDownState extends State<AppDropDown> {
                               Text(
                                 item,
                                 style: TextStyle(
-                                  color: isSelected ? Colors.white : Colors.black87,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.black87,
                                   fontWeight: isSelected
                                       ? FontWeight.bold
                                       : FontWeight.normal,
@@ -150,15 +154,13 @@ class _AppDropDownState extends State<AppDropDown> {
                             ],
                           ),
                         ),
-                          Divider(color: Colors.grey),
-
+                        Divider(color: Colors.grey),
                       ],
                     ),
                   );
                 },
               ),
             ),
-
         ],
       ),
     );

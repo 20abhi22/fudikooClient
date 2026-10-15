@@ -3,7 +3,11 @@ class SendOtpResponseModel {
   final String message;
   final String? otpId;
 
-  SendOtpResponseModel({required this.status, required this.message, this.otpId});
+  SendOtpResponseModel({
+    required this.status,
+    required this.message,
+    this.otpId,
+  });
 
   factory SendOtpResponseModel.fromJson(Map<String, dynamic> json) {
     return SendOtpResponseModel(

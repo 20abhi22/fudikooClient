@@ -71,8 +71,8 @@ class ResponseModel {
       discount: (json['extra_offer'] ?? '').toString(),
       message: (json['comments'] ?? '').toString(),
       status: (json['status'] ?? '').toString(),
-      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
-      updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()),
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString())?.toLocal(),
+      updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString())?.toLocal(),
       date: resolvedDate,
       time: (json['time'] ?? '').toString(),
       requestMenuItems: _stringFromAny(

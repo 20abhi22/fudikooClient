@@ -92,7 +92,7 @@ class AboutBadge extends StatelessWidget {
                             ),
                           ],
                         ),
-                        SizedBox(height: 20,),
+                        SizedBox(height: 20),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -126,7 +126,7 @@ class AboutBadge extends StatelessWidget {
                             ),
                           ],
                         ),
-                        SizedBox(height: 20,),
+                        SizedBox(height: 20),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -160,7 +160,7 @@ class AboutBadge extends StatelessWidget {
                             ),
                           ],
                         ),
-                        SizedBox(height: 20,),
+                        SizedBox(height: 20),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -194,7 +194,7 @@ class AboutBadge extends StatelessWidget {
                             ),
                           ],
                         ),
-                        SizedBox(height: 20,),
+                        SizedBox(height: 20),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -228,7 +228,6 @@ class AboutBadge extends StatelessWidget {
                             ),
                           ],
                         ),
-
 
                         SizedBox(height: 50),
                       ],

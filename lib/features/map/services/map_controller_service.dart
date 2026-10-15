@@ -42,17 +42,15 @@ class MapControllerService {
     );
   }
 
-// Add this method
-Future<void> onCameraMove(CameraPosition position) async {
-  // called from onCameraMove in GoogleMap
-}
+  // Add this method
+  Future<void> onCameraMove(CameraPosition position) async {
+    // called from onCameraMove in GoogleMap
+  }
 
   Future<void> animateTo(LatLng position, {double zoom = 15.0}) async {
-  final controller = await _controllerCompleter.future;
-  await controller.animateCamera(
-    CameraUpdate.newLatLngZoom(position, zoom),
-  );
-}
+    final controller = await _controllerCompleter.future;
+    await controller.animateCamera(CameraUpdate.newLatLngZoom(position, zoom));
+  }
 
   Future<void> expandAround(LatLng target) async {
     final controller = await _readyController;

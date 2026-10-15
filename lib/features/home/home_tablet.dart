@@ -3,11 +3,7 @@ import 'package:fudikoclient/core/responsive/app_dimensions.dart';
 import 'package:fudikoclient/features/home/home_content.dart';
 
 class HomeTablet extends StatelessWidget {
-  const HomeTablet({
-    super.key,
-    required this.items,
-    required this.orientation,
-  });
+  const HomeTablet({super.key, required this.items, required this.orientation});
 
   final List<HomeItem> items;
   final Orientation orientation;

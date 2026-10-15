@@ -47,7 +47,7 @@ class BookingModel {
             date: (json['date'] ?? '').toString(),
             time: (json['time'] ?? '').toString(),
           ) ?? now,
-      bookingDate: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? now,
+      bookingDate: DateTime.tryParse((json['created_at'] ?? '').toString())?.toLocal() ?? now,
       persons: _toInt(json['people']) ?? 0,
       status: (json['status'] ?? '').toString(),
       applicableFor: offer?['applicable_for']?.toString(),

@@ -122,10 +122,15 @@ class AppTextFeild extends StatefulWidget {
 class _AppTextFeildState extends State<AppTextFeild> {
   String _translated = '';
 
+  /// Callers that pass their own [InputDecoration] carry the hint there
+  /// instead of in [AppTextFeild.text], so it needs translating on its own.
+  String _translatedDecorationHint = '';
+
   @override
   void initState() {
     super.initState();
     _translate();
+    _translateDecorationHint();
   }
 
   @override
@@ -134,6 +139,11 @@ class _AppTextFeildState extends State<AppTextFeild> {
 
     if (oldWidget.text != widget.text) {
       _translate();
+    }
+
+    if (oldWidget.decoration?.hintText != widget.decoration?.hintText) {
+      _translatedDecorationHint = '';
+      _translateDecorationHint();
     }
   }
 
@@ -147,6 +157,28 @@ class _AppTextFeildState extends State<AppTextFeild> {
         _translated = result;
       });
     }
+  }
+
+  Future<void> _translateDecorationHint() async {
+    final hint = widget.decoration?.hintText;
+    if (hint == null || hint.trim().isEmpty) return;
+
+    final result = await TranslatorService.translate(hint);
+
+    if (mounted) {
+      setState(() {
+        _translatedDecorationHint = result;
+      });
+    }
+  }
+
+  /// The caller's decoration with its hint swapped for the translated copy.
+  /// The source hint shows until the translation resolves.
+  InputDecoration? get _localizedDecoration {
+    final decoration = widget.decoration;
+    if (decoration == null) return null;
+    if (_translatedDecorationHint.isEmpty) return decoration;
+    return decoration.copyWith(hintText: _translatedDecorationHint);
   }
 
   @override
@@ -240,6 +272,7 @@ class _AppTextFeildState extends State<AppTextFeild> {
                     : _TextFieldContent(
                         widget: widget,
                         translatedHint: translatedHint,
+                        decoration: _localizedDecoration,
                         iconSlot: iconSlot,
                         sideSpacing: sideSpacing,
                         fontSize: fontSize,
@@ -287,6 +320,7 @@ class _TextFieldContent extends StatelessWidget {
   const _TextFieldContent({
     required this.widget,
     required this.translatedHint,
+    required this.decoration,
     required this.iconSlot,
     required this.sideSpacing,
     required this.fontSize,
@@ -296,6 +330,7 @@ class _TextFieldContent extends StatelessWidget {
 
   final AppTextFeild widget;
   final String? translatedHint;
+  final InputDecoration? decoration;
   final double iconSlot;
   final double sideSpacing;
   final double fontSize;
@@ -353,7 +388,7 @@ class _TextFieldContent extends StatelessWidget {
                 ? [FilteringTextInputFormatter.digitsOnly]
                 : null,
             decoration:
-                widget.decoration ??
+                decoration ??
                 InputDecoration(
                   counterText: '',
                   hintText: translatedHint,

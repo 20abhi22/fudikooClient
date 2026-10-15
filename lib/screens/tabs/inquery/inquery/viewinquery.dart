@@ -110,14 +110,6 @@ class _ViewInqueryState extends State<ViewInquery> {
     return selectedFilter;
   }
 
-  double _filterDropdownWidth(String label) {
-    final metrics = _ViewInqueryMetrics.fromContext(context);
-    final textWidth = label.length * metrics.filterTextUnitWidth;
-    return (textWidth + metrics.filterDropdownExtraWidth)
-        .clamp(metrics.filterDropdownMinWidth, metrics.filterDropdownMaxWidth)
-        .toDouble();
-  }
-
   // ── Custom date range picker ──────────────────────────────
   Future<void> _pickCustomRange() async {
     final DateTimeRange? picked = await _pickCustomCalendarRangePopup();
@@ -143,19 +135,23 @@ class _ViewInqueryState extends State<ViewInquery> {
             final metrics = _ViewInqueryMetrics.fromContext(context);
             final activeDate = selectingStart ? tempStart : tempEnd;
 
+            final dialogWidth = _rangeDialogWidth(context, metrics);
+
             return Dialog(
               insetPadding: EdgeInsets.symmetric(
                 horizontal: metrics.dialogPaddingHorizontal,
                 vertical: metrics.dialogPaddingVertical,
               ),
-              constraints: BoxConstraints.tightFor(
-                width: _rangeDialogWidth(context, metrics),
+              constraints: BoxConstraints(
+                minWidth: dialogWidth,
+                maxWidth: dialogWidth,
+                maxHeight: MediaQuery.sizeOf(context).height * 0.9,
               ),
               backgroundColor: const Color(0xFFF5F5F5),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(metrics.dialogRadius),
               ),
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(
                   horizontal: metrics.dialogPaddingHorizontal,
                   vertical: metrics.dialogPaddingVertical,
@@ -367,13 +363,17 @@ class _ViewInqueryState extends State<ViewInquery> {
       backgroundColor: Colors.white,
       context: context,
       isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+        maxWidth: metrics.sheetMaxWidth,
+      ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(metrics.sheetRadius),
         ),
       ),
       builder: (context) {
-        return Padding(
+        return SingleChildScrollView(
           padding: EdgeInsets.all(metrics.sheetPadding),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -390,7 +390,7 @@ class _ViewInqueryState extends State<ViewInquery> {
               ),
               SizedBox(height: metrics.sheetHandleGap),
               Container(
-                width: MediaQuery.of(context).size.width,
+                width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(metrics.sheetInnerRadius),
@@ -440,20 +440,12 @@ class _ViewInqueryState extends State<ViewInquery> {
               ),
               Expanded(
                 child: Center(
-                  child: SizedBox(
-                    width: _filterDropdownWidth(_filterLabel),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10.r),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0x1A000000),
-                            offset: const Offset(0, 0),
-                            blurRadius: 10,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minWidth: metrics.filterDropdownMinWidth,
+                      maxWidth: metrics.filterDropdownMaxWidth,
+                    ),
+                    child: IntrinsicWidth(
                       child: AppFilterDropDown(
                         height: metrics.filterHeight,
                         hint: _filterLabel,
@@ -599,8 +591,6 @@ class _ViewInqueryMetrics {
     required this.backIconSize,
     required this.filterHeight,
     required this.filterIconSize,
-    required this.filterTextUnitWidth,
-    required this.filterDropdownExtraWidth,
     required this.filterDropdownMinWidth,
     required this.filterDropdownMaxWidth,
     required this.listHorizontalPadding,
@@ -629,6 +619,7 @@ class _ViewInqueryMetrics {
     required this.filterOptionRadius,
     required this.filterOptionTextSize,
     required this.sheetPadding,
+    required this.sheetMaxWidth,
     required this.sheetRadius,
     required this.sheetHandleWidth,
     required this.sheetHandleHeight,
@@ -644,8 +635,6 @@ class _ViewInqueryMetrics {
   final double backIconSize;
   final double filterHeight;
   final double filterIconSize;
-  final double filterTextUnitWidth;
-  final double filterDropdownExtraWidth;
   final double filterDropdownMinWidth;
   final double filterDropdownMaxWidth;
   final double listHorizontalPadding;
@@ -674,6 +663,7 @@ class _ViewInqueryMetrics {
   final double filterOptionRadius;
   final double filterOptionTextSize;
   final double sheetPadding;
+  final double sheetMaxWidth;
   final double sheetRadius;
   final double sheetHandleWidth;
   final double sheetHandleHeight;
@@ -702,8 +692,6 @@ class _ViewInqueryMetrics {
         backIconSize: s(34),
         filterHeight: v(38),
         filterIconSize: s(17),
-        filterTextUnitWidth: s(7.5),
-        filterDropdownExtraWidth: s(84),
         filterDropdownMinWidth: s(140),
         filterDropdownMaxWidth: s(260),
         listHorizontalPadding: s(48),
@@ -732,6 +720,7 @@ class _ViewInqueryMetrics {
         filterOptionRadius: s(10),
         filterOptionTextSize: 16,
         sheetPadding: s(34),
+        sheetMaxWidth: 480,
         sheetRadius: s(25),
         sheetHandleWidth: s(44),
         sheetHandleHeight: v(5),
@@ -750,8 +739,6 @@ class _ViewInqueryMetrics {
         backIconSize: 26,
         filterHeight: 30,
         filterIconSize: 13,
-        filterTextUnitWidth: 7.0,
-        filterDropdownExtraWidth: 68,
         filterDropdownMinWidth: 115,
         filterDropdownMaxWidth: 190,
         listHorizontalPadding: 24,
@@ -780,6 +767,7 @@ class _ViewInqueryMetrics {
         filterOptionRadius: 10,
         filterOptionTextSize: 13.5,
         sheetPadding: 24,
+        sheetMaxWidth: 420,
         sheetRadius: 22,
         sheetHandleWidth: 38,
         sheetHandleHeight: 5,
@@ -801,8 +789,6 @@ class _ViewInqueryMetrics {
         backIconSize: s(26),
         filterHeight: s(30),
         filterIconSize: s(13),
-        filterTextUnitWidth: s(7.0),
-        filterDropdownExtraWidth: s(68),
         filterDropdownMinWidth: s(115),
         filterDropdownMaxWidth: s(190),
         listHorizontalPadding: s(24),
@@ -831,6 +817,7 @@ class _ViewInqueryMetrics {
         filterOptionRadius: s(10),
         filterOptionTextSize: s(13.5),
         sheetPadding: s(22),
+        sheetMaxWidth: 420,
         sheetRadius: s(22),
         sheetHandleWidth: s(38),
         sheetHandleHeight: s(5),
@@ -848,8 +835,6 @@ class _ViewInqueryMetrics {
       backIconSize: 30.w,
       filterHeight: 32.h,
       filterIconSize: 15.sp,
-      filterTextUnitWidth: 7.5.w,
-      filterDropdownExtraWidth: 76.w,
       filterDropdownMinWidth: 120.w,
       filterDropdownMaxWidth: 210.w,
       listHorizontalPadding: 30.w,
@@ -878,6 +863,7 @@ class _ViewInqueryMetrics {
       filterOptionRadius: 10,
       filterOptionTextSize: 15,
       sheetPadding: 30.w,
+      sheetMaxWidth: 440.w,
       sheetRadius: 25,
       sheetHandleWidth: 40,
       sheetHandleHeight: 5,
@@ -949,6 +935,10 @@ class _CalendarMetrics {
   factory _CalendarMetrics.fromContext(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final isTablet = Breakpoints.isTablet(size.width);
+    // Phones rotated to landscape with very little vertical room —
+    // needs its own, tighter sizing rather than reusing isWideShortPhone.
+    final isShortLandscape =
+        !isTablet && size.width > size.height && size.height < 450;
     final isWideShortPhone =
         !isTablet && size.width >= 500 && size.height <= 760;
     final isCompactPhone = size.width < 390 || size.height < 700;
@@ -984,6 +974,37 @@ class _CalendarMetrics {
         dayTextSize: s(13),
         todayDotSize: s(5),
         todayDotGap: s(2),
+      );
+    }
+
+    if (isShortLandscape) {
+      return const _CalendarMetrics(
+        calendarWidth: 230,
+        headerIconButtonSize: 28,
+        headerIconSize: 18,
+        headerTextSize: 13,
+        headerTextGap: 3,
+        dropdownIconSize: 16,
+        sectionGap: 3,
+        yearIconSize: 16,
+        yearTextSize: 12,
+        monthGridMainSpacing: 5,
+        monthGridCrossSpacing: 5,
+        monthGridAspectRatio: 2.5,
+        monthCellHeight: 28,
+        monthCellRadius: 6,
+        monthTextSize: 10,
+        yearSheetHeight: 170,
+        yearSheetRadius: 12,
+        yearItemTextSize: 12,
+        weekdayCellWidth: 24,
+        weekdayTextSize: 9.5,
+        dayMainSpacing: 2,
+        dayCellSize: 21,
+        dayRadius: 6,
+        dayTextSize: 10.5,
+        todayDotSize: 3,
+        todayDotGap: 1,
       );
     }
 

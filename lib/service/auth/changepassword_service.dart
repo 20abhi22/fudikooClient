@@ -2,14 +2,15 @@ import 'package:dio/dio.dart';
 import 'package:fudikoclient/api/dio_client.dart';
 import 'package:fudikoclient/model/auth/change_password_response_model.dart';
 import 'package:fudikoclient/model/auth/changepassword_model.dart';
-import 'package:fudikoclient/utils/tokens.dart';   
+import 'package:fudikoclient/utils/error_messages.dart';
+import 'package:fudikoclient/utils/tokens.dart';
 
 class ChangePasswordService {
   Future<ChangePasswordResponseModel> changePassword(
-      ChangePasswordModel model) async {
+    ChangePasswordModel model,
+  ) async {
     try {
-
-      String? token = await getToken();  
+      String? token = await getToken();
 
       if (token == null) {
         return ChangePasswordResponseModel(
@@ -23,11 +24,7 @@ class ChangePasswordService {
       final response = await DioClient.dio.post(
         '/change-password',
         data: formData,
-        options: Options(
-          headers: {
-            "Authorization": "Bearer $token",  
-          },
-        ),
+        options: Options(headers: {"Authorization": "Bearer $token"}),
       );
 
       if (response.statusCode == 200) {
@@ -35,18 +32,19 @@ class ChangePasswordService {
       } else {
         return ChangePasswordResponseModel(
           status: false,
-          message: "Failed: ${response.statusCode}",
+          message: statusCodeMessage(
+            response.statusCode,
+            fallback: 'We could not change your password. Please try again.',
+          ),
         );
       }
-    } on DioException catch (e) {
-      return ChangePasswordResponseModel(
-        status: false,
-        message: e.response?.data['message'] ?? "Something went wrong",
-      );
     } catch (e) {
       return ChangePasswordResponseModel(
         status: false,
-        message: "Unexpected error occurred",
+        message: friendlyErrorMessage(
+          e,
+          fallback: 'We could not change your password. Please try again.',
+        ),
       );
     }
   }

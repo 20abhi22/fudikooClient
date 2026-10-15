@@ -4,7 +4,7 @@ import 'package:fudikoclient/screens/catering_tabs/inquery/catering_inquery.dart
 import 'package:fudikoclient/screens/catering_tabs/reservation/catering_reservation.dart';
 import 'package:fudikoclient/screens/customerProfile/customerProfile.dart';
 import 'package:fudikoclient/screens/home/homepage.dart' as root_home;
-import 'package:fudikoclient/service/notification/notification_badges_service.dart';
+import 'package:fudikoclient/service/notification/badge_controller.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:fudikoclient/utils/tab_navigation.dart';
 
@@ -22,16 +22,18 @@ class MainCateringNavPage extends StatefulWidget {
 class _MainCateringNavPageState extends State<MainCateringNavPage> {
   static const int _tabCount = 4;
   static const int _inquiryTabIndex = 1;
+  static const int _reservationTabIndex = 2;
 
   int currentIndex = _inquiryTabIndex;
   final List<int> _tabHistory = [];
   final List<bool> _tabCanPop = List<bool>.filled(_tabCount, false);
   final GlobalKey<CateringInqueryState> _inquiryKey =
       GlobalKey<CateringInqueryState>();
+  final GlobalKey<CateringReservationState> _reservationKey =
+      GlobalKey<CateringReservationState>();
   late final List<GlobalKey<NavigatorState>> _navigatorKeys;
   late final List<TabStackObserver> _observers;
-  int _inquiryBadgeCount = 0;
-  int _reservationBadgeCount = 0;
+  int? _pendingRefreshTab;
 
   @override
   void initState() {
@@ -44,16 +46,52 @@ class _MainCateringNavPageState extends State<MainCateringNavPage> {
       _tabCount,
       (index) => TabStackObserver(onStackChanged: () => _syncCanPop(index)),
     );
-    _loadNotificationBadges();
+    // Listener only, no subscribe(): the bottom bar keeps the poll alive, and
+    // this just gives a popup-blocked refresh another chance each tick.
+    BadgeController.instance.addListener(_flushPendingRefresh);
   }
 
-  Future<void> _loadNotificationBadges() async {
-    final badges = await NotificationBadgesService().fetchBadges();
-    if (!mounted) return;
-    setState(() {
-      _inquiryBadgeCount = badges.cateringEnquiries;
-      _reservationBadgeCount = badges.cateringReservations;
-    });
+  @override
+  void dispose() {
+    BadgeController.instance.removeListener(_flushPendingRefresh);
+    super.dispose();
+  }
+
+  /// Reloads whichever tab is open. Called when its badge count changes, so a
+  /// list never sits stale under a bumped badge.
+  ///
+  /// Held back while a dialog or bottom sheet covers the shell: reloading the
+  /// list underneath would pull the ground out from under whatever the customer
+  /// has open. The reload runs on the next badge poll once the popup is gone.
+  /// The Inquiries tab applies the same rule to its own inline overlays.
+  void _refreshTab(int index) {
+    if (_isPopupOpen) {
+      _pendingRefreshTab = index;
+      return;
+    }
+
+    _pendingRefreshTab = null;
+    if (index == _inquiryTabIndex) {
+      _inquiryKey.currentState?.refresh();
+    } else if (index == _reservationTabIndex) {
+      _reservationKey.currentState?.refreshReservations();
+    }
+  }
+
+  /// True while a route (dialog, bottom sheet, pushed page) sits above the
+  /// shell.
+  bool get _isPopupOpen => ModalRoute.of(context)?.isCurrent == false;
+
+  /// Retries a refresh that a popup blocked. Driven by the badge poll, so it
+  /// gets a chance every tick until the popup closes.
+  void _flushPendingRefresh() {
+    final pending = _pendingRefreshTab;
+    if (pending == null || _isPopupOpen) return;
+    if (pending != currentIndex) {
+      _pendingRefreshTab = null;
+      return;
+    }
+    _refreshTab(pending);
   }
 
   void _syncCanPop(int index) {
@@ -72,6 +110,10 @@ class _MainCateringNavPageState extends State<MainCateringNavPage> {
     if (index == _inquiryTabIndex) {
       _resetToInquiry();
       return;
+    }
+
+    if (index == _reservationTabIndex) {
+      _reservationKey.currentState?.refreshReservations();
     }
 
     if (index == currentIndex) return;
@@ -128,7 +170,7 @@ class _MainCateringNavPageState extends State<MainCateringNavPage> {
     final screens = [
       const SizedBox.shrink(),
       CateringInquery(key: _inquiryKey),
-      const CateringReservation(),
+      CateringReservation(key: _reservationKey),
       const CustomerProfile(),
     ];
 
@@ -146,8 +188,7 @@ class _MainCateringNavPageState extends State<MainCateringNavPage> {
                 child: CateringBottomnav(
                   selectedIndex: currentIndex,
                   onTabSelected: onTabChanged,
-                  inquiryBadgeCount: _inquiryBadgeCount,
-                  reservationBadgeCount: _reservationBadgeCount,
+                  onSelectedTabBadgeChanged: () => _refreshTab(currentIndex),
                 ),
               ),
         body: SafeArea(

@@ -24,6 +24,7 @@ class _EarnPointsState extends State<EarnPoints> {
 
   final ReferralService _referralService = ReferralService();
   String? _referralLink;
+  String _linkError = '';
 
   @override
   void initState() {
@@ -32,10 +33,14 @@ class _EarnPointsState extends State<EarnPoints> {
   }
 
   Future<void> _fetchReferralLink() async {
-    final result = await _referralService.getReferralLink();
+    if (mounted) setState(() => _linkError = '');
+
+    final result = await _referralService.fetchReferralLink();
     if (!mounted) return;
     setState(() {
-      _referralLink = result?.referralLink;
+      _referralLink = result.data?.referralLink;
+      // Without this the Share button would spin forever when the fetch fails.
+      _linkError = result.hasError ? result.message : '';
     });
   }
 
@@ -76,7 +81,9 @@ class _EarnPointsState extends State<EarnPoints> {
                         _EarnContent(
                           metrics: metrics,
                           referralLink: _referralLink,
+                          linkError: _linkError,
                           onShare: _shareReferralLink,
+                          onRetry: _fetchReferralLink,
                         ),
                       ],
                     ),
@@ -95,12 +102,16 @@ class _EarnContent extends StatelessWidget {
   const _EarnContent({
     required this.metrics,
     required this.referralLink,
+    required this.linkError,
     required this.onShare,
+    required this.onRetry,
   });
 
   final _EarnPointsLayoutMetrics metrics;
   final String? referralLink;
+  final String linkError;
   final VoidCallback onShare;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -160,14 +171,28 @@ class _EarnContent extends StatelessWidget {
             SizedBox(height: metrics.smallGap),
           ],
           SizedBox(height: metrics.titleGap),
+          if (linkError.isNotEmpty) ...[
+            AppText(
+              text: linkError,
+              size: metrics.captionSize,
+              fontWeight: FontWeight.w400,
+              color: appTextColor2,
+              isCentered: true,
+            ),
+            SizedBox(height: metrics.smallGap),
+          ],
           if (metrics.showButton)
             SizedBox(
               width: metrics.buttonWidth,
               height: metrics.buttonHeight,
               child: AppButton(
-                text: 'Share Your Link',
-                onPressed: referralLink == null ? null : onShare,
-                isLoading: referralLink == null,
+                text: linkError.isNotEmpty ? 'Retry' : 'Share Your Link',
+                onPressed: linkError.isNotEmpty
+                    ? onRetry
+                    : referralLink == null
+                    ? null
+                    : onShare,
+                isLoading: referralLink == null && linkError.isEmpty,
                 bgColor1: appLinkColor2,
                 bgColor2: appLinkColor2,
                 size: metrics.buttonTextSize,
@@ -253,10 +278,7 @@ class _EarnHero extends StatelessWidget {
 }
 
 class _InviteStep extends StatelessWidget {
-  const _InviteStep({
-    required this.text,
-    required this.metrics,
-  });
+  const _InviteStep({required this.text, required this.metrics});
 
   final String text;
   final _EarnPointsLayoutMetrics metrics;
@@ -361,22 +383,22 @@ class _EarnPointsLayoutMetrics {
     final heroHeight = isTabletLandscape
         ? height * 0.48
         : isTablet
-            ? height * 0.42
-            : isPhoneLandscape
-                ? height * 0.42
-                : isCompactPhone
-                    ? height * 0.32
-                    : height * 0.36;
+        ? height * 0.42
+        : isPhoneLandscape
+        ? height * 0.42
+        : isCompactPhone
+        ? height * 0.32
+        : height * 0.36;
 
     return _EarnPointsLayoutMetrics(
       heroHeight: heroHeight,
       heroHorizontalPadding: isLandscape
           ? width * 0.08
           : isTablet
-              ? width * 0.08
-              : isCompactPhone
-                  ? width * 0.06
-                  : width * 0.075,
+          ? width * 0.08
+          : isCompactPhone
+          ? width * 0.06
+          : width * 0.075,
       // Independent from heroHorizontalPadding: that value scales with
       // screen width and gets too large in landscape, pushing the back
       // icon away from the left edge. backLeft stays small and scales off
@@ -384,29 +406,29 @@ class _EarnPointsLayoutMetrics {
       backLeft: isLandscape
           ? (heroHeight * 0.06).clamp(12.0, 24.0)
           : isTablet
-              ? 24.0
-              : 16.0,
+          ? 24.0
+          : 16.0,
       heroTextBottom: isLandscape
           ? (heroHeight * 0.05).clamp(10.0, 24.0)
           : isTablet
-              ? AppDimensions.margin(context)
-              : isCompactPhone
-                  ? 14.0
-                  : 20.0,
+          ? AppDimensions.margin(context)
+          : isCompactPhone
+          ? 14.0
+          : 20.0,
       backTop: isLandscape
           ? (heroHeight * 0.09).clamp(12.0, 36.0)
           : isTablet
-              ? 36.0
-              : isCompactPhone
-                  ? 22.0
-                  : 40.0,
+          ? 36.0
+          : isCompactPhone
+          ? 22.0
+          : 40.0,
       backSize: isLandscape
           ? (heroHeight * 0.086).clamp(20.0, 34.0)
           : isTablet
-              ? 34.0
-              : isCompactPhone
-                  ? 26.0
-                  : 30.0,
+          ? 34.0
+          : isCompactPhone
+          ? 26.0
+          : 30.0,
       // Hero text (Earn / Unlimited / Points!!) scales off heroHeight in
       // landscape (phone or tablet), matching the tablet-landscape
       // reference proportions at any screen size. Portrait sizing for
@@ -414,84 +436,84 @@ class _EarnPointsLayoutMetrics {
       heroEarnSize: isLandscape
           ? (heroHeight * 0.132).clamp(18.0, 52.0)
           : isCompactPhone
-              ? 31.0
-              : 36.0,
+          ? 31.0
+          : 36.0,
       heroUnlimitedSize: isLandscape
           ? (heroHeight * 0.117).clamp(16.0, 46.0)
           : isCompactPhone
-              ? 28.0
-              : 32.0,
+          ? 28.0
+          : 32.0,
       heroPointsSize: isLandscape
           ? (heroHeight * 0.102).clamp(14.0, 40.0)
           : isCompactPhone
-              ? 25.0
-              : 29.0,
+          ? 25.0
+          : 29.0,
       contentHorizontalPadding: isTablet
           ? width * 0.12
           : isCompactPhone
-              ? width * 0.1
-              : width * 0.15,
+          ? width * 0.1
+          : width * 0.15,
       contentTopGap: isTablet
           ? AppDimensions.gap(context)
           : isCompactPhone
-              ? 4.0
-              : 6.0,
+          ? 4.0
+          : 6.0,
       moneyImageSize: isTablet
           ? 220.0
           : isCompactPhone
-              ? 112.0
-              : 138.0,
+          ? 112.0
+          : 138.0,
       titleGap: isTablet
           ? AppDimensions.margin(context)
           : isCompactPhone
-              ? 8.0
-              : 12.0,
+          ? 8.0
+          : 12.0,
       smallGap: isTablet
           ? AppDimensions.gap(context) * 0.75
           : isCompactPhone
-              ? 4.0
-              : 6.0,
+          ? 4.0
+          : 6.0,
       sectionGap: isTablet
           ? AppDimensions.margin(context) * 1.2
           : isCompactPhone
-              ? 12.0
-              : 16.0,
+          ? 12.0
+          : 16.0,
       bottomGap: isTablet
           ? AppDimensions.margin(context)
           : isCompactPhone
-              ? 8.0
-              : 12.0,
+          ? 8.0
+          : 12.0,
       titleSize: isTablet ? AppDimensions.title(context) : 20.0,
       bodySize: isTablet
           ? AppDimensions.body(context)
           : isCompactPhone
-              ? 11.0
-              : 12.5,
+          ? 11.0
+          : 12.5,
       captionSize: isTablet
           ? AppDimensions.caption(context)
           : isCompactPhone
-              ? 9.5
-              : 10.5,
+          ? 9.5
+          : 10.5,
       stepIconSize: isTablet
           ? 22.0
           : isCompactPhone
-              ? 18.0
-              : 20.0,
+          ? 18.0
+          : 20.0,
       buttonWidth: isTablet
           ? 220.0
           : isCompactPhone
-              ? 190.0
-              : 200.0,
+          ? 190.0
+          : 200.0,
       buttonHeight: isTablet
           ? 44.0
           : isCompactPhone
-              ? 40.0
-              : 40.0,
+          ? 40.0
+          : 40.0,
       buttonTextSize: isTablet
           ? AppDimensions.body(context)
           : isCompactPhone
-              ? 13.0
-              : 15.0,
+          ? 13.0
+          : 15.0,
       buttonRadius: isTablet ? 12.0 : 10.0,
       isTablet: isTablet,
       showButton: true,

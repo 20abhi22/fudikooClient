@@ -58,10 +58,14 @@ class MenuResponse {
   final List<MenuPdfModel> pdfs;
   final List<MenuItemModel> individualMenu;
 
+  /// Why the request failed, ready to show to the user. Empty on success.
+  final String message;
+
   MenuResponse({
     required this.status,
     required this.pdfs,
     required this.individualMenu,
+    this.message = '',
   });
 
   factory MenuResponse.fromJson(Map<String, dynamic> json) {

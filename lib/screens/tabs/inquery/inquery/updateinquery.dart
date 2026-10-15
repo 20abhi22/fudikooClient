@@ -12,6 +12,7 @@ import 'package:fudikoclient/service/inquery/inquery-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:fudikoclient/utils/tokens.dart';
 import 'package:intl/intl.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class UpdateInquery extends StatefulWidget {
   final Function(bool) onEnquiryTap;
@@ -49,7 +50,9 @@ class UpdateInquery extends StatefulWidget {
     required this.searchRadius,
     required this.expirationDate,
     required this.expirationTime,
-    required this.status, required this.placeName, required this.onEdit,
+    required this.status,
+    required this.placeName,
+    required this.onEdit,
   });
 
   @override
@@ -79,14 +82,18 @@ class _UpdateInqueryState extends State<UpdateInquery> {
     super.initState();
     nofopeoplecontroller.text = widget.people.toString();
     descriptioncontoller.text = widget.menuItems;
-    estimatedamountcontoller.text = double.parse(widget.estimatedAmount).toInt().toString();
+    estimatedamountcontoller.text = double.parse(
+      widget.estimatedAmount,
+    ).toInt().toString();
     datetimecontroller.text = "${widget.date} &  ${widget.time}";
-    validdatetimecontroller.text = "${widget.expirationDate} &  ${widget.expirationTime}";
+    validdatetimecontroller.text =
+        "${widget.expirationDate} &  ${widget.expirationTime}";
     radius = double.parse(widget.searchRadius).toInt().toString();
     longitude = widget.lng;
     latitude = widget.lat;
     place = widget.placeName;
   }
+
   Future<void> updateInquery() async {
     debugPrint(await getToken());
     try {
@@ -179,10 +186,15 @@ class _UpdateInqueryState extends State<UpdateInquery> {
           ),
           SizedBox(height: 10.h),
           GestureDetector(
-            onTap: () => Navigator.push(
-              context,
+            // Root navigator, not the tab's nested one — see ctInquery.dart:
+            // the tab shell's Scaffold shrinks its body for the keyboard,
+            // which would drag the picker's bottom-pinned radius panel up.
+            onTap: () => Navigator.of(context, rootNavigator: true).push(
               MaterialPageRoute(
                 builder: (context) => LocationSelect(
+                  initialLat: double.tryParse(latitude ?? ''),
+                  initialLng: double.tryParse(longitude ?? ''),
+                  initialDistance: double.tryParse(radius ?? ''),
                   returndata: (lat, lng, distance) async {
                     setState(() {
                       latitude = lat;
@@ -232,13 +244,12 @@ class _UpdateInqueryState extends State<UpdateInquery> {
             children: [
               Padding(
                 padding: EdgeInsets.only(left: 4.0, bottom: 4.h),
-                child: Text(
-                  'Enquiry valid for',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: AppText(
+                  text: 'Enquiry valid for',
+                  size: 12.sp,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.red,
+                  maxLines: 1,
                 ),
               ),
               GestureDetector(
@@ -288,18 +299,12 @@ class _UpdateInqueryState extends State<UpdateInquery> {
                     radius == null ||
                     latitude == null ||
                     longitude == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        "Please fill all the fields before proceeding!",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      backgroundColor: Colors.red,
-                      behavior: SnackBarBehavior.floating,
-                    ),
+                  showErrorSnack(
+                    context,
+                    "Please fill all the fields before proceeding!",
                   );
                   return;
-                }else{
+                } else {
                   updateInquery();
                 }
               },

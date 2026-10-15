@@ -13,6 +13,7 @@ import 'package:fudikoclient/screens/auth/otp.dart';
 import 'package:fudikoclient/service/auth/changepassword_service.dart';
 import 'package:fudikoclient/service/auth/forgotpassword-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class ChangePassword extends StatefulWidget {
   final String? token;
@@ -24,8 +25,6 @@ class ChangePassword extends StatefulWidget {
 }
 
 class _ChangePasswordState extends State<ChangePassword> {
-  final TextEditingController currentPasswordController =
-      TextEditingController();
   final TextEditingController newPasswordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
@@ -34,94 +33,32 @@ class _ChangePasswordState extends State<ChangePassword> {
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  bool _obscureOldPassword = true;
   bool isLoading = false;
 
   @override
   void dispose() {
-    currentPasswordController.dispose();
     newPasswordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
   }
 
-  // Future<void> changePassword() async {
-  //   final currentPassword = currentPasswordController.text.trim();
-  //   final newPassword = newPasswordController.text.trim();
-  //   final confirmPassword = confirmPasswordController.text.trim();
-
-  //   if (currentPassword.isEmpty ||
-  //       newPassword.isEmpty ||
-  //       confirmPassword.isEmpty) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text("Please fill all fields")),
-  //     );
-  //     return;
-  //   }
-
-  //   if (newPassword.length < 6) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text("Password must be at least 6 characters")),
-  //     );
-  //     return;
-  //   }
-
-  //   if (newPassword != confirmPassword) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text("Passwords do not match")),
-  //     );
-  //     return;
-  //   }
-
-  //   setState(() => isLoading = true);
-
-  //   final response = await _service.changePassword(
-  //     ChangePasswordModel(password: newPassword),
-  //   );
-
-  //   if (!mounted) return;
-  //   setState(() => isLoading = false);
-
-  //   if (response.status) {
-  //     currentPasswordController.clear();
-  //     newPasswordController.clear();
-  //     confirmPasswordController.clear();
-  //   }
-
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     SnackBar(
-  //       content: Text(response.message),
-  //       backgroundColor: response.status ? Colors.green : Colors.red,
-  //     ),
-  //   );
-  // }
-
   Future<void> changePassword() async {
     final isResetFlow = widget.token != null && widget.token!.isNotEmpty;
-    final currentPassword = currentPasswordController.text.trim();
     final newPassword = newPasswordController.text.trim();
     final confirmPassword = confirmPasswordController.text.trim();
 
-    if ((!isResetFlow && currentPassword.isEmpty) ||
-        newPassword.isEmpty ||
-        confirmPassword.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Please fill all fields")));
+    if (newPassword.isEmpty || confirmPassword.isEmpty) {
+      showErrorSnack(context, "Please fill all fields");
       return;
     }
 
     if (newPassword.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Password must be at least 6 characters")),
-      );
+      showErrorSnack(context, "Password must be at least 6 characters");
       return;
     }
 
     if (newPassword != confirmPassword) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
+      showErrorSnack(context, "Passwords do not match");
       return;
     }
 
@@ -136,12 +73,9 @@ class _ChangePasswordState extends State<ChangePassword> {
       if (!mounted) return;
       setState(() => isLoading = false);
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(response.message)));
+      showErrorSnack(context, response.message);
 
       if (response.status) {
-        currentPasswordController.clear();
         newPasswordController.clear();
         confirmPasswordController.clear();
         pushWidgetWhileRemove(newPage: const Login(), context: context);
@@ -157,18 +91,12 @@ class _ChangePasswordState extends State<ChangePassword> {
     setState(() => isLoading = false);
 
     if (response.status) {
-      currentPasswordController.clear();
       newPasswordController.clear();
       confirmPasswordController.clear();
       pushWidgetWhileRemove(newPage: const Login(), context: context);
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(response.message),
-        backgroundColor: response.status ? Colors.green : Colors.red,
-      ),
-    );
+    showStatusSnack(context, response.status, response.message);
   }
 
   @override
@@ -257,7 +185,6 @@ class _ChangePasswordState extends State<ChangePassword> {
                   padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                   child: Stack(
                     children: [
-                     
                       Center(
                         child: SingleChildScrollView(
                           padding: scrollPadding,
@@ -273,20 +200,14 @@ class _ChangePasswordState extends State<ChangePassword> {
                                 child: FractionallySizedBox(
                                   widthFactor: formWidthFactor,
                                   child: _ChangePasswordForm(
-                                    currentPasswordController:
-                                        currentPasswordController,
                                     newPasswordController:
                                         newPasswordController,
                                     confirmPasswordController:
                                         confirmPasswordController,
-                                    obscureOldPassword: _obscureOldPassword,
                                     obscurePassword: _obscurePassword,
                                     obscureConfirmPassword:
                                         _obscureConfirmPassword,
                                     isLoading: isLoading,
-                                    showCurrentPassword:
-                                        widget.token == null ||
-                                        widget.token!.isEmpty,
                                     textSize: textSize,
                                     gap: gap,
                                     sectionGap: sectionGap,
@@ -298,12 +219,6 @@ class _ChangePasswordState extends State<ChangePassword> {
                                         MaterialPageRoute(
                                           builder: (context) => const Otp(),
                                         ),
-                                      );
-                                    },
-                                    onToggleOldPassword: () {
-                                      setState(
-                                        () => _obscureOldPassword =
-                                            !_obscureOldPassword,
                                       );
                                     },
                                     onTogglePassword: () {
@@ -326,7 +241,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                         ),
                       ),
 
-                       Positioned(
+                      Positioned(
                         top: backTop,
                         left: 0,
                         child: GestureDetector(
@@ -352,40 +267,32 @@ class _ChangePasswordState extends State<ChangePassword> {
 
 class _ChangePasswordForm extends StatelessWidget {
   const _ChangePasswordForm({
-    required this.currentPasswordController,
     required this.newPasswordController,
     required this.confirmPasswordController,
-    required this.obscureOldPassword,
     required this.obscurePassword,
     required this.obscureConfirmPassword,
     required this.isLoading,
-    required this.showCurrentPassword,
     required this.textSize,
     required this.gap,
     required this.sectionGap,
     required this.fieldHeight,
     required this.onSubmit,
     required this.onForgotPassword,
-    required this.onToggleOldPassword,
     required this.onTogglePassword,
     required this.onToggleConfirmPassword,
   });
 
-  final TextEditingController currentPasswordController;
   final TextEditingController newPasswordController;
   final TextEditingController confirmPasswordController;
-  final bool obscureOldPassword;
   final bool obscurePassword;
   final bool obscureConfirmPassword;
   final bool isLoading;
-  final bool showCurrentPassword;
   final double textSize;
   final double gap;
   final double sectionGap;
   final double fieldHeight;
   final VoidCallback onSubmit;
   final VoidCallback onForgotPassword;
-  final VoidCallback onToggleOldPassword;
   final VoidCallback onTogglePassword;
   final VoidCallback onToggleConfirmPassword;
 
@@ -404,22 +311,6 @@ class _ChangePasswordForm extends StatelessWidget {
           ),
         ),
         SizedBox(height: sectionGap * 0.67),
-        if (showCurrentPassword) ...[
-          AppTextFeild(
-            controller: currentPasswordController,
-            text: "Current Password",
-            iconImagePath: padlockOutlineIcon,
-            isObscure: obscureOldPassword,
-            enableInteractiveSelection: false,
-            suffixIcon: obscureOldPassword
-                ? Icons.visibility_off_outlined
-                : Icons.visibility_outlined,
-            onSuffixTap: onToggleOldPassword,
-            height: fieldHeight,
-            size: textSize,
-          ),
-          SizedBox(height: gap),
-        ],
         AppTextFeild(
           controller: newPasswordController,
           text: "New Password",

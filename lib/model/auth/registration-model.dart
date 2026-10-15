@@ -8,9 +8,8 @@ class RegistrationModel {
   RegistrationModel({
     required this.username,
     required this.email,
-    required this.password
+    required this.password,
   });
-
 
   FormData toFormData() {
     return FormData.fromMap({

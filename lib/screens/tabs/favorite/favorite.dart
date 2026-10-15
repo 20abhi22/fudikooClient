@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/apptext.dart';
+import 'package:fudikoclient/components/error_state.dart';
 import 'package:fudikoclient/core/responsive/breakpoints.dart';
 import 'package:fudikoclient/model/favorite/favoraite_model.dart';
 import 'package:fudikoclient/model/restaurant/restaurant-model.dart';
@@ -22,19 +23,19 @@ class Favorite extends StatefulWidget {
   const Favorite({super.key, this.currentLat, this.currentLng});
 
   @override
-  State<Favorite> createState() => _FavoriteState();
+  State<Favorite> createState() => FavoriteState();
 }
 
-class _FavoriteState extends State<Favorite> {
+class FavoriteState extends State<Favorite> {
   FavouriteRestaurantService favouriteRestaurantService =
       FavouriteRestaurantService();
   List<FavouriteRestaurantModel> restaurantsList = [];
   List<FavouriteRestaurantModel> _allRestaurants = [];
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
-  bool isBookingModalOpen = false;
   bool _isSearchActive = false;
   bool _isLoadingRestaurants = true;
+  String _loadError = '';
 
   @override
   void initState() {
@@ -42,9 +43,15 @@ class _FavoriteState extends State<Favorite> {
     loadFavouriteRestaurants();
   }
 
-  Future<void> loadFavouriteRestaurants() async {
+  /// Re-fetches favourites. Called by the bottom nav when this tab is tapped.
+  Future<void> refresh() => loadFavouriteRestaurants();
+
+  Future<void> loadFavouriteRestaurants({bool showLoader = true}) async {
     if (mounted) {
-      setState(() => _isLoadingRestaurants = true);
+      setState(() {
+        _isLoadingRestaurants = showLoader;
+        _loadError = '';
+      });
     }
 
     FavouriteRestaurantModelResponse response = await favouriteRestaurantService
@@ -60,12 +67,15 @@ class _FavoriteState extends State<Favorite> {
         restaurantsList = response.restaurant;
         _allRestaurants = List.from(response.restaurant);
         _isLoadingRestaurants = false;
+        _loadError = '';
       });
     } else {
       setState(() {
         _isLoadingRestaurants = false;
+        _loadError = response.message.isNotEmpty
+            ? response.message
+            : 'We could not load your favourites. Please try again.';
       });
-      debugPrint('Error loading favourite restaurants');
     }
   }
 
@@ -226,7 +236,9 @@ class _FavoriteState extends State<Favorite> {
           onRefresh: loadFavouriteRestaurants,
           child: ListView.builder(
             padding: EdgeInsets.only(top: metrics.topPadding),
-            itemCount: _isLoadingRestaurants ? 2 : restaurantsList.length + 2,
+            itemCount: (_isLoadingRestaurants || _loadError.isNotEmpty)
+                ? 2
+                : restaurantsList.length + 2,
             physics: const AlwaysScrollableScrollPhysics(),
             itemBuilder: (context, index) {
               if (index == 0) {
@@ -245,6 +257,18 @@ class _FavoriteState extends State<Favorite> {
                       vertical: metrics.loadingVerticalPadding,
                     ),
                     child: const Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                if (_loadError.isNotEmpty) {
+                  return Padding(
+                    padding: EdgeInsets.symmetric(
+                      vertical: metrics.emptyVerticalPadding,
+                    ),
+                    child: ErrorStateView(
+                      message: _loadError,
+                      onRetry: loadFavouriteRestaurants,
+                    ),
                   );
                 }
 
@@ -269,13 +293,14 @@ class _FavoriteState extends State<Favorite> {
                 return SizedBox(height: metrics.afterSearchGap);
               }
 
-              if (_isLoadingRestaurants) {
+              if (_isLoadingRestaurants || _loadError.isNotEmpty) {
                 return const SizedBox.shrink();
               }
 
               final restaurant = restaurantsList[index - 2];
 
               return Center(
+                key: ValueKey(restaurant.uuid),
                 child: SizedBox(
                   width: metrics.contentWidth,
                   child: InkWell(
@@ -318,6 +343,8 @@ class _FavoriteState extends State<Favorite> {
                       status: restaurant.status,
                       isFavourite: true,
                       isFavoriteBox: false,
+                      onFavouriteChanged: (_) =>
+                          loadFavouriteRestaurants(showLoader: false),
                       offers: restaurant.offers,
                       image: restaurant.image,
                       onRatingOnClick: () => Navigator.push(
@@ -334,52 +361,34 @@ class _FavoriteState extends State<Favorite> {
                         final selectedOffers = restaurant.offers
                             .where((offer) => offer.uuid == offerId)
                             .toList();
-                        setState(
-                          () => isBookingModalOpen = !isBookingModalOpen,
+                        // No slot-picker step here — book straight into the
+                        // offer's own displayed time.
+                        showModalBottomSheet(
+                          backgroundColor: Colors.white,
+                          context: context,
+                          isScrollControlled: true,
+                          useSafeArea: true,
+                          constraints: Breakpoints.isTabletContext(context)
+                              ? const BoxConstraints(maxWidth: 500)
+                              : null,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(25),
+                            ),
+                          ),
+                          builder: (_) => SingleChildScrollView(
+                            child: NumberOfPeopleModal(
+                              uuid: restaurant.uuid,
+                              allowSlotSelection: false,
+                              offerId: offerId,
+                              offer:
+                                  offer ??
+                                  (selectedOffers.isEmpty
+                                      ? null
+                                      : selectedOffers.first),
+                            ),
+                          ),
                         );
-                        if (isBookingModalOpen) {
-                          // showModalBottomSheet(
-                          //   backgroundColor: Colors.white,
-                          //   context: context,
-                          //   isScrollControlled: true,
-                          //   shape: const RoundedRectangleBorder(
-                          //     borderRadius: BorderRadius.vertical(
-                          //       top: Radius.circular(25),
-                          //     ),
-                          //   ),
-                          //   builder: (_) => NumberOfPeopleModal(
-                          //     uuid: restaurant.uuid,
-                          //     offerId: offerId,
-                          //     offer:
-                          //         offer ??
-                          //         (selectedOffers.isEmpty
-                          //             ? null
-                          //             : selectedOffers.first),
-                          //   ),
-                          // );
-                          showModalBottomSheet(
-  backgroundColor: Colors.white,
-  context: context,
-  isScrollControlled: true,
-  useSafeArea: true,
-  constraints: Breakpoints.isTabletContext(context)
-      ? const BoxConstraints(maxWidth: 500)
-      : null,
-  shape: const RoundedRectangleBorder(
-    borderRadius: BorderRadius.vertical(
-      top: Radius.circular(25),
-    ),
-  ),
-  builder: (_) => SingleChildScrollView(
-    child: NumberOfPeopleModal(
-      uuid: restaurant.uuid,
-      offerId: offerId,
-      offer: offer ??
-          (selectedOffers.isEmpty ? null : selectedOffers.first),
-    ),
-  ),
-);
-                        }
                       },
                     ),
                   ),

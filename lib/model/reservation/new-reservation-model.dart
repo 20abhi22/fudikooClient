@@ -5,14 +5,14 @@ class NewReservationModel {
   final String id;
   final String time;
   final String date;
-   final String? offerId; 
+  final String? offerId;
 
   NewReservationModel({
     required this.people,
     required this.id,
     required this.time,
     required this.date,
-    this.offerId, 
+    this.offerId,
   });
 
   FormData toFormData() {
@@ -22,18 +22,20 @@ class NewReservationModel {
       "time": time,
       "date": date,
       if (offerId != null) 'offer_id': offerId, // ← add
-
     });
   }
-
 }
 
-class NewReservationModelResponse{
+class NewReservationModelResponse {
   final bool status;
   final String message;
   final bool? couponRecieved;
 
-  NewReservationModelResponse({required this.status, required this.message, this.couponRecieved});
+  NewReservationModelResponse({
+    required this.status,
+    required this.message,
+    this.couponRecieved,
+  });
 
   factory NewReservationModelResponse.fromJson(Map<String, dynamic> json) {
     return NewReservationModelResponse(
@@ -42,7 +44,4 @@ class NewReservationModelResponse{
       couponRecieved: json['couponRecieved'],
     );
   }
-
-
-
 }

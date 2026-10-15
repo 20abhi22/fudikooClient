@@ -118,10 +118,7 @@ class _CardMetrics {
   final double lineGap;
   final double imageBottom;
 
-  factory _CardMetrics.from(
-    BuildContext context,
-    BoxConstraints constraints,
-  ) {
+  factory _CardMetrics.from(BuildContext context, BoxConstraints constraints) {
     final screenSize = MediaQuery.sizeOf(context);
     final width = constraints.hasBoundedWidth && constraints.maxWidth.isFinite
         ? constraints.maxWidth
@@ -130,7 +127,8 @@ class _CardMetrics {
     final fallbackHeight = (screenSize.height * (isTablet ? 0.19 : 0.17))
         .clamp(isTablet ? 190.0 : 145.0, isTablet ? 250.0 : 190.0)
         .toDouble();
-    final height = constraints.hasBoundedHeight && constraints.maxHeight.isFinite
+    final height =
+        constraints.hasBoundedHeight && constraints.maxHeight.isFinite
         ? constraints.maxHeight
         : fallbackHeight;
     final title = (height * (isTablet ? 0.2 : 0.18))

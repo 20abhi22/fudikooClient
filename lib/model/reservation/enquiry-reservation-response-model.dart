@@ -39,9 +39,8 @@ class EnquiryResponseModel {
       restaurantName: (json['restaurant_name'] ?? '').toString(),
       date: (json['date'] ?? '').toString(),
       time: (json['time'] ?? '').toString(),
-      createdAt: DateTime.tryParse(
-            (json['created_at'] ?? '').toString(),
-          ) ??
+      createdAt:
+          DateTime.tryParse((json['created_at'] ?? '').toString())?.toLocal() ??
           DateTime.now(),
     );
   }
@@ -85,5 +84,11 @@ DateTime? _parseDateTime({required String date, required String time}) {
   if (meridiem == 'PM' && hour < 12) hour += 12;
   if (meridiem == 'AM' && hour == 12) hour = 0;
 
-  return DateTime(parsedDate.year, parsedDate.month, parsedDate.day, hour, minute);
+  return DateTime(
+    parsedDate.year,
+    parsedDate.month,
+    parsedDate.day,
+    hour,
+    minute,
+  );
 }

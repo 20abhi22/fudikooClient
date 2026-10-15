@@ -2,23 +2,90 @@ import 'package:flutter/material.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/core/responsive/app_dimensions.dart';
 import 'package:fudikoclient/core/responsive/breakpoints.dart';
+import 'package:fudikoclient/model/notification/notification_badges_model.dart';
+import 'package:fudikoclient/service/notification/badge_controller.dart';
 
 const Color _activeColor = Color(0xFFE8820C);
 const Color _inactiveColor = Color(0xFF545450);
 
-class BanquetBottomnav extends StatelessWidget {
+/// The count each tab shows, by tab index. A null means the tab has no badge
+/// (Home, Profile).
+const List<int Function(NotificationBadgesModel)?> _badgeSelectors = [
+  null,
+  _enquiryEnquiries,
+  _enquiryReservations,
+  null,
+];
+
+int _enquiryEnquiries(NotificationBadgesModel b) => b.enquiryEnquiries;
+int _enquiryReservations(NotificationBadgesModel b) => b.enquiryReservations;
+
+class BanquetBottomnav extends StatefulWidget {
   const BanquetBottomnav({
     super.key,
     required this.selectedIndex,
     required this.onTabSelected,
-    this.inquiryBadgeCount = 0,
-    this.reservationBadgeCount = 0,
+    this.onSelectedTabBadgeChanged,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onTabSelected;
-  final int inquiryBadgeCount;
-  final int reservationBadgeCount;
+
+  /// Fired when a poll finds the *selected* tab's badge count has changed — new
+  /// activity landed on the page the customer is looking at, so the shell can
+  /// reload it instead of leaving a stale list under a bumped badge.
+  final VoidCallback? onSelectedTabBadgeChanged;
+
+  @override
+  State<BanquetBottomnav> createState() => _BanquetBottomnavState();
+}
+
+class _BanquetBottomnavState extends State<BanquetBottomnav> {
+  final BadgeController _controller = BadgeController.instance;
+  late NotificationBadgesModel _badges;
+  late bool _hasSeenCounts;
+
+  @override
+  void initState() {
+    super.initState();
+    // Seed from whatever the controller already knows so a nav mounted later
+    // paints the right counts on its first frame.
+    _badges = _controller.badges;
+    _hasSeenCounts = _controller.hasFetchedOnce;
+    _controller.addListener(_onBadgesChanged);
+    _controller.subscribe();
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onBadgesChanged);
+    _controller.unsubscribe();
+    super.dispose();
+  }
+
+  void _onBadgesChanged() {
+    if (!mounted) return;
+
+    final previous = _badges;
+    final hadCounts = _hasSeenCounts;
+    _hasSeenCounts = true;
+    setState(() => _badges = _controller.badges);
+
+    // The first counts only seed — every non-zero badge would otherwise read
+    // as "changed" and refresh a page that just loaded.
+    if (hadCounts &&
+        _badgeFor(widget.selectedIndex, previous) !=
+            _badgeFor(widget.selectedIndex, _badges)) {
+      widget.onSelectedTabBadgeChanged?.call();
+    }
+  }
+
+  int _badgeFor(int index, NotificationBadgesModel badges) {
+    final selector = index >= 0 && index < _badgeSelectors.length
+        ? _badgeSelectors[index]
+        : null;
+    return selector == null ? 0 : selector(badges);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,12 +122,12 @@ final metrics = _BottomNavMetrics.fromWidth(
       _BottomNavItem(
         label: 'Inquiries',
         iconPath: 'assets/icons/history.png',
-        badge: inquiryBadgeCount,
+        badge: _badgeFor(1, _badges),
       ),
       _BottomNavItem(
         label: 'Reservation',
         iconPath: 'assets/icons/reservation_inactive 1.png',
-        badge: reservationBadgeCount,
+        badge: _badgeFor(2, _badges),
       ),
       const _BottomNavItem(
         label: 'Profile',
@@ -87,7 +154,7 @@ final metrics = _BottomNavMetrics.fromWidth(
           children: items.asMap().entries.map((entry) {
             final index = entry.key;
             final item = entry.value;
-            final isSelected = index == selectedIndex;
+            final isSelected = index == widget.selectedIndex;
             final color = isSelected ? _activeColor : _inactiveColor;
 
             return Expanded(
@@ -96,7 +163,7 @@ final metrics = _BottomNavMetrics.fromWidth(
                 selected: isSelected,
                 label: item.label,
                 child: InkWell(
-                  onTap: () => onTabSelected(index),
+                  onTap: () => widget.onTabSelected(index),
                   child: Padding(
                     padding: EdgeInsets.symmetric(
                       vertical: metrics.itemVerticalPadding,

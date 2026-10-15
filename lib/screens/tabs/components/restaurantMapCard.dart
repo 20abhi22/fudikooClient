@@ -6,6 +6,7 @@ import 'package:fudikoclient/model/restaurant/restaurant_liked.dart';
 import 'package:fudikoclient/model/restaurant/restaurant-model.dart';
 import 'package:fudikoclient/service/restaurant/restaurant-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class RestaurantMapCard extends StatefulWidget {
   final VoidCallback? onRatingOnClick;
@@ -85,30 +86,14 @@ class _RestaurantMapCardState extends State<RestaurantMapCard> {
         isLiked = !isLiked;
       });
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: isLiked ? Colors.green : Colors.red,
-          content: AppText(
-            text: isLiked ? 'Add to favourites' : 'Removed from favourites',
-            size: 13,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
+      showStatusSnack(
+        context,
+        isLiked,
+        isLiked ? 'Add to favourites' : 'Removed from favourites',
       );
     } else {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.red,
-          content: AppText(
-            text: 'Something went wrong',
-            size: 13,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-      );
+      showErrorSnack(context, 'Something went wrong');
     }
   }
 

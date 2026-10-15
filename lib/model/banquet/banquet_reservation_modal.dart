@@ -69,7 +69,7 @@ class BanquetReservationModal {
           ) ??
           now,
       bookingDate:
-          DateTime.tryParse((json['created_at'] ?? '').toString()) ?? now,
+          DateTime.tryParse((json['created_at'] ?? '').toString())?.toLocal() ?? now,
       persons: _toInt(json['people']) ?? 0,
       status: (json['status'] ?? '').toString(),
       applicableFor: applicableFor?.isEmpty == true ? null : applicableFor,

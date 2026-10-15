@@ -1,3 +1,5 @@
+import 'package:fudikoclient/api/api_config.dart';
+
 class CustomerProfileModel {
   final String badge;
   final String? badgeImage;
@@ -72,6 +74,6 @@ class CustomerProfileModel {
     if (path.startsWith('http://') || path.startsWith('https://')) {
       return path;
     }
-    return 'https://fudikko.bitwissenddev.in${path.startsWith('/') ? path : '/$path'}';
+    return '${ApiConfig.origin}${path.startsWith('/') ? path : '/$path'}';
   }
 }

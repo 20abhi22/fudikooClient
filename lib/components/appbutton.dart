@@ -17,6 +17,7 @@ class AppButton extends StatelessWidget {
   final double? buttonwidth;
   final bool? isShadow;
   final double? buttonheight;
+  final double? horizontalPadding;
 
   const AppButton({
     super.key,
@@ -33,6 +34,7 @@ class AppButton extends StatelessWidget {
     this.buttonwidth,
     this.isShadow,
     this.buttonheight,
+    this.horizontalPadding,
   });
 
   @override
@@ -78,8 +80,10 @@ class AppButton extends StatelessWidget {
               style: TextButton.styleFrom(
                 backgroundColor: Colors.transparent,
                 padding: EdgeInsets.symmetric(
-                  horizontal: AppDimensions.gap(context),
+                  horizontal: horizontalPadding ?? AppDimensions.gap(context),
                 ),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(resolvedRadius),
                 ),
@@ -114,13 +118,15 @@ class AppButton extends StatelessWidget {
                     ),
                     SizedBox(width: AppDimensions.gap(context) / 2),
                   ],
-                  AppText(
-                    text: isLoading ? '' : text,
-                    size: resolvedTextSize,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  Flexible(
+                    child: AppText(
+                      text: isLoading ? '' : text,
+                      size: resolvedTextSize,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),

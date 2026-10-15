@@ -187,10 +187,7 @@ class _RatingPageState extends State<RatingPage> {
                             fontWeight: FontWeight.w600,
                             color: appTextColor2,
                           ),
-                          _buildOverallStars(
-                            _averageRating,
-                            metrics.starSize,
-                          ),
+                          _buildOverallStars(_averageRating, metrics.starSize),
                           SizedBox(height: metrics.reviewCountTopGap),
                           AppText(
                             text: "Based on $totalReviews reviews",

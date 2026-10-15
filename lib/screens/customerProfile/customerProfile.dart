@@ -1,12 +1,13 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:fudikoclient/components/error_state.dart';
+import 'package:fudikoclient/utils/error_messages.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/apptext.dart';
+import 'package:fudikoclient/components/mapPicker.dart';
 import 'package:fudikoclient/core/responsive/breakpoints.dart';
-import 'package:fudikoclient/model/auth/mapplace-model.dart';
 import 'package:fudikoclient/model/profile/customer-profile-model.dart';
 import 'package:fudikoclient/routetransitions.dart';
 import 'package:fudikoclient/screens/badge/badgeinfo.dart';
@@ -14,10 +15,8 @@ import 'package:fudikoclient/screens/customerProfile/donutPercentage.dart';
 import 'package:fudikoclient/screens/earnPoints/earnPoints.dart';
 import 'package:fudikoclient/screens/reliability/reliabilityinfo.dart';
 import 'package:fudikoclient/service/profile/customer-profile-service.dart';
-import 'package:fudikoclient/service/auth/map-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -32,6 +31,7 @@ class _CustomerProfileState extends State<CustomerProfile> {
   CustomerProfileService profileService = CustomerProfileService();
   CustomerProfileModel? profile;
   bool isLoading = false;
+  String _loadError = '';
   final ImagePicker _imagePicker = ImagePicker();
 
   @override
@@ -49,7 +49,10 @@ class _CustomerProfileState extends State<CustomerProfile> {
   }
 
   Future<void> _fetchProfile() async {
-    setState(() => isLoading = true);
+    setState(() {
+      isLoading = true;
+      _loadError = '';
+    });
     try {
       final data = await profileService.getProfile();
       final apiPlace = data.place.trim();
@@ -57,20 +60,30 @@ class _CustomerProfileState extends State<CustomerProfile> {
       final resolvedPlace = hasApiPlace
           ? apiPlace
           : await _placeFromCoordinates(data.lat, data.lng);
-      final coordinateFallback =
-          data.lat.isNotEmpty && data.lng.isNotEmpty
-              ? '${data.lat}, ${data.lng}'
-              : 'Location unavailable';
+      final coordinateFallback = data.lat.isNotEmpty && data.lng.isNotEmpty
+          ? '${data.lat}, ${data.lng}'
+          : 'Location unavailable';
       if (!mounted) return;
       setState(() {
         // Prefer the address supplied by the API. When it is absent, derive
         // a display address from the latitude and longitude.
         profile = data.copyWith(place: resolvedPlace ?? coordinateFallback);
         isLoading = false;
+        _loadError = '';
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => isLoading = false);
+      setState(() {
+        isLoading = false;
+        // Only strand the screen when we have nothing to show; a refresh that
+        // fails over an already-loaded profile keeps the stale data.
+        if (profile == null) {
+          _loadError = friendlyErrorMessage(
+            e,
+            fallback: 'We could not load your profile. Please try again.',
+          );
+        }
+      });
     }
   }
 
@@ -108,6 +121,33 @@ class _CustomerProfileState extends State<CustomerProfile> {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Icon-based fallback used whenever a profile picture is absent or fails to load.
+  Widget _profileImageFallback({double? size, double iconScale = 0.5}) {
+    return Container(
+      color: const Color(0xFFF0F0F0),
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.person,
+        size: size != null ? size * iconScale : null,
+        color: const Color(0xFFB0B0B0),
+      ),
+    );
+  }
+
+  /// Renders a network profile image with the icon fallback on error/absence.
+  Widget _profileImage(String? imageUrl, {double? size}) {
+    if (imageUrl == null || imageUrl.isEmpty || imageUrl == '-') {
+      return _profileImageFallback(size: size);
+    }
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      width: size,
+      height: size,
+      errorBuilder: (_, __, ___) => _profileImageFallback(size: size),
+    );
   }
 
   Widget _editField(
@@ -242,8 +282,10 @@ class _CustomerProfileState extends State<CustomerProfile> {
       final result = await Navigator.push<Map<String, dynamic>>(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              _ProfileMapPickerPage(initialLocation: initialLocation),
+          builder: (_) => MapPickerPage(
+            initialLocation: initialLocation,
+            initialPlaceName: placeController.text,
+          ),
         ),
       );
 
@@ -300,26 +342,19 @@ class _CustomerProfileState extends State<CustomerProfile> {
     }
 
     final result = await showModalBottomSheet<String>(
-      // context: context,
-      // isScrollControlled: true,
-      // backgroundColor: Colors.transparent,
-      // builder: (context) {
-        context: context,
-  isScrollControlled: true,
-  useSafeArea: true,
-  backgroundColor: Colors.transparent,
-  constraints: Breakpoints.isTabletContext(context)
-      ? const BoxConstraints(maxWidth: 600)
-      : null,
-  builder: (context) {
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      constraints: Breakpoints.isTabletContext(context)
+          ? const BoxConstraints(maxWidth: 600)
+          : null,
+      builder: (context) {
         return StatefulBuilder(
           builder: (context, modalSetState) {
             return Center(
               child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-      maxWidth: 600,
-    ),
-
+                constraints: const BoxConstraints(maxWidth: 600),
                 child: Padding(
                   padding: EdgeInsets.only(
                     left: 20,
@@ -389,26 +424,17 @@ class _CustomerProfileState extends State<CustomerProfile> {
                                     padding: const EdgeInsets.all(3),
                                     child: ClipOval(
                                       child: selectedProfilePhotoPath != null
+                                          // User just picked a new photo from gallery — show it directly.
                                           ? Image.file(
                                               File(selectedProfilePhotoPath!),
                                               fit: BoxFit.cover,
                                               width: double.infinity,
                                               height: double.infinity,
                                             )
-                                          : profile?.profilePicture != '-' &&
-                                                profile?.profilePicture != null
-                                          ? Image.network(
-                                              profile!.profilePicture,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (_, __, ___) =>
-                                                  Image.asset(
-                                                    'assets/images/avatar2.png',
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                            )
-                                          : Image.asset(
-                                              'assets/images/avatar2.png',
-                                              fit: BoxFit.cover,
+                                          // Otherwise show the saved network picture, or the icon fallback.
+                                          : _profileImage(
+                                              profile?.profilePicture,
+                                              size: 96,
                                             ),
                                     ),
                                   ),
@@ -447,118 +473,104 @@ class _CustomerProfileState extends State<CustomerProfile> {
                           ),
                           const SizedBox(height: 20),
 
-if (Breakpoints.isTabletContext(context) &&
-    MediaQuery.of(context).orientation == Orientation.landscape) ...[
-  Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Expanded(
-        child: _editField(
-          "Name",
-          nameController,
-        ),
-      ),
-      const SizedBox(width: 16),
-      Expanded(
-        child: _editField(
-          "Email",
-          emailController,
-          readOnly: true,
-        ),
-      ),
-    ],
-  ),
+                          if (Breakpoints.isTabletContext(context) &&
+                              MediaQuery.of(context).orientation ==
+                                  Orientation.landscape) ...[
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: _editField("Name", nameController),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _editField(
+                                    "Email",
+                                    emailController,
+                                    readOnly: true,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 15),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: _editField(
+                                    "Place",
+                                    placeController,
+                                    readOnly: true,
+                                    onTap: () => openMapPicker(modalSetState),
+                                    suffixIcon: Icons.map_outlined,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _editField(
+                                    "Contact Info",
+                                    contactController,
+                                    keyboardType: TextInputType.phone,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ] else ...[
+                            _editField("Name", nameController),
+                            const SizedBox(height: 15),
+                            _editField(
+                              "Email",
+                              emailController,
+                              readOnly: true,
+                            ),
+                            const SizedBox(height: 15),
+                            _editField(
+                              "Place",
+                              placeController,
+                              readOnly: true,
+                              onTap: () => openMapPicker(modalSetState),
+                              suffixIcon: Icons.map_outlined,
+                            ),
+                            const SizedBox(height: 15),
+                            _editField(
+                              "Contact Info",
+                              contactController,
+                              keyboardType: TextInputType.phone,
+                            ),
+                          ],
 
-  const SizedBox(height: 15),
+                          const SizedBox(height: 25),
 
-  Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Expanded(
-        child: _editField(
-          "Place",
-          placeController,
-          readOnly: true,
-          onTap: () => openMapPicker(modalSetState),
-          suffixIcon: Icons.map_outlined,
-        ),
-      ),
-      const SizedBox(width: 16),
-      Expanded(
-        child: _editField(
-          "Contact Info",
-          contactController,
-          keyboardType: TextInputType.phone,
-        ),
-      ),
-    ],
-  ),
-] else ...[
-  _editField(
-    "Name",
-    nameController,
-  ),
-
-  const SizedBox(height: 15),
-
-  _editField(
-    "Email",
-    emailController,
-    readOnly: true,
-  ),
-
-  const SizedBox(height: 15),
-
-  _editField(
-    "Place",
-    placeController,
-    readOnly: true,
-    onTap: () => openMapPicker(modalSetState),
-    suffixIcon: Icons.map_outlined,
-  ),
-
-  const SizedBox(height: 15),
-
-  _editField(
-    "Contact Info",
-    contactController,
-    keyboardType: TextInputType.phone,
-  ),
-],
-
-const SizedBox(height: 25),
-
-SizedBox(
-  width: double.infinity,
-  height: 48,
-  child: ElevatedButton(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: appButtonColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.r),
-      ),
-    ),
-    onPressed: isSaving
-        ? null
-        : () => saveProfile(modalSetState),
-    child: isSaving
-        ? const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: Colors.white,
-            ),
-          )
-        : const Text(
-            "Save Changes",
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-  ),
-),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: appButtonColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.r),
+                                ),
+                              ),
+                              onPressed: isSaving
+                                  ? null
+                                  : () => saveProfile(modalSetState),
+                              child: isSaving
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const AppText(
+                                      text: "Save Changes",
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      size: 14,
+                                    ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -586,6 +598,14 @@ SizedBox(
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    if (_loadError.isNotEmpty) {
+      return Scaffold(
+        body: SafeArea(
+          child: ErrorStateView(message: _loadError, onRetry: _fetchProfile),
+        ),
+      );
+    }
+
     final double statusBarHeight = MediaQuery.paddingOf(context).top;
 
     return Scaffold(
@@ -594,327 +614,348 @@ SizedBox(
       body: SafeArea(
         top: false,
         child: LayoutBuilder(
-            builder: (context, constraints) {
-  
-          return SingleChildScrollView(
-            child: ConstrainedBox(
-               constraints: BoxConstraints(
-            minHeight: constraints.maxHeight,
-          ),
-              child: IntrinsicHeight(
-                child: Column(
-                  children: [
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        // expand banner to include statusBar area so it visually blends
-                        Image.asset(
-                          'assets/images/banner1.png',
-                          height: metrics.bannerHeight + statusBarHeight,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
-                        Positioned(
-                          bottom: -metrics.avatarOverlap,
-                          left: 0,
-                          right: 0,
-                          child: Center(
-                            child: Container(
-                              width: metrics.avatarSize,
-                              height: metrics.avatarSize,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: metrics.avatarShadowBlur,
-                                    offset: Offset(0, metrics.avatarShadowOffset),
-                                  ),
-                                ],
-                              ),
-                              padding: EdgeInsets.all(metrics.avatarBorderPadding),
-                              child: ClipOval(
-                                child:
-                                    profile?.profilePicture != '-' &&
-                                        profile?.profilePicture != null
-                                    ? Image.network(
-                                        profile!.profilePicture,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Image.asset(
-                                          'assets/images/avatar2.png',
-                                          fit: BoxFit.cover,
-                                        ),
-                                      )
-                                    : Image.asset(
-                                        'assets/images/avatar2.png',
-                                        fit: BoxFit.cover,
-                                      ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: metrics.avatarBottomGap),
-                    AppText(
-                      text: profile?.name ?? '-',
-                      size: metrics.nameTextSize,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                      isCentered: true,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: metrics.nameEmailGap),
-                    AppText(
-                      text: profile?.email ?? '-',
-                      size: metrics.emailTextSize,
-                      fontWeight: FontWeight.w200,
-                      color: Colors.black,
-                      isCentered: true,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: metrics.sectionGap),
-                
-                    // Badge + Rating card
-                    Center(
-                      child: SizedBox(
-                        width: metrics.contentWidth,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: metrics.badgeCardHorizontalPadding,
-                          ),
-                          child: Container(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    children: [
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          // expand banner to include statusBar area so it visually blends
+                          Image.asset(
+                            'assets/images/banner1.png',
+                            height: metrics.bannerHeight + statusBarHeight,
                             width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(metrics.cardRadius),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: metrics.cardShadowBlur,
-                                  offset: Offset(0, metrics.cardShadowOffset),
-                                ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: EdgeInsets.all(metrics.badgeCardPadding),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        minHeight: metrics.statColumnMinHeight,
-                                      ),
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          GestureDetector(
-                                            onTap: () => Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) => BadgeInfo(),
-                                              ),
-                                            ),
-                                            child: profile?.badgeImage != null
-                                                ? Image.network(
-                                                    profile!.badgeImage!,
-                                                    height: metrics.badgeImageSize,
-                                                    width: metrics.badgeImageSize,
-                                                    fit: BoxFit.contain,
-                                                    errorBuilder: (_, __, ___) =>
-                                                        Image.asset(
-                                                          'assets/images/badge1.png',
-                                                          height:
-                                                              metrics.badgeImageSize,
-                                                          width:
-                                                              metrics.badgeImageSize,
-                                                          fit: BoxFit.contain,
-                                                        ),
-                                                  )
-                                                : Image.asset(
-                                                    'assets/images/badge1.png',
-                                                    height: metrics.badgeImageSize,
-                                                    width: metrics.badgeImageSize,
-                                                    fit: BoxFit.contain,
-                                                  ),
-                                          ),
-                                          SizedBox(height: metrics.smallGap),
-                                          AppText(
-                                            text: profile?.badge == '-'
-                                                ? "No Badge"
-                                                : profile?.badge ?? '-',
-                                            size: metrics.labelTextSize,
-                                            fontWeight: FontWeight.w400,
-                                            color: appButtonColor2,
-                                            isCentered: true,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          AppText(
-                                            text: "Badge",
-                                            size: metrics.labelTextSize,
-                                            fontWeight: FontWeight.w400,
-                                            color: appButtonColor2,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    width: 1,
-                                    height: metrics.dividerHeight,
-                                    color: appTextColor3,
-                                  ),
-                                  Expanded(
-                                    child: ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        minHeight: metrics.statColumnMinHeight,
-                                      ),
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          GestureDetector(
-                                            onTap: () => Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) => ReliabilityInfo(
-                                                  rating: profile?.rating ?? 0,
-                                                ),
-                                              ),
-                                            ),
-                                            child: SizedBox(
-                                              width: metrics.chartSize,
-                                              height: metrics.chartSize,
-                                              child: DonutChart(
-                                                percentage:
-                                                    (profile?.rating ?? 0) / 100,
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(height: metrics.smallGap),
-                                          AppText(
-                                            text: "Reliability",
-                                            size: metrics.labelTextSize,
-                                            fontWeight: FontWeight.w400,
-                                            color: appButtonColor2,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          AppText(
-                                            text: "Rating",
-                                            size: metrics.labelTextSize,
-                                            fontWeight: FontWeight.w400,
-                                            color: appButtonColor2,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            fit: BoxFit.cover,
                           ),
-                        ),
-                      ),
-                    ),
-                
-                    // Info card
-                    Center(
-                      child: SizedBox(
-                        width: metrics.contentWidth,
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                            left: metrics.infoHorizontalPadding,
-                            right: metrics.infoHorizontalPadding,
-                            top: metrics.infoTopGap,
-                            bottom: metrics.infoBottomGap,
-                          ),
-                          child: Container(
-                            padding: EdgeInsets.all(metrics.infoPadding),
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(metrics.infoRadius),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.3),
-                                  blurRadius: metrics.cardShadowBlur,
-                                  offset: Offset(0, metrics.cardShadowOffset),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    GestureDetector(
-                                      onTap: _showEditProfileModal,
-                                      child: Image.asset(
-                                        editIcon,
-                                        width: metrics.editIconSize,
-                                        height: metrics.editIconSize,
+                          Positioned(
+                            bottom: -metrics.avatarOverlap,
+                            left: 0,
+                            right: 0,
+                            child: Center(
+                              child: Container(
+                                width: metrics.avatarSize,
+                                height: metrics.avatarSize,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      blurRadius: metrics.avatarShadowBlur,
+                                      offset: Offset(
+                                        0,
+                                        metrics.avatarShadowOffset,
                                       ),
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: metrics.infoRowGap),
-                                _infoRow("Place", profile?.place ?? '-', metrics),
-                                SizedBox(height: metrics.infoRowGap),
-                                _infoRow(
-                                  "Contact Info",
-                                  profile?.contactInfo ?? '-',
-                                  metrics,
+                                padding: EdgeInsets.all(
+                                  metrics.avatarBorderPadding,
                                 ),
-                              ],
+                                child: ClipOval(
+                                  child: _profileImage(
+                                    profile?.profilePicture,
+                                    size: metrics.avatarSize,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                    ),
-                
-                    SizedBox(height: metrics.inviteTopGap),
-                    Center(
-                      child: InkWell(
-                        onTap: () =>
-                            slideRightWidget(context: context, newPage: EarnPoints()),
+                      SizedBox(height: metrics.avatarBottomGap),
+                      AppText(
+                        text: profile?.name ?? '-',
+                        size: metrics.nameTextSize,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                        isCentered: true,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: metrics.nameEmailGap),
+                      AppText(
+                        text: profile?.email ?? '-',
+                        size: metrics.emailTextSize,
+                        fontWeight: FontWeight.w200,
+                        color: Colors.black,
+                        isCentered: true,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: metrics.sectionGap),
+
+                      // Badge + Rating card
+                      Center(
                         child: SizedBox(
                           width: metrics.contentWidth,
                           child: Padding(
                             padding: EdgeInsets.symmetric(
-                              horizontal: metrics.inviteHorizontalPadding,
+                              horizontal: metrics.badgeCardHorizontalPadding,
                             ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(
-                                metrics.inviteRadius,
+                            child: Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(
+                                  metrics.cardRadius,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.2),
+                                    blurRadius: metrics.cardShadowBlur,
+                                    offset: Offset(0, metrics.cardShadowOffset),
+                                  ),
+                                ],
                               ),
-                              child: Image.asset(
-                                'assets/images/inviteimage.png',
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: metrics.inviteHeight,
+                              child: Padding(
+                                padding: EdgeInsets.all(
+                                  metrics.badgeCardPadding,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          minHeight:
+                                              metrics.statColumnMinHeight,
+                                        ),
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () => Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) => BadgeInfo(),
+                                                ),
+                                              ),
+                                              child: profile?.badgeImage != null
+                                                  ? Image.network(
+                                                      profile!.badgeImage!,
+                                                      height: metrics
+                                                          .badgeImageSize,
+                                                      width: metrics
+                                                          .badgeImageSize,
+                                                      fit: BoxFit.contain,
+                                                      errorBuilder:
+                                                          (
+                                                            _,
+                                                            __,
+                                                            ___,
+                                                          ) => Image.asset(
+                                                            'assets/images/badge1.png',
+                                                            height: metrics
+                                                                .badgeImageSize,
+                                                            width: metrics
+                                                                .badgeImageSize,
+                                                            fit: BoxFit.contain,
+                                                          ),
+                                                    )
+                                                  : Image.asset(
+                                                      'assets/images/badge1.png',
+                                                      height: metrics
+                                                          .badgeImageSize,
+                                                      width: metrics
+                                                          .badgeImageSize,
+                                                      fit: BoxFit.contain,
+                                                    ),
+                                            ),
+                                            SizedBox(height: metrics.smallGap),
+                                            AppText(
+                                              text: profile?.badge == '-'
+                                                  ? "No Badge"
+                                                  : profile?.badge ?? '-',
+                                              size: metrics.labelTextSize,
+                                              fontWeight: FontWeight.w400,
+                                              color: appButtonColor2,
+                                              isCentered: true,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            AppText(
+                                              text: "Badge",
+                                              size: metrics.labelTextSize,
+                                              fontWeight: FontWeight.w400,
+                                              color: appButtonColor2,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      width: 1,
+                                      height: metrics.dividerHeight,
+                                      color: appTextColor3,
+                                    ),
+                                    Expanded(
+                                      child: ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          minHeight:
+                                              metrics.statColumnMinHeight,
+                                        ),
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () => Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      ReliabilityInfo(
+                                                        rating:
+                                                            profile?.rating ??
+                                                            0,
+                                                      ),
+                                                ),
+                                              ),
+                                              child: SizedBox(
+                                                width: metrics.chartSize,
+                                                height: metrics.chartSize,
+                                                child: DonutChart(
+                                                  percentage:
+                                                      (profile?.rating ?? 0) /
+                                                      100,
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(height: metrics.smallGap),
+                                            AppText(
+                                              text: "Reliability",
+                                              size: metrics.labelTextSize,
+                                              fontWeight: FontWeight.w400,
+                                              color: appButtonColor2,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            AppText(
+                                              text: "Rating",
+                                              size: metrics.labelTextSize,
+                                              fontWeight: FontWeight.w400,
+                                              color: appButtonColor2,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(height: metrics.bottomGap),
-                  ],
+
+                      // Info card
+                      Center(
+                        child: SizedBox(
+                          width: metrics.contentWidth,
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              left: metrics.infoHorizontalPadding,
+                              right: metrics.infoHorizontalPadding,
+                              top: metrics.infoTopGap,
+                              bottom: metrics.infoBottomGap,
+                            ),
+                            child: Container(
+                              padding: EdgeInsets.all(metrics.infoPadding),
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(
+                                  metrics.infoRadius,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                    blurRadius: metrics.cardShadowBlur,
+                                    offset: Offset(0, metrics.cardShadowOffset),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      GestureDetector(
+                                        onTap: _showEditProfileModal,
+                                        child: Image.asset(
+                                          editIcon,
+                                          width: metrics.editIconSize,
+                                          height: metrics.editIconSize,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: metrics.infoRowGap),
+                                  _infoRow(
+                                    "Place",
+                                    profile?.place ?? '-',
+                                    metrics,
+                                  ),
+                                  SizedBox(height: metrics.infoRowGap),
+                                  _infoRow(
+                                    "Contact Info",
+                                    profile?.contactInfo ?? '-',
+                                    metrics,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: metrics.inviteTopGap),
+                      Center(
+                        child: InkWell(
+                          onTap: () => slideRightWidget(
+                            context: context,
+                            newPage: EarnPoints(),
+                          ),
+                          child: SizedBox(
+                            width: metrics.contentWidth,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: metrics.inviteHorizontalPadding,
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(
+                                  metrics.inviteRadius,
+                                ),
+                                child: Image.asset(
+                                  'assets/images/inviteimage.png',
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: metrics.inviteHeight,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: metrics.bottomGap),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
-  },
-  ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -1057,40 +1098,18 @@ class _CustomerProfileMetrics {
 
       return _CustomerProfileMetrics(
         contentWidth: contentWidth,
-        // bannerHeight: s(220),
-bannerHeight: isLandscape
-    ? s(180)
-    : s(220),
-        // avatarSize: s(230),
-        // avatarOverlap: s(115),
-        // avatarBottomGap: s(140),
-        avatarSize: isLandscape
-    ? s(180)
-    : s(230),
-
-avatarOverlap: isLandscape
-    ? s(90)
-    : s(115),
-
-avatarBottomGap: isLandscape
-    ? s(110)
-    : s(140),
-
-sectionGap: isLandscape
-    ? s(24)
-    : s(36),
+        bannerHeight: isLandscape ? s(180) : s(220),
+        avatarSize: isLandscape ? s(180) : s(230),
+        avatarOverlap: isLandscape ? s(90) : s(115),
+        avatarBottomGap: isLandscape ? s(110) : s(140),
+        sectionGap: isLandscape ? s(24) : s(36),
         avatarBorderPadding: s(5),
         avatarShadowBlur: s(12),
         avatarShadowOffset: s(4),
         nameTextSize: s(25),
         emailTextSize: s(18),
         nameEmailGap: s(7),
-        // sectionGap: s(36),
-        // badgeCardHorizontalPadding: s(70),
-        badgeCardHorizontalPadding:
-    size.width > size.height
-        ? s(40)
-        : s(70),
+        badgeCardHorizontalPadding: size.width > size.height ? s(40) : s(70),
         badgeCardPadding: s(26),
         cardRadius: s(26),
         cardShadowBlur: s(12),
@@ -1117,11 +1136,7 @@ sectionGap: isLandscape
         inviteTopGap: s(48),
         inviteHorizontalPadding: s(18),
         inviteRadius: s(50),
-        // inviteHeight: s(190),
-        inviteHeight:
-    size.width > size.height
-        ? s(150)
-        : s(190),
+        inviteHeight: size.width > size.height ? s(150) : s(190),
         bottomGap: s(24),
       );
     }
@@ -1221,7 +1236,7 @@ sectionGap: isLandscape
       );
     }
 
-    return _CustomerProfileMetrics(
+    return const _CustomerProfileMetrics(
       contentWidth: double.infinity,
       bannerHeight: 150,
       avatarSize: 200,
@@ -1263,442 +1278,6 @@ sectionGap: isLandscape
       inviteRadius: 50,
       inviteHeight: 150,
       bottomGap: 20,
-    );
-  }
-}
-
-class _ProfileMapPickerPage extends StatefulWidget {
-  final LatLng? initialLocation;
-
-  const _ProfileMapPickerPage({this.initialLocation});
-
-  @override
-  State<_ProfileMapPickerPage> createState() => _ProfileMapPickerPageState();
-}
-
-class _ProfileMapPickerPageState extends State<_ProfileMapPickerPage> {
-  final MapService _mapService = MapService();
-  final TextEditingController _searchController = TextEditingController();
-  GoogleMapController? _mapController;
-  late LatLng _pickedLocation;
-  String _placeName = 'Fetching location...';
-  bool _isGeocoding = false;
-  bool _isFetchingCurrentLocation = false;
-  bool _isSearching = false;
-  Set<Marker> _markers = {};
-  List<MapPlacesResponse> _searchResults = [];
-  Timer? _searchDebounce;
-
-  @override
-  void initState() {
-    super.initState();
-    _pickedLocation = widget.initialLocation ?? const LatLng(10.8505, 76.2711);
-    _updateMarker(_pickedLocation);
-
-    if (widget.initialLocation == null) {
-      _getCurrentLocation();
-    } else {
-      _reverseGeocode(_pickedLocation);
-    }
-  }
-
-  @override
-  void dispose() {
-    _searchDebounce?.cancel();
-    _searchController.dispose();
-    _mapController?.dispose();
-    super.dispose();
-  }
-
-  Future<void> _getCurrentLocation() async {
-    if (_isFetchingCurrentLocation) return;
-    if (mounted) setState(() => _isFetchingCurrentLocation = true);
-
-    try {
-      final isLocationServiceEnabled =
-          await Geolocator.isLocationServiceEnabled();
-      if (!isLocationServiceEnabled) {
-        _showLocationSnackBar(
-          'Turn on location services to use your current location',
-          actionLabel: 'Settings',
-          onAction: Geolocator.openLocationSettings,
-        );
-        return;
-      }
-
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied) {
-        _showLocationSnackBar('Location permission was denied');
-        return;
-      }
-      if (permission == LocationPermission.deniedForever) {
-        _showLocationSnackBar(
-          'Location permission is permanently denied',
-          actionLabel: 'Settings',
-          onAction: Geolocator.openAppSettings,
-        );
-        return;
-      }
-
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      final latLng = LatLng(position.latitude, position.longitude);
-
-      if (!mounted) return;
-      setState(() => _pickedLocation = latLng);
-      _mapController?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 15));
-      _updateMarker(latLng);
-      await _reverseGeocode(latLng);
-    } catch (_) {
-      if (!mounted) return;
-      await _reverseGeocode(_pickedLocation);
-    } finally {
-      if (mounted) setState(() => _isFetchingCurrentLocation = false);
-    }
-  }
-
-  void _showLocationSnackBar(
-    String message, {
-    String? actionLabel,
-    Future<bool> Function()? onAction,
-  }) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        action: actionLabel == null || onAction == null
-            ? null
-            : SnackBarAction(
-                label: actionLabel,
-                onPressed: () {
-                  onAction();
-                },
-              ),
-      ),
-    );
-  }
-
-  void _onSearchChanged(String value) {
-    _searchDebounce?.cancel();
-    final query = value.trim();
-
-    if (query.isEmpty) {
-      setState(() {
-        _searchResults = [];
-        _isSearching = false;
-      });
-      return;
-    }
-
-    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
-      _searchPlaces(query);
-    });
-  }
-
-  Future<void> _searchPlaces(String query) async {
-    if (!mounted || query != _searchController.text.trim()) return;
-    setState(() => _isSearching = true);
-
-    try {
-      final places = await _mapService.listPlaces(
-        query,
-        lat: _pickedLocation.latitude,
-        lng: _pickedLocation.longitude,
-      );
-      if (!mounted || query != _searchController.text.trim()) return;
-      setState(() => _searchResults = places);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _searchResults = []);
-    } finally {
-      if (mounted && query == _searchController.text.trim()) {
-        setState(() => _isSearching = false);
-      }
-    }
-  }
-
-  Future<void> _selectPlace(MapPlacesResponse place) async {
-    final placeId = place.placeId;
-    if (placeId == null || placeId.isEmpty) return;
-
-    FocusScope.of(context).unfocus();
-    setState(() {
-      _isSearching = true;
-      _searchResults = [];
-    });
-
-    try {
-      final coordinates = await _mapService.getPlace(placeId);
-      final lat = coordinates.lat;
-      final lng = coordinates.lng;
-      if (!mounted || lat == null || lng == null) return;
-
-      final location = LatLng(lat, lng);
-      setState(() => _pickedLocation = location);
-      await _mapController?.animateCamera(
-        CameraUpdate.newLatLngZoom(location, 16),
-      );
-      _updateMarker(location);
-      await _reverseGeocode(location);
-    } finally {
-      if (mounted) setState(() => _isSearching = false);
-    }
-  }
-
-  Future<void> _reverseGeocode(LatLng latLng) async {
-    setState(() => _isGeocoding = true);
-    try {
-      final placemarks = await placemarkFromCoordinates(
-        latLng.latitude,
-        latLng.longitude,
-      );
-
-      if (placemarks.isNotEmpty) {
-        final place = placemarks.first;
-        final parts = [
-          place.street,
-          place.subLocality,
-          place.locality,
-          place.administrativeArea,
-        ].where((part) => part != null && part.isNotEmpty).toList();
-
-        setState(() {
-          _placeName = parts.isEmpty
-              ? '${latLng.latitude}, ${latLng.longitude}'
-              : parts.join(', ');
-        });
-      }
-    } catch (e) {
-      setState(() => _placeName = '${latLng.latitude}, ${latLng.longitude}');
-    }
-
-    setState(() => _isGeocoding = false);
-  }
-
-  void _updateMarker(LatLng latLng) {
-    setState(() {
-      _markers = {
-        Marker(
-          markerId: const MarkerId('picked'),
-          position: latLng,
-          draggable: true,
-          onDragEnd: (newPosition) async {
-            setState(() => _pickedLocation = newPosition);
-            _updateMarker(newPosition);
-            await _reverseGeocode(newPosition);
-          },
-        ),
-      };
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Select Place'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 1,
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context, {
-                'lat': _pickedLocation.latitude,
-                'lng': _pickedLocation.longitude,
-                'place': _placeName,
-              });
-            },
-            child: const Text(
-              'Confirm',
-              style: TextStyle(
-                color: Colors.orange,
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: _pickedLocation,
-              zoom: 14,
-            ),
-            onMapCreated: (controller) {
-              _mapController = controller;
-              controller.animateCamera(
-                CameraUpdate.newLatLngZoom(_pickedLocation, 15),
-              );
-            },
-            markers: _markers,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
-            onTap: (latLng) async {
-              setState(() => _pickedLocation = latLng);
-              _updateMarker(latLng);
-              await _reverseGeocode(latLng);
-            },
-          ),
-          Positioned(
-            top: 12,
-            left: 16,
-            right: 16,
-            child: Material(
-              color: Colors.transparent,
-              child: Column(
-                children: [
-                  TextField(
-                    controller: _searchController,
-                    onChanged: _onSearchChanged,
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      hintText: 'Search for a place',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _isSearching
-                          ? const Padding(
-                              padding: EdgeInsets.all(14),
-                              child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                            )
-                          : _searchController.text.isNotEmpty
-                          ? IconButton(
-                              onPressed: () {
-                                _searchController.clear();
-                                _onSearchChanged('');
-                              },
-                              icon: const Icon(Icons.clear),
-                            )
-                          : null,
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.orange),
-                      ),
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Material(
-                        color: Colors.white,
-                        shape: const CircleBorder(),
-                        elevation: 3,
-                        child: Tooltip(
-                          message: 'Use current location',
-                          child: IconButton(
-                            onPressed: _isFetchingCurrentLocation
-                                ? null
-                                : _getCurrentLocation,
-                            icon: _isFetchingCurrentLocation
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(Icons.my_location),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (_searchResults.isNotEmpty)
-                    Container(
-                      constraints: const BoxConstraints(maxHeight: 240),
-                      margin: const EdgeInsets.only(top: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: const [
-                          BoxShadow(color: Colors.black26, blurRadius: 8),
-                        ],
-                      ),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        padding: EdgeInsets.zero,
-                        itemCount: _searchResults.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final place = _searchResults[index];
-                          return ListTile(
-                            leading: const Icon(Icons.location_on_outlined),
-                            title: Text(
-                              place.mainText ?? '',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            subtitle: place.secondaryText?.isNotEmpty == true
-                                ? Text(
-                                    place.secondaryText!,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  )
-                                : null,
-                            onTap: () => _selectPlace(place),
-                          );
-                        },
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.location_on, color: Colors.orange),
-                  SizedBox(width: 10.w),
-                  Expanded(
-                    child: _isGeocoding
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(
-                            _placeName,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

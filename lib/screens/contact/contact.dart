@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:fudikoclient/components/apptext.dart';
+import 'package:fudikoclient/components/error_state.dart';
 import 'package:fudikoclient/core/responsive/app_dimensions.dart';
 import 'package:fudikoclient/core/responsive/breakpoints.dart';
 import 'package:fudikoclient/model/support/support_information_model.dart';
@@ -18,6 +20,7 @@ class _ContactPageState extends State<ContactPage> {
 
   SupportInformationModel? _supportInfo;
   bool _isLoading = true;
+  String _loadError = '';
 
   @override
   void initState() {
@@ -26,32 +29,40 @@ class _ContactPageState extends State<ContactPage> {
   }
 
   Future<void> _fetchSupportInformation() async {
-    final result = await _supportService.getSupportInformation();
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _loadError = '';
+      });
+    }
+
+    final result = await _supportService.fetchSupportInformation();
 
     if (!mounted) return;
     setState(() {
-      _supportInfo = result;
+      _supportInfo = result.data;
       _isLoading = false;
+      _loadError = result.hasError ? result.message : '';
     });
   }
 
-List<_ContactItem> get _items => [
-        _ContactItem(
-          label: 'Mail Us',
-          icon: Icons.mail,
-          onTap: () => _launchMail(_supportInfo?.contactEmail),
-        ),
-        _ContactItem(
-          label: 'Chat with Us',
-          icon: Icons.message,
-          onTap: () => _launchUrl(_supportInfo?.chatLink),
-        ),
-        _ContactItem(
-          label: 'Contact Us',
-          icon: Icons.phone,
-          onTap: () => _launchPhone(_supportInfo?.contactUsPhone),
-        ),
-      ];
+  List<_ContactItem> get _items => [
+    _ContactItem(
+      label: 'Mail Us',
+      icon: Icons.mail,
+      onTap: () => _launchMail(_supportInfo?.contactEmail),
+    ),
+    _ContactItem(
+      label: 'Chat with Us',
+      icon: Icons.message,
+      onTap: () => _launchUrl(_supportInfo?.chatLink),
+    ),
+    _ContactItem(
+      label: 'Contact Us',
+      icon: Icons.phone,
+      onTap: () => _launchPhone(_supportInfo?.contactUsPhone),
+    ),
+  ];
 
   Future<void> _launchMail(String? email) async {
     if (email == null || email.isEmpty) return;
@@ -76,8 +87,6 @@ List<_ContactItem> get _items => [
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -115,26 +124,40 @@ List<_ContactItem> get _items => [
                       Center(
                         child: SingleChildScrollView(
                           padding: EdgeInsets.only(
-                            top: metrics.backTop +
+                            top:
+                                metrics.backTop +
                                 metrics.backSize +
                                 metrics.contentTopGap,
                             bottom: metrics.bottomPadding,
                           ),
                           child: FractionallySizedBox(
                             widthFactor: metrics.contentWidthFactor,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                for (var index = 0; index < _items.length; index++) ...[
-                                  _ContactCard(
-                                    item: _items[index],
-                                    metrics: metrics,
+                            child: _isLoading
+                                ? const Center(
+                                    child: CircularProgressIndicator(),
+                                  )
+                                : _loadError.isNotEmpty
+                                ? ErrorStateView(
+                                    message: _loadError,
+                                    onRetry: _fetchSupportInformation,
+                                  )
+                                : Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      for (
+                                        var index = 0;
+                                        index < _items.length;
+                                        index++
+                                      ) ...[
+                                        _ContactCard(
+                                          item: _items[index],
+                                          metrics: metrics,
+                                        ),
+                                        if (index != _items.length - 1)
+                                          SizedBox(height: metrics.cardGap),
+                                      ],
+                                    ],
                                   ),
-                                  if (index != _items.length - 1)
-                                    SizedBox(height: metrics.cardGap),
-                                ],
-                              ],
-                            ),
                           ),
                         ),
                       ),
@@ -151,10 +174,7 @@ List<_ContactItem> get _items => [
 }
 
 class _ContactCard extends StatelessWidget {
-  const _ContactCard({
-    required this.item,
-    required this.metrics,
-  });
+  const _ContactCard({required this.item, required this.metrics});
 
   final _ContactItem item;
   final _ContactLayoutMetrics metrics;
@@ -162,7 +182,7 @@ class _ContactCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-       onTap: item.onTap,
+      onTap: item.onTap,
       child: Container(
         width: double.infinity,
         height: metrics.cardHeight,
@@ -178,20 +198,21 @@ class _ContactCard extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: metrics.cardHorizontalPadding),
+          padding: EdgeInsets.symmetric(
+            horizontal: metrics.cardHorizontalPadding,
+          ),
           child: Row(
             children: [
               Icon(item.icon, size: metrics.iconSize, color: appButtonColor),
               SizedBox(width: metrics.iconGap),
               Expanded(
-                child: Text(
-                  item.label,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: metrics.labelSize,
-                    fontWeight: FontWeight.w500,
-                    color: appTextColor3,
-                  ),
+                child: AppText(
+                  text: item.label,
+                  size: metrics.labelSize,
+                  fontWeight: FontWeight.w500,
+                  color: appTextColor3,
+                  isCentered: true,
+                  maxLines: 1,
                 ),
               ),
               SizedBox(width: metrics.trailingBalanceWidth),
@@ -274,9 +295,7 @@ class _ContactLayoutMetrics {
           : isCompactPhone
           ? width * 0.06
           : width * 0.075,
-      contentWidthFactor: isTablet
-          ? (isTabletLandscape ? 0.46 : 0.58)
-          : 1.0,
+      contentWidthFactor: isTablet ? (isTabletLandscape ? 0.46 : 0.58) : 1.0,
       backTop: isTablet
           ? (isLandscape ? 18.0 : 36.0)
           : isCompactLandscape
@@ -292,14 +311,18 @@ class _ContactLayoutMetrics {
           ? 26.0
           : 30.0,
       contentTopGap: isTablet
-          ? (isLandscape ? AppDimensions.gap(context) * 0.9 : AppDimensions.margin(context) * 1.2)
+          ? (isLandscape
+                ? AppDimensions.gap(context) * 0.9
+                : AppDimensions.margin(context) * 1.2)
           : isCompactLandscape
           ? 18.0
           : isCompactPhone
           ? 40.0
           : 50.0,
       bottomPadding: isTablet
-          ? (isLandscape ? AppDimensions.gap(context) : AppDimensions.margin(context))
+          ? (isLandscape
+                ? AppDimensions.gap(context)
+                : AppDimensions.margin(context))
           : isCompactLandscape
           ? 14.0
           : isCompactPhone
@@ -346,7 +369,9 @@ class _ContactLayoutMetrics {
           ? 16.0
           : 20.0,
       labelSize: isTablet
-          ? (isLandscape ? AppDimensions.body(context) * 0.95 : AppDimensions.body(context) + 1)
+          ? (isLandscape
+                ? AppDimensions.body(context) * 0.95
+                : AppDimensions.body(context) + 1)
           : isCompactLandscape
           ? 14.0
           : isCompactPhone

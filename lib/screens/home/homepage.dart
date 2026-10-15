@@ -12,8 +12,10 @@ import 'package:fudikoclient/screens/catering_tabs/main_catering_nav.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/model/auth/mapplace-model.dart';
 import 'package:fudikoclient/routetransitions.dart';
+import 'package:fudikoclient/screens/notification/notification_setting.dart';
 import 'package:fudikoclient/service/partner_ad/partner_ads_service.dart';
 import 'package:fudikoclient/utils/tokens.dart';
+import 'package:fudikoclient/utils/translator_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fudikoclient/screens/aboutapp/about.dart';
 import 'package:fudikoclient/screens/auth/login.dart';
@@ -33,6 +35,7 @@ import 'package:fudikoclient/screens/reward/reward.dart';
 import 'package:fudikoclient/screens/tabs/main_restaurant_nav.dart';
 import 'package:fudikoclient/screens/takeaway_tabs/takeaway.dart';
 import 'package:fudikoclient/service/auth/map-service.dart';
+import 'package:fudikoclient/service/notification/device_token_service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:fudikoclient/widgets/app_shell.dart';
 import 'package:geocoding/geocoding.dart';
@@ -158,8 +161,7 @@ class _HomePageContentState extends ConsumerState<_HomePageContent> {
   }
 
   Future<void> _applySharedLocation(SelectedLocation location) async {
-    final isSameLocation =
-        _currentCity == location.city &&
+    final isSameLocation = _currentCity == location.city &&
         _currentLat == location.latitude &&
         _currentLng == location.longitude;
     if (isSameLocation || !mounted) return;
@@ -289,64 +291,64 @@ class _HomePageContentState extends ConsumerState<_HomePageContent> {
     final double horizontalPadding = isTablet
         ? screenWidth * 0.06
         : isCompactPhone
-        ? screenWidth * 0.05
-        : screenWidth * 0.075;
+            ? screenWidth * 0.05
+            : screenWidth * 0.075;
     final double contentGap = isCompactPhone
         ? screenHeight * 0.01
         : isTablet
-        ? AppDimensions.gridGap(context)
-        : screenHeight * 0.012;
+            ? AppDimensions.gridGap(context)
+            : screenHeight * 0.012;
     final double sliderWidth = screenWidth * (isTablet ? 0.28 : 0.5);
     final double drawerWidth = isTablet
         ? (screenWidth * 0.34).clamp(300.0, 360.0).toDouble()
         : isCompactPhone
-        ? (screenWidth * 0.72).clamp(240.0, 280.0).toDouble()
-        : screenWidth * 0.6;
+            ? (screenWidth * 0.72).clamp(240.0, 280.0).toDouble()
+            : screenWidth * 0.6;
     final double drawerHorizontalPadding = isTablet
         ? 28.0
         : isCompactPhone
-        ? 18.0
-        : screenWidth * 0.05;
+            ? 18.0
+            : screenWidth * 0.05;
     final double drawerInnerPadding = isTablet
         ? 14.0
         : isCompactPhone
-        ? 10.0
-        : screenWidth * 0.025;
+            ? 10.0
+            : screenWidth * 0.025;
     final double drawerLogoWidth = isTablet
         ? drawerWidth * 0.46
         : isCompactPhone
-        ? drawerWidth * 0.5
-        : screenWidth * 0.35;
+            ? drawerWidth * 0.5
+            : screenWidth * 0.35;
     final double drawerSectionGap = isTablet
         ? 34.0
         : isCompactPhone
-        ? 22.0
-        : screenHeight * 0.06;
+            ? 22.0
+            : screenHeight * 0.06;
     final double drawerItemGap = isTablet
         ? 10.0
         : isCompactPhone
-        ? 8.0
-        : screenHeight * 0.012;
+            ? 8.0
+            : screenHeight * 0.012;
     final double drawerIconSize = isTablet
         ? 22.0
         : isCompactPhone
-        ? 19.0
-        : 21.w;
+            ? 19.0
+            : 21.w;
     final double drawerInfoIconSize = isTablet
         ? 23.0
         : isCompactPhone
-        ? 20.0
-        : 22.w;
+            ? 20.0
+            : 22.w;
     final double drawerLargeIconSize = isTablet
         ? 26.0
         : isCompactPhone
-        ? 23.0
-        : 26.w;
+            ? 23.0
+            : 26.w;
     final double drawerLogoutIconSize = isTablet
         ? 22.0
         : isCompactPhone
-        ? 19.0
-        : 20.w;
+            ? 19.0
+            : 20.w;
 
     return PopScope(
       canPop: false,
@@ -364,385 +366,409 @@ class _HomePageContentState extends ConsumerState<_HomePageContent> {
       },
       child: Scaffold(
         backgroundColor: appSecondaryBackgroundColor,
-        body: SafeArea(
-          child: Stack(
-            children: [
-              Column(
-                children: [
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: horizontalPadding,
-                      vertical: isCompactPhone
-                          ? screenHeight * 0.016
-                          : screenHeight * 0.025,
+        // Keep the home layout fixed when the keyboard opens (e.g. the
+        // location bottom sheet); the sheet handles its own insets.
+        resizeToAvoidBottomInset: false,
+        // Belt to the resizeToAvoidBottomInset brace: the home layout is a
+        // chain of Expandeds, so any bottom inset that reaches it re-lays the
+        // service cards into whatever is left above the keyboard. Dropping the
+        // inset here keeps every descendant measuring against the full window
+        // no matter which widget below asks for it. The location sheet is a
+        // separate route and still sees the real insets.
+        body: MediaQuery.removeViewInsets(
+          context: context,
+          removeBottom: true,
+          // Second belt. The two above only work while the window keeps its
+          // size; if the platform resizes it for the keyboard regardless,
+          // every Expanded below re-lays out into what is left above the
+          // keyboard and the service cards visibly shrink. This holds the
+          // layout at its full height and lets the keyboard cover the
+          // overflow instead. See _StableLayoutHeight.
+          child: _StableLayoutHeight(
+          child: SafeArea(
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: horizontalPadding,
+                        vertical: isCompactPhone
+                            ? screenHeight * 0.016
+                            : screenHeight * 0.025,
+                      ),
+                      child: _navBar(),
                     ),
-                    child: _navBar(),
-                  ),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: PageView.builder(
-                            controller: _pageController,
-                            itemCount: 2,
-                            onPageChanged: (index) {
-                              setState(() => _currentIndex = index);
-                            },
-                            itemBuilder: (context, index) {
-                              return Padding(
-                                padding: EdgeInsets.only(
-                                  left: horizontalPadding,
-                                  right: horizontalPadding,
-                                  top: isCompactPhone
-                                      ? screenHeight * 0.016
-                                      : screenHeight * 0.03,
-                                  bottom: isCompactPhone
-                                      ? screenHeight * 0.006
-                                      : screenHeight * 0.01,
-                                ),
-                                child: index == 0
-                                    ? _serviceContent(gap: contentGap)
-                                    : _offerContent(
-                                        isTablet: isTablet,
-                                        compactHeight: isCompactPhone,
-                                      ),
-                              );
-                            },
-                          ),
-                        ),
-
-                        // WORKING SLIDER
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            vertical: isCompactPhone
-                                ? screenHeight * 0.014
-                                : screenHeight * 0.02,
-                          ),
-                          child: Center(
-                            child: SizedBox(
-                              width: sliderWidth,
-                              height: 8,
-                              child: Stack(
-                                alignment: Alignment.centerLeft,
-                                children: [
-                                  // Background thin line
-                                  Container(
-                                    width: sliderWidth,
-                                    height: 0.5,
-                                    decoration: BoxDecoration(
-                                      color: sliderColor,
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: PageView.builder(
+                              controller: _pageController,
+                              itemCount: 2,
+                              onPageChanged: (index) {
+                                setState(() => _currentIndex = index);
+                              },
+                              itemBuilder: (context, index) {
+                                return Padding(
+                                  padding: EdgeInsets.only(
+                                    left: horizontalPadding,
+                                    right: horizontalPadding,
+                                    top: isCompactPhone
+                                        ? screenHeight * 0.016
+                                        : screenHeight * 0.03,
+                                    bottom: isCompactPhone
+                                        ? screenHeight * 0.006
+                                        : screenHeight * 0.01,
                                   ),
-                                  // Active half — animates position
-                                  AnimatedPositioned(
-                                    duration: const Duration(milliseconds: 300),
-                                    curve: Curves.easeInOut,
-                                    left: _currentIndex == 0
-                                        ? 0
-                                        : sliderWidth / 2,
-                                    top: 0,
-                                    bottom: 0,
-                                    child: Container(
-                                      width: sliderWidth / 2,
-                                      height: 7,
+                                  child: index == 0
+                                      ? _serviceContent(gap: contentGap)
+                                      : _offerContent(
+                                          isTablet: isTablet,
+                                          compactHeight: isCompactPhone,
+                                        ),
+                                );
+                              },
+                            ),
+                          ),
+
+                          // WORKING SLIDER
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              vertical: isCompactPhone
+                                  ? screenHeight * 0.014
+                                  : screenHeight * 0.02,
+                            ),
+                            child: Center(
+                              child: SizedBox(
+                                width: sliderWidth,
+                                height: 8,
+                                child: Stack(
+                                  alignment: Alignment.centerLeft,
+                                  children: [
+                                    // Background thin line
+                                    Container(
+                                      width: sliderWidth,
+                                      height: 0.5,
                                       decoration: BoxDecoration(
                                         color: sliderColor,
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                    // Active half — animates position
+                                    AnimatedPositioned(
+                                      duration:
+                                          const Duration(milliseconds: 300),
+                                      curve: Curves.easeInOut,
+                                      left: _currentIndex == 0
+                                          ? 0
+                                          : sliderWidth / 2,
+                                      top: 0,
+                                      bottom: 0,
+                                      child: Container(
+                                        width: sliderWidth / 2,
+                                        height: 7,
+                                        decoration: BoxDecoration(
+                                          color: sliderColor,
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Drawer overlay
+                if (isDrawerOpen)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      onTap: () => setState(() => isDrawerOpen = false),
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ),
+
+                // Drawer
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 300),
+                  top: 0,
+                  bottom: 0,
+                  left: isDrawerOpen ? 0 : -drawerWidth - 24,
+                  child: Container(
+                    width: drawerWidth,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          offset: Offset(-4, 0),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-
-              // Drawer overlay
-              if (isDrawerOpen)
-                Positioned.fill(
-                  child: GestureDetector(
-                    onTap: () => setState(() => isDrawerOpen = false),
-                    child: Container(
-                      color: Colors.black.withValues(alpha: 0.4),
-                    ),
-                  ),
-                ),
-
-              // Drawer
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 300),
-                top: 0,
-                bottom: 0,
-                left: isDrawerOpen ? 0 : -drawerWidth - 24,
-                child: Container(
-                  width: drawerWidth,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 10,
-                        offset: Offset(-4, 0),
-                      ),
-                    ],
-                  ),
-                  child: SafeArea(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: drawerHorizontalPadding,
-                      ),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              height: isCompactPhone
-                                  ? 36
-                                  : isTablet
-                                  ? 56
-                                  : screenHeight * 0.12,
-                            ),
-                            Align(
-                              alignment: Alignment.center,
-                              child: Image.asset(
-                                'assets/images/logofudikoo.png',
-                                width: drawerLogoWidth,
+                    child: SafeArea(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: drawerHorizontalPadding,
+                        ),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                height: isCompactPhone
+                                    ? 36
+                                    : isTablet
+                                        ? 56
+                                        : screenHeight * 0.12,
                               ),
-                            ),
-                            SizedBox(height: drawerSectionGap),
-                            AppText(
-                              text: "Settings",
-                              size: 15,
-                              fontWeight: FontWeight.w600,
-                              color: appTextColor2,
-                            ),
-                            SizedBox(height: drawerItemGap),
-                            Divider(
-                              thickness: 1,
-                              color: Colors.grey,
-                              height: 1,
-                            ),
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: drawerInnerPadding,
+                              Align(
+                                alignment: Alignment.center,
+                                child: Image.asset(
+                                  'assets/images/logofudikoo.png',
+                                  width: drawerLogoWidth,
+                                ),
                               ),
-                              child: Column(
-                                children: [
-                                  SizedBox(height: drawerItemGap),
-                                  _drawerItem(
-                                    "Change Password",
-                                    lockIcon,
-                                    //  ChangePassword(),
-                                    UpdatePassword(),
-                                    drawerIconSize,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  Divider(
-                                    thickness: 1,
-                                    color: Colors.grey,
-                                    height: 1,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  _drawerItem(
-                                    "Notifications",
-                                    bellIcon,
-                                    NotificationScreen(),
-                                    drawerIconSize,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  Divider(
-                                    thickness: 1,
-                                    color: Colors.grey,
-                                    height: 1,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  _drawerItem(
-                                    "Languages",
-                                    languageIcon,
-                                    Languages(),
-                                    drawerIconSize,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  Divider(
-                                    thickness: 1,
-                                    color: Colors.grey,
-                                    height: 1,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  _drawerItem(
-                                    "Rewards",
-                                    rewardsIcon,
-                                    Reward(),
-                                    drawerIconSize,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  Divider(
-                                    thickness: 1,
-                                    color: Colors.grey,
-                                    height: 1,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  _drawerItem(
-                                    "Invite a Friend",
-                                    inviteIcon,
-                                    EarnPoints(),
-                                    drawerIconSize,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  Divider(
-                                    thickness: 1,
-                                    color: Colors.grey,
-                                    height: 1,
-                                  ),
-                                ],
+                              SizedBox(height: drawerSectionGap),
+                              AppText(
+                                text: "Settings",
+                                size: 15,
+                                fontWeight: FontWeight.w600,
+                                color: appTextColor2,
                               ),
-                            ),
-                            SizedBox(height: drawerSectionGap),
-                            AppText(
-                              text: "Information",
-                              size: 15,
-                              fontWeight: FontWeight.w600,
-                              color: appTextColor2,
-                            ),
-                            SizedBox(height: drawerItemGap),
-                            Divider(
-                              thickness: 1,
-                              color: Colors.grey,
-                              height: 1,
-                            ),
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: drawerInnerPadding,
+                              SizedBox(height: drawerItemGap),
+                              Divider(
+                                thickness: 1,
+                                color: Colors.grey,
+                                height: 1,
                               ),
-                              child: Column(
-                                children: [
-                                  SizedBox(height: drawerItemGap),
-                                  _drawerItem(
-                                    "About the App",
-                                    infoIcon,
-                                    AboutPage(),
-                                    drawerInfoIconSize,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  Divider(
-                                    thickness: 1,
-                                    color: Colors.grey,
-                                    height: 1,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  _drawerItem(
-                                    "Badge Earnings",
-                                    helpIcon,
-                                    BadgeInfo(),
-                                    drawerLargeIconSize,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  Divider(
-                                    thickness: 1,
-                                    color: Colors.grey,
-                                    height: 1,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  _drawerItem(
-                                    "About Badges",
-                                    "assets/images/verificationgrey.png",
-                                    AboutBadgePage(),
-                                    drawerLargeIconSize,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  Divider(
-                                    thickness: 1,
-                                    color: Colors.grey,
-                                    height: 1,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  _drawerItem(
-                                    "Complaints",
-                                    complainIcon,
-                                    ComplaintPage(),
-                                    drawerLargeIconSize,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  Divider(
-                                    thickness: 1,
-                                    color: Colors.grey,
-                                    height: 1,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  _drawerItem(
-                                    "Rate the App",
-                                    rateAppIcon,
-                                    FeedBack(),
-                                    drawerIconSize,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  Divider(
-                                    thickness: 1,
-                                    color: Colors.grey,
-                                    height: 1,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  _drawerItem(
-                                    "Support",
-                                    customerServiceIcon,
-                                    ContactPage(),
-                                    drawerIconSize,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  Divider(
-                                    thickness: 1,
-                                    color: Colors.grey,
-                                    height: 1,
-                                  ),
-                                ],
+                              Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: drawerInnerPadding,
+                                ),
+                                child: Column(
+                                  children: [
+                                    SizedBox(height: drawerItemGap),
+                                    _drawerItem(
+                                      "Change Password",
+                                      lockIcon,
+                                      //  ChangePassword(),
+                                      UpdatePassword(),
+                                      drawerIconSize,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    Divider(
+                                      thickness: 1,
+                                      color: Colors.grey,
+                                      height: 1,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    _drawerItem(
+                                      "Notifications",
+                                      bellIcon,
+                                      NotificationSettingsPage(),
+                                      drawerIconSize,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    Divider(
+                                      thickness: 1,
+                                      color: Colors.grey,
+                                      height: 1,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    _drawerItem(
+                                      "Languages",
+                                      languageIcon,
+                                      Languages(),
+                                      drawerIconSize,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    Divider(
+                                      thickness: 1,
+                                      color: Colors.grey,
+                                      height: 1,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    _drawerItem(
+                                      "Rewards",
+                                      rewardsIcon,
+                                      Reward(),
+                                      drawerIconSize,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    Divider(
+                                      thickness: 1,
+                                      color: Colors.grey,
+                                      height: 1,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    _drawerItem(
+                                      "Invite a Friend",
+                                      inviteIcon,
+                                      EarnPoints(),
+                                      drawerIconSize,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    Divider(
+                                      thickness: 1,
+                                      color: Colors.grey,
+                                      height: 1,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            SizedBox(height: drawerSectionGap),
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: drawerInnerPadding,
+                              SizedBox(height: drawerSectionGap),
+                              AppText(
+                                text: "Information",
+                                size: 15,
+                                fontWeight: FontWeight.w600,
+                                color: appTextColor2,
                               ),
-                              child: Column(
-                                children: [
-                                  Divider(
-                                    thickness: 1,
-                                    color: Colors.red,
-                                    height: 1,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  _drawerItem(
-                                    "Log Out",
-                                    logoutIcon,
-                                    Login(),
-                                    drawerLogoutIconSize,
-                                    Colors.red,
-                                  ),
-                                  SizedBox(height: drawerItemGap),
-                                  Divider(
-                                    thickness: 1,
-                                    color: Colors.red,
-                                    height: 1,
-                                  ),
-                                ],
+                              SizedBox(height: drawerItemGap),
+                              Divider(
+                                thickness: 1,
+                                color: Colors.grey,
+                                height: 1,
                               ),
-                            ),
-                            SizedBox(
-                              height: isCompactPhone ? 18 : screenHeight * 0.03,
-                            ),
-                          ],
+                              Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: drawerInnerPadding,
+                                ),
+                                child: Column(
+                                  children: [
+                                    SizedBox(height: drawerItemGap),
+                                    _drawerItem(
+                                      "About the App",
+                                      infoIcon,
+                                      AboutPage(),
+                                      drawerInfoIconSize,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    Divider(
+                                      thickness: 1,
+                                      color: Colors.grey,
+                                      height: 1,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    _drawerItem(
+                                      "Badge Earnings",
+                                      helpIcon,
+                                      BadgeInfo(),
+                                      drawerLargeIconSize,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    Divider(
+                                      thickness: 1,
+                                      color: Colors.grey,
+                                      height: 1,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    _drawerItem(
+                                      "About Badges",
+                                      "assets/images/verificationgrey.png",
+                                      AboutBadgePage(),
+                                      drawerLargeIconSize,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    Divider(
+                                      thickness: 1,
+                                      color: Colors.grey,
+                                      height: 1,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    _drawerItem(
+                                      "Complaints",
+                                      complainIcon,
+                                      ComplaintPage(),
+                                      drawerLargeIconSize,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    Divider(
+                                      thickness: 1,
+                                      color: Colors.grey,
+                                      height: 1,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    _drawerItem(
+                                      "Rate the App",
+                                      rateAppIcon,
+                                      FeedBack(),
+                                      drawerIconSize,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    Divider(
+                                      thickness: 1,
+                                      color: Colors.grey,
+                                      height: 1,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    _drawerItem(
+                                      "Support",
+                                      customerServiceIcon,
+                                      ContactPage(),
+                                      drawerIconSize,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    Divider(
+                                      thickness: 1,
+                                      color: Colors.grey,
+                                      height: 1,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: drawerSectionGap),
+                              Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: drawerInnerPadding,
+                                ),
+                                child: Column(
+                                  children: [
+                                    Divider(
+                                      thickness: 1,
+                                      color: Colors.red,
+                                      height: 1,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    _drawerItem(
+                                      "Log Out",
+                                      logoutIcon,
+                                      Login(),
+                                      drawerLogoutIconSize,
+                                      Colors.red,
+                                    ),
+                                    SizedBox(height: drawerItemGap),
+                                    Divider(
+                                      thickness: 1,
+                                      color: Colors.red,
+                                      height: 1,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(
+                                height:
+                                    isCompactPhone ? 18 : screenHeight * 0.03,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
+          ),
           ),
         ),
       ),
@@ -800,103 +826,97 @@ class _HomePageContentState extends ConsumerState<_HomePageContent> {
   //   );
   // }
 
-Widget _serviceContent({required double gap}) {
-  final orientation = MediaQuery.orientationOf(context);
+  Widget _serviceContent({required double gap}) {
+    final orientation = MediaQuery.orientationOf(context);
 
-  final services = <Widget>[
-    InkWell(
-      onTap: () => slideRightWidget(
-        newPage: MainRestaurantNavPage(
-          city: _currentCity,
-          lat: _currentLat,
-          lng: _currentLng,
+    final services = <Widget>[
+      InkWell(
+        onTap: () => slideRightWidget(
+          newPage: MainRestaurantNavPage(
+            city: _currentCity,
+            lat: _currentLat,
+            lng: _currentLng,
+          ),
+          context: context,
         ),
-        context: context,
+        child: const RestaurantBox(),
       ),
-      child: const RestaurantBox(),
-    ),
-    InkWell(
-      onTap: () => slideRightWidget(
-        newPage: MainBanquetNavPage(
-          city: _currentCity,
-          lat: _currentLat,
-          lng: _currentLng,
+      InkWell(
+        onTap: () => slideRightWidget(
+          newPage: MainBanquetNavPage(
+            city: _currentCity,
+            lat: _currentLat,
+            lng: _currentLng,
+          ),
+          context: context,
         ),
-        context: context,
+        child: const BanquetBox(),
       ),
-      child: const BanquetBox(),
-    ),
-    InkWell(
-      onTap: () => slideRightWidget(
-        newPage: MainCateringNavPage(
-          city: _currentCity,
-          lat: _currentLat,
-          lng: _currentLng,
+      InkWell(
+        onTap: () => slideRightWidget(
+          newPage: MainCateringNavPage(
+            city: _currentCity,
+            lat: _currentLat,
+            lng: _currentLng,
+          ),
+          context: context,
         ),
-        context: context,
+        child: const CateringBox(),
       ),
-      child: const CateringBox(),
-    ),
-    InkWell(
-      onTap: () => slideRightWidget(
-        newPage: const TakeAway(),
-        context: context,
+      InkWell(
+        onTap: () =>
+            slideRightWidget(newPage: const TakeAway(), context: context),
+        child: const TakeAwayBox(),
       ),
-      child: const TakeAwayBox(),
-    ),
-  ];
+    ];
 
-  // PORTRAIT (unchanged)
-  if (orientation == Orientation.portrait) {
-    return Column(
-      children: [
-        Expanded(child: services[0]),
-        SizedBox(height: gap),
-        Expanded(child: services[1]),
-        SizedBox(height: gap),
-        Expanded(child: services[2]),
-        SizedBox(height: gap),
-        Expanded(child: services[3]),
-      ],
-    );
-  }
-
-  // LANDSCAPE
-  return LayoutBuilder(
-    builder: (context, constraints) {
-      final cardWidth = (constraints.maxWidth - gap) / 2;
-      final cardHeight = (constraints.maxHeight - gap) / 2;
-
-      Widget buildCard(Widget child) {
-        return SizedBox(
-          width: cardWidth,
-          height: cardHeight,
-          child: child,
-        );
-      }
-
+    // PORTRAIT (unchanged)
+    if (orientation == Orientation.portrait) {
       return Column(
         children: [
-          Row(
-            children: [
-              buildCard(services[0]),
-              SizedBox(width: gap),
-              buildCard(services[1]),
-            ],
-          ),
+          Expanded(child: services[0]),
           SizedBox(height: gap),
-          Row(
-            children: [
-              buildCard(services[2]),
-              SizedBox(width: gap),
-              buildCard(services[3]),
-            ],
-          ),
+          Expanded(child: services[1]),
+          SizedBox(height: gap),
+          Expanded(child: services[2]),
+          SizedBox(height: gap),
+          Expanded(child: services[3]),
         ],
       );
-    },
-  );
-}
+    }
+
+    // LANDSCAPE
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardWidth = (constraints.maxWidth - gap) / 2;
+        final cardHeight = (constraints.maxHeight - gap) / 2;
+
+        Widget buildCard(Widget child) {
+          return SizedBox(width: cardWidth, height: cardHeight, child: child);
+        }
+
+        return Column(
+          children: [
+            Row(
+              children: [
+                buildCard(services[0]),
+                SizedBox(width: gap),
+                buildCard(services[1]),
+              ],
+            ),
+            SizedBox(height: gap),
+            Row(
+              children: [
+                buildCard(services[2]),
+                SizedBox(width: gap),
+                buildCard(services[3]),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Widget _offerContent({required bool isTablet, required bool compactHeight}) {
     if (_isAdsLoading) {
@@ -917,23 +937,21 @@ Widget _serviceContent({required double gap}) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final offerCount = _partnerAds.length;
-        final activeOfferIndex = _currentOfferIndex
-            .clamp(0, offerCount - 1)
-            .toInt();
-        final dense =
-            compactHeight ||
+        final activeOfferIndex =
+            _currentOfferIndex.clamp(0, offerCount - 1).toInt();
+        final dense = compactHeight ||
             constraints.maxHeight < 520 ||
             constraints.maxWidth < 360;
         final indicatorSize = isTablet
             ? 8.0
             : dense
-            ? 6.0
-            : 7.0;
+                ? 6.0
+                : 7.0;
         final activeIndicatorHeight = isTablet
             ? 24.0
             : dense
-            ? 18.0
-            : 21.0;
+                ? 18.0
+                : 21.0;
         final indicatorGap = dense ? 5.0 : 7.0;
 
         return Row(
@@ -1046,23 +1064,22 @@ Widget _serviceContent({required double gap}) {
     final isMobileDevice = Breakpoints.isMobileDevice(sizeOfScreen);
     final isCompactPhone = isMobileDevice && (width < 390 || height < 720);
     final isTablet = Breakpoints.isTabletDevice(sizeOfScreen);
-    final iconSize =
-        size ??
+    final iconSize = size ??
         (isTablet
             ? 22.0
             : isCompactPhone
-            ? 18.0
-            : 20.w);
+                ? 18.0
+                : 20.w);
     final itemGap = isTablet
         ? 12.0
         : isCompactPhone
-        ? 8.0
-        : 10.w;
+            ? 8.0
+            : 10.w;
     final textSize = isTablet
         ? 14.0
         : isCompactPhone
-        ? 12.5
-        : 13.sp;
+            ? 12.5
+            : 13.sp;
 
     return GestureDetector(
       onTap: () {
@@ -1074,7 +1091,11 @@ Widget _serviceContent({required double gap}) {
           if (!mounted) return;
           if (routeWidget != null) {
             if (routeWidget is Login) {
+              await DeviceTokenService().unregisterDeviceToken();
               await removeToken();
+              // Logging out hands the app back to a fresh user, so the
+              // language goes back to the default too.
+              await TranslatorService.resetToEnglish();
               if (!mounted) return;
               pushWidgetWhileRemove(newPage: routeWidget, context: context);
             } else {
@@ -1124,13 +1145,13 @@ Widget _serviceContent({required double gap}) {
     final locationWidth = isTablet
         ? width * 0.32
         : isCompactPhone
-        ? width * 0.42
-        : width * 0.45;
+            ? width * 0.42
+            : width * 0.45;
     final menuSize = isTablet
         ? 34.0
         : isCompactPhone
-        ? 26.0
-        : 30.0;
+            ? 26.0
+            : 30.0;
     final topPadding = isCompactPhone ? 6.0 : 10.0;
 
     return Stack(
@@ -1282,7 +1303,6 @@ Widget _serviceContent({required double gap}) {
 
   Future<void> _showLocationPicker() async {
     final MapService mapService = MapService();
-    List<String> places = [];
     List<MapPlacesResponse> locations = [];
     bool isSearchLoading = false;
     final TextEditingController searchController = TextEditingController();
@@ -1309,19 +1329,34 @@ Widget _serviceContent({required double gap}) {
           builder: (context, setModalState) {
             return LayoutBuilder(
               builder: (context, constraints) {
-                final viewInsets = MediaQuery.viewInsetsOf(context);
-                final maxSheetHeight =
-                    (MediaQuery.sizeOf(context).height - viewInsets.bottom)
-                        .clamp(0.0, MediaQuery.sizeOf(context).height * 0.86)
-                        .toDouble();
-                final resultMaxHeight = (maxSheetHeight * 0.42)
+                final media = MediaQuery.of(context);
+                final keyboardInset = media.viewInsets.bottom;
+                final screenHeight = media.size.height;
+                // What the sheet can actually show the user: the room left
+                // above the keyboard, and never more than 86% of the screen.
+                final visibleSheetHeight = (screenHeight - keyboardInset)
+                    .clamp(0.0, screenHeight * 0.86)
+                    .toDouble();
+                // The scroll view pads its own bottom by the keyboard inset,
+                // so the box has to be that much taller than the part the
+                // user sees. Capping the whole box at the visible height
+                // instead let the padding eat it: the sheet is anchored to
+                // the bottom of the screen, so on a short landscape viewport
+                // it ended up entirely behind the keyboard.
+                final maxSheetHeight = visibleSheetHeight + keyboardInset;
+                final resultMaxHeight = (visibleSheetHeight * 0.42)
                     .clamp(120.0, 280.0)
                     .toDouble();
                 final content = ConstrainedBox(
                   constraints: BoxConstraints(maxHeight: maxSheetHeight),
                   child: SingleChildScrollView(
                     padding: EdgeInsets.only(
-                      bottom: viewInsets.bottom,
+                      // The keyboard while it is up, the gesture inset
+                      // otherwise — the sheet runs to the bottom edge of the
+                      // screen either way.
+                      bottom: keyboardInset > 0
+                          ? keyboardInset
+                          : media.viewPadding.bottom,
                       left: 20.w,
                       right: 20.w,
                       top: 20.h,
@@ -1378,40 +1413,42 @@ Widget _serviceContent({required double gap}) {
                           ),
                         ),
                         SizedBox(height: 16.h),
-                        TextField(
-                          controller: searchController,
-                          decoration: InputDecoration(
-                            hintText: "Search location...",
-                            prefixIcon: Icon(
-                              Icons.search,
-                              color: appTextColor3,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.r),
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade300,
+                        TranslatedBuilder(
+                          text: "Search location...",
+                          builder: (context, hintText) => TextField(
+                            controller: searchController,
+                            decoration: InputDecoration(
+                              hintText: hintText,
+                              prefixIcon: Icon(
+                                Icons.search,
+                                color: appTextColor3,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10.r),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10.r),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
                               ),
                             ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.r),
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade300,
-                              ),
-                            ),
+                            onChanged: (val) async {
+                              if (val.length >= 2) {
+                                setModalState(() => isSearchLoading = true);
+                                final response = await mapService.listPlaces(
+                                  val,
+                                );
+                                setModalState(() {
+                                  locations = response;
+                                  isSearchLoading = false;
+                                });
+                              }
+                            },
                           ),
-                          onChanged: (val) async {
-                            if (val.length >= 2) {
-                              setModalState(() => isSearchLoading = true);
-                              final response = await mapService.listPlaces(val);
-                              setModalState(() {
-                                places = response
-                                    .map((p) => p.mainText ?? '')
-                                    .toList();
-                                locations = response;
-                                isSearchLoading = false;
-                              });
-                            }
-                          },
                         ),
                         SizedBox(height: 10.h),
                         if (isSearchLoading)
@@ -1427,17 +1464,29 @@ Widget _serviceContent({required double gap}) {
                             child: ListView.builder(
                               shrinkWrap: true,
                               physics: const ClampingScrollPhysics(),
-                              itemCount: places.length,
+                              itemCount: locations.length,
                               itemBuilder: (context, index) {
+                                final place = locations[index];
+                                final placeName = place.mainText ?? '';
                                 return ListTile(
                                   leading: Icon(
                                     Icons.location_on,
                                     color: appTextColor3,
                                   ),
-                                  title: Text(places[index]),
+                                  title: Text(placeName),
+                                  subtitle: (place.secondaryText ?? '').isEmpty
+                                      ? null
+                                      : Text(
+                                          place.secondaryText!,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
                                   onTap: () async {
-                                    final placeId =
-                                        locations[index].placeId ?? '';
+                                    final placeId = place.placeId ?? '';
                                     try {
                                       final coords = await mapService.getPlace(
                                         placeId,
@@ -1450,31 +1499,25 @@ Widget _serviceContent({required double gap}) {
                                       );
                                       if (!mounted) return;
                                       setState(() {
-                                        _currentCity = places[index];
+                                        _currentCity = placeName;
                                         _currentLat = lat;
                                         _currentLng = lng;
                                       });
                                       await _saveCachedLocation(
-                                        places[index],
+                                        placeName,
                                         lat,
                                         lng,
                                       );
-                                      _publishLocation(places[index], lat, lng);
+                                      _publishLocation(placeName, lat, lng);
                                     } catch (e) {
                                       if (!mounted) return;
-                                      setState(
-                                        () => _currentCity = places[index],
-                                      );
+                                      setState(() => _currentCity = placeName);
                                       await _saveCachedLocation(
-                                        places[index],
+                                        placeName,
                                         null,
                                         null,
                                       );
-                                      _publishLocation(
-                                        places[index],
-                                        null,
-                                        null,
-                                      );
+                                      _publishLocation(placeName, null, null);
                                     }
                                     if (!mounted || !context.mounted) return;
                                     Navigator.pop(context);
@@ -1493,6 +1536,64 @@ Widget _serviceContent({required double gap}) {
               },
             );
           },
+        );
+      },
+    );
+  }
+}
+
+/// Holds its child at the tallest height it has been laid out at for the
+/// current width.
+///
+/// The home layout is a chain of [Expanded]s, so it takes whatever height it
+/// is handed. `resizeToAvoidBottomInset: false` and the `removeViewInsets`
+/// above it stop *Flutter* from shrinking that height for the keyboard, but
+/// neither can do anything if the platform resizes the window itself - from
+/// inside Flutter a resized window is indistinguishable from a genuinely
+/// shorter one. Remembering the full height and drawing at it regardless
+/// keeps the cards their own size; the keyboard simply covers what overflows.
+///
+/// On a build where the window is not resized (adjustNothing in the manifest,
+/// re-asserted in MainActivity.onCreate) the height never drops and this is a
+/// no-op.
+class _StableLayoutHeight extends StatefulWidget {
+  const _StableLayoutHeight({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_StableLayoutHeight> createState() => _StableLayoutHeightState();
+}
+
+class _StableLayoutHeightState extends State<_StableLayoutHeight> {
+  double? _width;
+  double _tallest = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final height = constraints.maxHeight;
+        if (!height.isFinite) return widget.child;
+
+        if (_width != constraints.maxWidth) {
+          // A width change is a real layout change - rotation, split screen -
+          // so start measuring again rather than holding on to the old height.
+          _width = constraints.maxWidth;
+          _tallest = height;
+        } else if (height > _tallest) {
+          _tallest = height;
+        }
+
+        if (_tallest <= height) return widget.child;
+
+        return ClipRect(
+          child: OverflowBox(
+            alignment: Alignment.topCenter,
+            minHeight: _tallest,
+            maxHeight: _tallest,
+            child: widget.child,
+          ),
         );
       },
     );

@@ -75,15 +75,16 @@ class _AboutPageState extends State<AboutPage> {
 
                                     return SingleChildScrollView(
                                       padding: EdgeInsets.only(
-                                        top: metrics.backTop +
+                                        top:
+                                            metrics.backTop +
                                             metrics.backSize +
                                             metrics.titleTopGap,
                                       ),
                                       child: ConstrainedBox(
                                         constraints: BoxConstraints(
-                                          minHeight: (minHeight -
-                                                  metrics.titleTopGap)
-                                              .clamp(0.0, double.infinity),
+                                          minHeight:
+                                              (minHeight - metrics.titleTopGap)
+                                                  .clamp(0.0, double.infinity),
                                         ),
                                         child: Center(
                                           child: Column(
@@ -98,8 +99,7 @@ class _AboutPageState extends State<AboutPage> {
                                                 fontWeight: FontWeight.bold,
                                                 color: appTextColor2,
                                                 maxLines: 1,
-                                                overflow:
-                                                    TextOverflow.ellipsis,
+                                                overflow: TextOverflow.ellipsis,
                                                 isCentered: false,
                                               ),
                                               SizedBox(
@@ -116,8 +116,7 @@ class _AboutPageState extends State<AboutPage> {
                                                   maxLines: 40,
                                                 ),
                                                 SizedBox(
-                                                  height:
-                                                      metrics.paragraphGap,
+                                                  height: metrics.paragraphGap,
                                                 ),
                                               ],
                                             ],
@@ -139,10 +138,10 @@ class _AboutPageState extends State<AboutPage> {
                               builder: (context, snapshot) {
                                 final versionText =
                                     snapshot.connectionState ==
-                                                ConnectionState.done &&
-                                            snapshot.hasData
-                                        ? 'Version ${snapshot.data!.version}+${snapshot.data!.buildNumber}'
-                                        : 'Version ...';
+                                            ConnectionState.done &&
+                                        snapshot.hasData
+                                    ? 'Version ${snapshot.data!.version}+${snapshot.data!.buildNumber}'
+                                    : 'Version ...';
 
                                 return AppText(
                                   text: versionText,
@@ -172,10 +171,7 @@ class _AboutPageState extends State<AboutPage> {
 }
 
 class _CenteredContent extends StatelessWidget {
-  const _CenteredContent({
-    required this.widthFactor,
-    required this.child,
-  });
+  const _CenteredContent({required this.widthFactor, required this.child});
 
   final double widthFactor;
   final Widget child;
@@ -184,10 +180,7 @@ class _CenteredContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.topCenter,
-      child: FractionallySizedBox(
-        widthFactor: widthFactor,
-        child: child,
-      ),
+      child: FractionallySizedBox(widthFactor: widthFactor, child: child),
     );
   }
 }
@@ -238,83 +231,99 @@ class _AboutLayoutMetrics {
     final isTabletLandscape = isTablet && isLandscape;
 
     return _AboutLayoutMetrics(
-        contentWidthFactor: isTabletLandscape
+      contentWidthFactor: isTabletLandscape
           ? 0.68
           : isTablet
           ? 0.74
           : 1.0,
-        pageHorizontalPadding: isTablet
+      pageHorizontalPadding: isTablet
           ? (isLandscape ? width * 0.06 : width * 0.08)
           : isCompactLandscape
           ? width * 0.045
           : isCompactPhone
           ? width * 0.06
           : width * 0.075,
-        horizontalPadding: isTablet
+      horizontalPadding: isTablet
           ? (isLandscape ? width * 0.045 : width * 0.055)
           : isCompactLandscape
           ? width * 0.04
           : isCompactPhone
           ? width * 0.06
           : width * 0.075,
-        backTop: isTablet
+      backTop: isTablet
           ? (isLandscape ? 18.0 : 36.0)
           : isCompactLandscape
           ? 10.0
           : isCompactPhone
           ? 18.0
           : 40.0,
-        backSize: isTablet
+      backSize: isTablet
           ? (isLandscape ? 30.0 : 34.0)
           : isCompactLandscape
           ? 24.0
           : isCompactPhone
           ? 28.0
           : 30.0,
-        titleTopGap: isTablet
-          ? (isLandscape ? AppDimensions.gap(context) * 0.9 : AppDimensions.margin(context) * 1.15)
+      titleTopGap: isTablet
+          ? (isLandscape
+                ? AppDimensions.gap(context) * 0.9
+                : AppDimensions.margin(context) * 1.15)
           : isCompactLandscape
           ? 12.0
           : isCompactPhone
           ? 22.0
           : 40.0,
-        contentVerticalPadding: isTablet
-          ? (isLandscape ? AppDimensions.gap(context) : AppDimensions.padding(context))
+      contentVerticalPadding: isTablet
+          ? (isLandscape
+                ? AppDimensions.gap(context)
+                : AppDimensions.padding(context))
           : isCompactLandscape
           ? 10.0
           : isCompactPhone
           ? 12.0
           : 20.0,
-        paragraphGap: isTablet
-          ? (isLandscape ? AppDimensions.gap(context) * 0.8 : AppDimensions.gap(context))
+      paragraphGap: isTablet
+          ? (isLandscape
+                ? AppDimensions.gap(context) * 0.8
+                : AppDimensions.gap(context))
           : isCompactLandscape
           ? 8.0
           : isCompactPhone
           ? 10.0
           : 12.0,
-        scrollBottomGap: isTablet
-          ? (isLandscape ? AppDimensions.gap(context) * 1.2 : AppDimensions.margin(context))
+      scrollBottomGap: isTablet
+          ? (isLandscape
+                ? AppDimensions.gap(context) * 1.2
+                : AppDimensions.margin(context))
           : isCompactLandscape
           ? 14.0
           : isCompactPhone
           ? 24.0
           : 50.0,
-        versionBottom: isTablet
-          ? (isLandscape ? AppDimensions.gap(context) : AppDimensions.padding(context))
+      versionBottom: isTablet
+          ? (isLandscape
+                ? AppDimensions.gap(context)
+                : AppDimensions.padding(context))
           : isCompactLandscape
           ? 10.0
           : isCompactPhone
           ? 16.0
           : 30.0,
-        titleSize: isTablet ? (isLandscape ? AppDimensions.title(context) * 0.95 : AppDimensions.title(context)) : 20.0,
-        bodySize: isTablet
-          ? (isLandscape ? AppDimensions.body(context) * 0.95 : AppDimensions.body(context))
+      titleSize: isTablet
+          ? (isLandscape
+                ? AppDimensions.title(context) * 0.95
+                : AppDimensions.title(context))
+          : 20.0,
+      bodySize: isTablet
+          ? (isLandscape
+                ? AppDimensions.body(context) * 0.95
+                : AppDimensions.body(context))
           : isCompactLandscape
           ? 13.0
           : isCompactPhone
           ? 14.0
           : 15.0,
-        versionSize: isTablet ? AppDimensions.caption(context) : 13.0,
+      versionSize: isTablet ? AppDimensions.caption(context) : 13.0,
     );
   }
 }

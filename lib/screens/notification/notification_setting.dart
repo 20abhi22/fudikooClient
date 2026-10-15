@@ -5,6 +5,7 @@ import 'package:fudikoclient/core/responsive/app_dimensions.dart';
 import 'package:fudikoclient/core/responsive/breakpoints.dart';
 import 'package:fudikoclient/service/notification/notification_service.dart';
 import 'package:fudikoclient/utils/constants.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class NotificationSettingsPage extends StatefulWidget {
   const NotificationSettingsPage({super.key});
@@ -71,14 +72,11 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
     setState(() => _isSaving = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          success
-              ? 'Notification settings saved.'
-              : 'Unable to save notification settings.',
-        ),
-      ),
+    showErrorSnack(
+      context,
+      success
+          ? 'Notification settings saved.'
+          : 'Unable to save notification settings.',
     );
 
     if (!success) await _loadNotificationSettings();
@@ -100,8 +98,8 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
                 return Stack(
                   children: [
-                    Align(  
-                      child:SingleChildScrollView(
+                    Align(
+                      child: SingleChildScrollView(
                         physics: const ClampingScrollPhysics(),
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
@@ -134,16 +132,21 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                                     ),
                                   ),
                                   SizedBox(height: metrics.headerGap),
-                                  _SettingsDivider(height: metrics.dividerHeight),
+                                  _SettingsDivider(
+                                    height: metrics.dividerHeight,
+                                  ),
                                   _buildSwitchRow(
                                     label: 'Get notified about new offers',
                                     value: _newOffers,
                                     metrics: metrics,
                                     onToggle: (value) => _updateSetting(
-                                      updateLocalState: () => _newOffers = value,
+                                      updateLocalState: () =>
+                                          _newOffers = value,
                                     ),
                                   ),
-                                  _SettingsDivider(height: metrics.dividerHeight),
+                                  _SettingsDivider(
+                                    height: metrics.dividerHeight,
+                                  ),
                                   _buildSwitchRow(
                                     label: 'Get notified about new Promotions',
                                     value: _newPromotions,
@@ -153,7 +156,9 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                                           _newPromotions = value,
                                     ),
                                   ),
-                                  _SettingsDivider(height: metrics.dividerHeight),
+                                  _SettingsDivider(
+                                    height: metrics.dividerHeight,
+                                  ),
                                   _buildSwitchRow(
                                     label: 'Reservation Reminders',
                                     value: _reservationReminders,
@@ -163,16 +168,21 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                                           _reservationReminders = value,
                                     ),
                                   ),
-                                  _SettingsDivider(height: metrics.dividerHeight),
+                                  _SettingsDivider(
+                                    height: metrics.dividerHeight,
+                                  ),
                                   _buildSwitchRow(
                                     label: 'Get notified the order status',
                                     value: _orderStatus,
                                     metrics: metrics,
                                     onToggle: (value) => _updateSetting(
-                                      updateLocalState: () => _orderStatus = value,
+                                      updateLocalState: () =>
+                                          _orderStatus = value,
                                     ),
                                   ),
-                                  _SettingsDivider(height: metrics.dividerHeight),
+                                  _SettingsDivider(
+                                    height: metrics.dividerHeight,
+                                  ),
                                   if (_errorMessage != null)
                                     Padding(
                                       padding: EdgeInsets.symmetric(
@@ -290,45 +300,55 @@ class _SettingsLayoutMetrics {
       contentWidthFactor: isTablet && isLandscape ? 0.82 : 1.0,
       horizontalPadding: isTablet
           ? width * 0.055
-        : isCompactLandscape
-        ? width * 0.045
-        : isCompactPhone
+          : isCompactLandscape
+          ? width * 0.045
+          : isCompactPhone
           ? width * 0.06
           : width * 0.075,
       backTop: isTablet
-        ? (isLandscape ? 18.0 : 26.0)
-        : isCompactLandscape
-        ? 10.0
-        : isCompactPhone
+          ? (isLandscape ? 18.0 : 26.0)
+          : isCompactLandscape
+          ? 10.0
+          : isCompactPhone
           ? 16.0
           : 20.0,
       backSize: isTablet
-        ? (isLandscape ? 30.0 : 32.0)
-        : isCompactLandscape
-        ? 24.0
-        : isCompactPhone
+          ? (isLandscape ? 30.0 : 32.0)
+          : isCompactLandscape
+          ? 24.0
+          : isCompactPhone
           ? 26.0
           : 28.0,
       headerGap: isTablet
-        ? (isLandscape ? AppDimensions.gap(context) * 1.5 : AppDimensions.margin(context) * 1.4)
-        : isCompactLandscape
-        ? 20.0
-        : isCompactPhone
+          ? (isLandscape
+                ? AppDimensions.gap(context) * 1.5
+                : AppDimensions.margin(context) * 1.4)
+          : isCompactLandscape
+          ? 20.0
+          : isCompactPhone
           ? 42.0
           : 60.0,
-      dividerHeight: isCompactLandscape ? 12.0 : isCompactPhone ? 16.0 : 20.0,
+      dividerHeight: isCompactLandscape
+          ? 12.0
+          : isCompactPhone
+          ? 16.0
+          : 20.0,
       rowVerticalPadding: isTablet
-        ? (isLandscape ? AppDimensions.gap(context) * 0.6 : AppDimensions.gap(context))
-        : isCompactLandscape
-        ? 6.0
-        : isCompactPhone
+          ? (isLandscape
+                ? AppDimensions.gap(context) * 0.6
+                : AppDimensions.gap(context))
+          : isCompactLandscape
+          ? 6.0
+          : isCompactPhone
           ? 8.0
           : 10.0,
       rowTextSize: isTablet
-        ? (isLandscape ? AppDimensions.caption(context) : AppDimensions.body(context))
-        : isCompactLandscape
-        ? 13.0
-        : isCompactPhone
+          ? (isLandscape
+                ? AppDimensions.caption(context)
+                : AppDimensions.body(context))
+          : isCompactLandscape
+          ? 13.0
+          : isCompactPhone
           ? 14.0
           : 15.0,
       errorTextSize: isTablet ? AppDimensions.caption(context) : 13.0,

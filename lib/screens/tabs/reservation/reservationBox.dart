@@ -8,14 +8,14 @@ import 'package:fudikoclient/utils/constants.dart';
 
 class ReservationBox extends StatelessWidget {
   final VoidCallback? onCancelTap;
-  const ReservationBox({super.key,this.onCancelTap});
+  const ReservationBox({super.key, this.onCancelTap});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding:  EdgeInsets.only(bottom: 20.h),
+      padding: EdgeInsets.only(bottom: 20.h),
       child: GestureDetector(
-        onTap: (){
+        onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const QrCoupon()),
@@ -35,7 +35,7 @@ class ReservationBox extends StatelessWidget {
             ],
           ),
           child: Padding(
-            padding:  EdgeInsets.all(20.w),
+            padding: EdgeInsets.all(20.w),
             child: Column(
               children: [
                 Row(
@@ -128,7 +128,11 @@ class ReservationBox extends StatelessWidget {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(Icons.calendar_month, color: appTextColor5, size: 18),
+                              Icon(
+                                Icons.calendar_month,
+                                color: appTextColor5,
+                                size: 18,
+                              ),
                               SizedBox(width: 5.w),
                               Flexible(
                                 child: RichText(
@@ -165,7 +169,7 @@ class ReservationBox extends StatelessWidget {
                                 color: appTextColor5,
                                 size: 18,
                               ),
-                                  SizedBox(width: 5.w),
+                              SizedBox(width: 5.w),
                               Flexible(
                                 child: RichText(
                                   text: TextSpan(
@@ -214,7 +218,6 @@ class ReservationBox extends StatelessWidget {
                                           color: appLinkColor,
                                         ),
                                       ),
-
                                     ],
                                   ),
                                 ),
@@ -259,10 +262,10 @@ class ReservationBox extends StatelessWidget {
                         color: Colors.red,
                       ),
                     ),
-                        SizedBox(width: 20.w),
+                    SizedBox(width: 20.w),
                     SizedBox(
                       width: 100.w,
-                      height:35.h,
+                      height: 35.h,
                       child: AppButton(
                         text: "Coupon",
 

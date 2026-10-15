@@ -12,15 +12,16 @@ import 'package:fudikoclient/service/inquery/banquet_reservation_service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class BanquetReservation extends StatefulWidget {
   const BanquetReservation({super.key});
 
   @override
-  State<BanquetReservation> createState() => _BanquetReservationState();
+  State<BanquetReservation> createState() => BanquetReservationState();
 }
 
-class _BanquetReservationState extends State<BanquetReservation> {
+class BanquetReservationState extends State<BanquetReservation> {
   bool isDeletePressed = false;
   bool isConfirmedPressed = false;
   bool isBookingCanceled = false;
@@ -113,6 +114,13 @@ class _BanquetReservationState extends State<BanquetReservation> {
     super.dispose();
   }
 
+  Future<void> refreshReservations() {
+    if (_isReservationSearchActive) {
+      return _searchReservations(_reservationSearchController.text);
+    }
+    return _fetchReservations();
+  }
+
   Future<void> _fetchReservations() async {
     setState(() {
       _isLoadingReservations = true;
@@ -166,12 +174,7 @@ class _BanquetReservationState extends State<BanquetReservation> {
       }
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isSuccess ? Colors.green : Colors.red,
-      ),
-    );
+    showStatusSnack(context, isSuccess, message);
 
     if (isSuccess) {
       await _fetchReservations();
@@ -260,91 +263,122 @@ class _BanquetReservationState extends State<BanquetReservation> {
     showDialog(
       context: context,
       builder: (dialogContext) {
+        final size = MediaQuery.sizeOf(dialogContext);
+        final isTablet = Breakpoints.isTabletDevice(size);
+        final isLandscape = size.width > size.height;
+        final isShortHeight = isLandscape && size.height <= 500;
+
+        final double width = isTablet
+            ? (isLandscape ? 480 : 520)
+            : isLandscape
+            ? size.width * 0.6
+            : size.width - 60;
+
         return Dialog(
           backgroundColor: Colors.white,
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: 24.w,
+            vertical: isShortHeight ? 12.h : 24.h,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.r),
           ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: AppText(
-                        text: "Reason for accepting another response",
-                        size: 15,
-                        fontWeight: FontWeight.w600,
-                        color: appTextColor3,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: width,
+              maxHeight: size.height * (isShortHeight ? 0.92 : 0.82),
+            ),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: 24.w,
+                vertical: isShortHeight ? 16.h : 24.h,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppText(
+                          text: "Reason for accepting another response",
+                          size: 15,
+                          fontWeight: FontWeight.w600,
+                          color: appTextColor3,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(dialogContext),
+                        child: Icon(
+                          Icons.close,
+                          size: 24,
+                          color: appTextColor3,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: isShortHeight ? 10.h : 18.h),
+                  TranslatedBuilder(
+                    text: "Type your reason",
+                    builder: (context, translatedHint) => TextField(
+                      controller: _acceptAnotherReasonController,
+                      maxLines: isShortHeight ? 2 : 4,
+                      decoration: InputDecoration(
+                        hintText: translatedHint,
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 14.w,
+                          vertical: 12.h,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(dialogContext),
-                      child: Icon(Icons.close, size: 24, color: appTextColor3),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 18.h),
-                TextField(
-                  controller: _acceptAnotherReasonController,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    hintText: "Type your reason",
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 14.w,
-                      vertical: 12.h,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.r),
-                      borderSide: BorderSide.none,
-                    ),
                   ),
-                ),
-                SizedBox(height: 20.h),
-                SizedBox(
-                  width: double.infinity,
-                  height: 40.h,
-                  child: AppButton(
-                    text: "Submit",
-                    bgColor1: appButtonColor,
-                    bgColor2: appButtonColor,
-                    size: 15,
-                    borderRadius: 10.r,
-                    onPressed: () {
-                      final reason = _acceptAnotherReasonController.text.trim();
-                      if (reason.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Please type a reason")),
-                        );
-                        return;
-                      }
+                  SizedBox(height: isShortHeight ? 12.h : 20.h),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 40.h,
+                    child: AppButton(
+                      text: "Submit",
+                      bgColor1: appButtonColor,
+                      bgColor2: appButtonColor,
+                      size: 15,
+                      borderRadius: 10.r,
+                      onPressed: () {
+                        final reason = _acceptAnotherReasonController.text
+                            .trim();
+                        if (reason.isEmpty) {
+                          showErrorSnack(context, "Please type a reason");
+                          return;
+                        }
 
-                      setState(() {
-                        selectedStatus = reason;
-                      });
-                      Navigator.pop(dialogContext);
-                    },
+                        setState(() {
+                          selectedStatus = reason;
+                        });
+                        Navigator.pop(dialogContext);
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
       },
     );
   }
+
   final List<String> _cancelReasons = const [
-  "I changed my mind",
-  "I need to reschedule the event",
-  "Entered the wrong details",
-  "I booked by mistake",
-  "Other Reasons",
-];
+    "I changed my mind",
+    "I need to reschedule the event",
+    "Entered the wrong details",
+    "I booked by mistake",
+    "Other Reasons",
+  ];
 
   Widget _responsiveDialog({required Widget child}) {
     final size = MediaQuery.sizeOf(context);
@@ -573,6 +607,7 @@ class _BanquetReservationState extends State<BanquetReservation> {
                         });
                       },
                       onRequestTap: () => _openPartyRequest(booking),
+                      onCouponClosed: refreshReservations,
                     );
                   },
                 ),
@@ -626,94 +661,52 @@ class _BanquetReservationState extends State<BanquetReservation> {
   void _showFilterBottomSheet() {
     final metrics = _BanquetReservationMetrics.fromContext(context);
 
-    // showModalBottomSheet(
-    //   backgroundColor: Colors.white,
-    //   context: context,
-    //   isScrollControlled: true,
-    //   shape: RoundedRectangleBorder(
-    //     borderRadius: BorderRadius.vertical(
-    //       top: Radius.circular(metrics.sheetTopRadius),
-    //     ),
-    //   ),
-    //
-    final size = MediaQuery.sizeOf(context);
-    final isTablet = Breakpoints.isTabletDevice(size);
-    final isLandscape = size.width > size.height;
-
-    // showModalBottomSheet(
-    //   context: context,
-    //   backgroundColor: Colors.white,
-    //   isScrollControlled: true,
-    //   useSafeArea: true,
-
-    //   constraints: isTablet
-    //       ? BoxConstraints(maxWidth: isLandscape ? 360 : 420)
-    //       : null,
-
-    //   shape: RoundedRectangleBorder(
-    //     borderRadius: BorderRadius.vertical(
-    //       top: Radius.circular(metrics.sheetTopRadius),
-    //     ),
-    //   ),
     showModalBottomSheet(
-  context: context,
-  backgroundColor: Colors.white,
-  useSafeArea: true,
-  shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.vertical(
-      top: Radius.circular(metrics.sheetTopRadius),
-    ),
-  ),
-
-      builder: (_) {
-        return SafeArea(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              12,
-              20,
-              MediaQuery.of(context).viewInsets.bottom + 20,
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: metrics.sheetHandleWidth,
-                    height: metrics.sheetHandleHeight,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(
-                        metrics.sheetHandleRadius,
-                      ),
-                    ),
+      backgroundColor: Colors.white,
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(metrics.sheetTopRadius),
+        ),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.all(metrics.sheetPadding),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: metrics.sheetHandleWidth,
+                height: metrics.sheetHandleHeight,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(
+                    metrics.sheetHandleRadius,
                   ),
-
-                  SizedBox(height: metrics.sheetGap),
-
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(
-                        metrics.sheetContainerRadius,
-                      ),
-                    ),
-                    padding: EdgeInsets.all(metrics.sheetContainerPadding),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _buildFilterOption("All Bookings"),
-                        Divider(height: 1),
-                        _buildFilterOption("Confirmed"),
-                        Divider(height: 1),
-                        _buildFilterOption("Cancelled"),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              SizedBox(height: metrics.sheetGap),
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(
+                    metrics.sheetContainerRadius,
+                  ),
+                ),
+                padding: EdgeInsets.all(metrics.sheetContainerPadding),
+                child: Column(
+                  children: [
+                    _buildFilterOption("All Bookings"),
+                    Divider(color: Colors.grey[200]),
+                    _buildFilterOption("Confirmed"),
+                    Divider(color: Colors.grey[200]),
+                    _buildFilterOption("Cancelled"),
+                  ],
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -721,182 +714,167 @@ class _BanquetReservationState extends State<BanquetReservation> {
   }
 
   Widget _buildCancelHeader() {
-  return Row(
-    children: [
-      const Spacer(),
-      AppText(
-        text: "Reason for Cancel",
-        size: 14,
-        fontWeight: FontWeight.w500,
-        color: menuIconColor,
-        isCentered: true,
-      ),
-      const Spacer(),
-      GestureDetector(
-        onTap: _isCancellingReservation
-            ? null
-            : () {
-                setState(() {
-                  isSearchDeletePressed = false;
-                  _selectedReservationId = '';
-                });
-              },
-        child: Icon(
-          Icons.close,
-          size: 25,
-          color: appTextColor3,
+    return Row(
+      children: [
+        const Spacer(),
+        AppText(
+          text: "Reason for Cancel",
+          size: 14,
+          fontWeight: FontWeight.w500,
+          color: menuIconColor,
+          isCentered: true,
         ),
-      ),
-    ],
-  );
-}
-
-Widget _deleteSearchBox() {
-  return Stack(
-    children: [
-      Positioned.fill(
-        child: Container(
-          color: Colors.black.withOpacity(.5),
+        const Spacer(),
+        GestureDetector(
+          onTap: _isCancellingReservation
+              ? null
+              : () {
+                  setState(() {
+                    isSearchDeletePressed = false;
+                    _selectedReservationId = '';
+                  });
+                },
+          child: Icon(Icons.close, size: 25, color: appTextColor3),
         ),
-      ),
+      ],
+    );
+  }
 
-      Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: _responsiveDialog(
-            child: Container(
-              width: double.infinity,
+  Widget _deleteSearchBox() {
+    return Stack(
+      children: [
+        Positioned.fill(child: Container(color: Colors.black.withOpacity(.5))),
 
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * .80,
-              ),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: _responsiveDialog(
+              child: Container(
+                width: double.infinity,
 
-              padding: const EdgeInsets.symmetric(
-                horizontal: 28,
-                vertical: 24,
-              ),
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * .80,
+                ),
 
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(.22),
-                    blurRadius: 32,
-                    spreadRadius: 4,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-              ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 28,
+                  vertical: 24,
+                ),
 
-              child: Column(
-                children: [
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(.22),
+                      blurRadius: 32,
+                      spreadRadius: 4,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
+                ),
 
-                  _buildCancelHeader(),
+                child: Column(
+                  children: [
+                    _buildCancelHeader(),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final size = MediaQuery.sizeOf(context);
+                                final isLandscape = size.width > size.height;
 
-                          LayoutBuilder(
-                            builder: (context, constraints) {
+                                return GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
 
-                              final size = MediaQuery.sizeOf(context);
-                              final isLandscape =
-                                  size.width > size.height;
+                                  itemCount: _cancelReasons.length,
 
-                              return GridView.builder(
-                                shrinkWrap: true,
-                                physics:
-                                    const NeverScrollableScrollPhysics(),
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: isLandscape ? 3 : 1,
 
-                                itemCount: _cancelReasons.length,
+                                        crossAxisSpacing: 16,
+                                        mainAxisSpacing: 16,
+                                        mainAxisExtent: 48,
+                                      ),
 
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount:
-                                      isLandscape ? 3 : 1,
+                                  itemBuilder: (_, index) =>
+                                      buildStatusButton(_cancelReasons[index]),
+                                );
+                              },
+                            ),
 
-                                  crossAxisSpacing: 16,
-                                  mainAxisSpacing: 16,
-                                  mainAxisExtent: 48,
-                                ),
+                            const SizedBox(height: 28),
 
-                                itemBuilder: (_, index) =>
-                                    buildStatusButton(
-                                        _cancelReasons[index]),
-                              );
-                            },
-                          ),
+                            AppText(
+                              text:
+                                  "Canceling a confirmed booking may negatively impact your reliability rating.",
+                              size: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                              isCentered: true,
+                            ),
 
-                          const SizedBox(height: 28),
+                            const SizedBox(height: 12),
 
-                          AppText(
-                            text:
-                                "Canceling a confirmed booking may negatively impact your reliability rating.",
-                            size: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
-                            isCentered: true,
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          AppText(
-                            text:
-                                "However, if you accept another response instead, the previous booking will be automatically replaced without affecting your rating.",
-                            size: 13,
-                            fontWeight: FontWeight.w400,
-                            color: appTextColor2,
-                            isCentered: true,
-                          ),
-                        ],
+                            AppText(
+                              text:
+                                  "However, if you accept another response instead, the previous booking will be automatically replaced without affecting your rating.",
+                              size: 13,
+                              fontWeight: FontWeight.w400,
+                              color: appTextColor2,
+                              isCentered: true,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  GestureDetector(
-                    onTap: _showAcceptAnotherReasonPopup,
-                    child: AppText(
-                      text: "Accept another response",
-                      size: 15,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xFF3954DB),
-                      isCentered: true,
+                    GestureDetector(
+                      onTap: _showAcceptAnotherReasonPopup,
+                      child: AppText(
+                        text: "Accept another response",
+                        size: 15,
+                        fontWeight: FontWeight.w400,
+                        color: const Color(0xFF3954DB),
+                        isCentered: true,
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  SizedBox(
-                    width: 160,
-                    height: 44,
-                    child: AppButton(
-                      text: _isCancellingReservation
-                          ? "Cancelling..."
-                          : "Cancel",
-                      bgColor1: const Color(0xFFCE3F3F),
-                      bgColor2: const Color(0xFFCE3F3F),
-                      borderRadius: 10,
-                      onPressed: _isCancellingReservation
-                          ? null
-                          : _cancelSelectedReservation,
+                    SizedBox(
+                      width: 160,
+                      height: 44,
+                      child: AppButton(
+                        text: _isCancellingReservation
+                            ? "Cancelling..."
+                            : "Cancel",
+                        bgColor1: const Color(0xFFCE3F3F),
+                        bgColor2: const Color(0xFFCE3F3F),
+                        borderRadius: 10,
+                        onPressed: _isCancellingReservation
+                            ? null
+                            : _cancelSelectedReservation,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
   Widget buildStatusButton(String text) {
     final bool isSelected = selectedStatus == text;
@@ -1517,6 +1495,10 @@ Widget _deleteSearchBox() {
         : 'Request details';
     final menuItems = reservation?.menuItems.trim().isNotEmpty == true
         ? reservation!.menuItems
+              .split(RegExp(r'[,\n]'))
+              .map((item) => item.trim())
+              .where((item) => item.isNotEmpty)
+              .join(', ')
         : 'No menu details available';
     final persons = reservation == null
         ? 'No person count available'
@@ -1621,6 +1603,7 @@ Widget _deleteSearchBox() {
                               iconPath: menuIcon,
                               title: "Your Menu",
                               value: menuItems,
+                              maxLines: 20,
                             ),
                           ),
                           SizedBox(width: 24.w),
@@ -1669,6 +1652,7 @@ Widget _deleteSearchBox() {
                         iconPath: menuIcon,
                         title: "Your Menu",
                         value: menuItems,
+                        maxLines: 20,
                       ),
 
                       SizedBox(height: 20.h),
@@ -1718,6 +1702,7 @@ Widget _deleteSearchBox() {
     required String iconPath,
     required String title,
     required String value,
+    int? maxLines,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1746,6 +1731,7 @@ Widget _deleteSearchBox() {
                 fontWeight: FontWeight.w500,
                 color: appTextColor2,
                 lineSpacing: 1.5,
+                maxLines: maxLines,
               ),
             ],
           ),
@@ -1900,18 +1886,18 @@ class _BanquetReservationMetrics {
 
         // Bottom Sheet
         sheetTopRadius: s(28),
-        sheetPadding: s(18),
-        sheetHandleWidth: s(42),
-        sheetHandleHeight: s(4),
+        sheetPadding: s(36),
+        sheetHandleWidth: s(48),
+        sheetHandleHeight: s(5),
         sheetHandleRadius: s(10),
-        sheetGap: v(10),
-        sheetContainerRadius: s(18),
-        sheetContainerPadding: s(10),
+        sheetGap: v(18),
+        sheetContainerRadius: s(22),
+        sheetContainerPadding: s(20),
 
-        filterOptionVerticalPadding: v(10),
+        filterOptionVerticalPadding: v(14),
         filterOptionHorizontalPadding: s(10),
-        filterOptionRadius: s(8),
-        filterOptionTextSize: 15,
+        filterOptionRadius: s(10),
+        filterOptionTextSize: 16,
       );
     }
 
@@ -1941,19 +1927,19 @@ class _BanquetReservationMetrics {
         retryButtonTextSize: 12,
         retryButtonRadius: 9,
 
-        sheetTopRadius: 20,
-        sheetPadding: 18,
-        sheetHandleWidth: 36,
-        sheetHandleHeight: 4,
-        sheetHandleRadius: 8,
-        sheetGap: 8,
-        sheetContainerRadius: 16,
-        sheetContainerPadding: 10,
+        sheetTopRadius: 24,
+        sheetPadding: 26,
+        sheetHandleWidth: 40,
+        sheetHandleHeight: 5,
+        sheetHandleRadius: 10,
+        sheetGap: 14,
+        sheetContainerRadius: 18,
+        sheetContainerPadding: 15,
 
-        filterOptionVerticalPadding: 9,
+        filterOptionVerticalPadding: 11,
         filterOptionHorizontalPadding: 8,
-        filterOptionRadius: 8,
-        filterOptionTextSize: 12,
+        filterOptionRadius: 9,
+        filterOptionTextSize: 13,
       );
     }
 
@@ -1987,19 +1973,19 @@ class _BanquetReservationMetrics {
         retryButtonTextSize: s(12),
         retryButtonRadius: s(9),
 
-        sheetTopRadius: s(20),
-        sheetPadding: s(18),
-        sheetHandleWidth: s(34),
+        sheetTopRadius: s(22),
+        sheetPadding: s(22),
+        sheetHandleWidth: s(38),
         sheetHandleHeight: s(4),
-        sheetHandleRadius: s(8),
-        sheetGap: s(8),
-        sheetContainerRadius: s(16),
-        sheetContainerPadding: s(10),
+        sheetHandleRadius: s(9),
+        sheetGap: s(13),
+        sheetContainerRadius: s(18),
+        sheetContainerPadding: s(14),
 
-        filterOptionVerticalPadding: s(9),
+        filterOptionVerticalPadding: s(10),
         filterOptionHorizontalPadding: s(8),
-        filterOptionRadius: s(8),
-        filterOptionTextSize: s(12),
+        filterOptionRadius: s(9),
+        filterOptionTextSize: s(13),
       );
     }
 
@@ -2014,10 +2000,10 @@ class _BanquetReservationMetrics {
 
       sectionGap: 20,
 
-      filterWidth: 150,
-      filterHeight: 30,
-      filterIconSize: 18,
-      filterTextSize: 10,
+      filterWidth: 150.w,
+      filterHeight: 30.h,
+      filterIconSize: 18.sp,
+      filterTextSize: 10.sp,
 
       stateVerticalPadding: 60,
       stateTextSize: 15,
@@ -2028,19 +2014,19 @@ class _BanquetReservationMetrics {
       retryButtonTextSize: 14,
       retryButtonRadius: 10,
 
-      sheetTopRadius: 24,
-      sheetPadding: 20,
-      sheetHandleWidth: 38,
-      sheetHandleHeight: 4,
-      sheetHandleRadius: 8,
-      sheetGap: 10,
-      sheetContainerRadius: 18,
-      sheetContainerPadding: 10,
+      sheetTopRadius: 25.r,
+      sheetPadding: 30.w,
+      sheetHandleWidth: 40.w,
+      sheetHandleHeight: 5.h,
+      sheetHandleRadius: 10.r,
+      sheetGap: 16.h,
+      sheetContainerRadius: 20.r,
+      sheetContainerPadding: 16.w,
 
-      filterOptionVerticalPadding: 10,
-      filterOptionHorizontalPadding: 8,
-      filterOptionRadius: 8,
-      filterOptionTextSize: 14,
+      filterOptionVerticalPadding: 12.h,
+      filterOptionHorizontalPadding: 8.w,
+      filterOptionRadius: 10,
+      filterOptionTextSize: 15,
     );
   }
 }

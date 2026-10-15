@@ -9,13 +9,14 @@ import 'package:fudikoclient/model/inquery/response_model.dart';
 import 'package:fudikoclient/service/inquery/inquery-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:intl/intl.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class CtResponseBox extends StatefulWidget {
   final ResponseModel response;
   final VoidCallback onCancelTap;
   final VoidCallback onAcceptTap;
   final VoidCallback viewRequestClick;
-  const  CtResponseBox({
+  const CtResponseBox({
     super.key,
     required this.response,
     required this.onCancelTap,
@@ -116,18 +117,13 @@ class _CtResponseBoxState extends State<CtResponseBox> {
 
     if (!context.mounted || !mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          result['status'] == true
-              ? (result['message']?.toString() ??
-                    'Enquiry response declined successfully')
-              : (result['message']?.toString() ?? 'Something went wrong'),
-          style: const TextStyle(color: Colors.white),
-        ),
-        backgroundColor: result['status'] == true ? Colors.green : Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
+    showStatusSnack(
+      context,
+      result['status'] == true,
+      result['status'] == true
+          ? (result['message']?.toString() ??
+                'Enquiry response declined successfully')
+          : (result['message']?.toString() ?? 'Something went wrong'),
     );
 
     if (result['status'] == true) {

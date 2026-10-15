@@ -6,6 +6,7 @@ class RestaurantFilterRequest {
   final double? searchRadiusKm;
   final String? type;
   final int? offerPercentage;
+  final int? startPercentage;
   final DateTime? dateTime;
 
   const RestaurantFilterRequest({
@@ -14,6 +15,7 @@ class RestaurantFilterRequest {
     this.searchRadiusKm,
     this.type,
     this.offerPercentage,
+    this.startPercentage,
     this.dateTime,
   });
 
@@ -28,6 +30,8 @@ class RestaurantFilterRequest {
       if (type != null && type!.trim().isNotEmpty) 'type': type!.trim(),
       if (offerPercentage != null)
         'offer_percentage': offerPercentage.toString(),
+      if (startPercentage != null)
+        'start_percentage': startPercentage.toString(),
       if (selectedDateTime != null) 'date': _formatDate(selectedDateTime),
       if (selectedDateTime != null) 'time': _formatTime(selectedDateTime),
     });

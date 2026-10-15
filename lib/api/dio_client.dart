@@ -1,30 +1,62 @@
+
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
+import 'package:fudikoclient/api/api_config.dart';
+import 'package:fudikoclient/api/retry_interceptor.dart';
+import 'package:fudikoclient/utils/tokens.dart';
 
 class DioClient {
-  static final Dio dio = Dio(
-    BaseOptions(
-      baseUrl: 'https://fudikko.bitwissenddev.in/api',
-      connectTimeout: const Duration(seconds: 60),
-      receiveTimeout: const Duration(seconds: 60),
-      headers: {'Accept': 'application/json'},
-    ),
-  );
+  static final Dio dio = _createDio();
 
-static void addInterceptor() {
-    dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          final prefs = await SharedPreferences.getInstance();
-          final token = prefs.getString("auth_token");
-
-          if (token != null) {
-            options.headers["Authorization"] = "Bearer $token";
-          }
-
-          return handler.next(options);
-        },
+  static Dio _createDio() {
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: ApiConfig.baseUrl,
+        // Fail fast when the server (or the network) is unreachable, but stay
+        // patient once a request is actually in flight — image/PDF uploads
+        // legitimately take a while.
+        connectTimeout: const Duration(seconds: 20),
+        sendTimeout: const Duration(minutes: 2),
+        receiveTimeout: const Duration(minutes: 2),
+        headers: {'Accept': 'application/json'},
       ),
     );
+
+    dio.interceptors.addAll([
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          try {
+            final token = await getToken();
+            if (token != null && token.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
+          } catch (_) {}
+          handler.next(options);
+        },
+        onError: (DioException err, handler) async {
+          if (err.response?.statusCode == 401) {
+            try {
+              await removeToken();
+            } catch (_) {}
+          }
+          handler.next(err);
+        },
+      ),
+      RetryOnReconnectInterceptor(),
+    ]);
+
+    // Request logging includes the bearer token and response bodies, so it is
+    // limited to debug builds.
+    if (kDebugMode) {
+      dio.interceptors.add(
+        LogInterceptor(requestBody: true, responseBody: true, requestHeader: true),
+      );
+    }
+
+    return dio;
   }
+
+  /// Kept for call sites in `main()`; the interceptors are now installed when
+  /// [dio] is first created.
+  static void addInterceptor() {}
 }

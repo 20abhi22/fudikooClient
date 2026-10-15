@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/apptext.dart';
@@ -12,7 +14,9 @@ import 'package:fudikoclient/screens/auth/otp.dart';
 import 'package:fudikoclient/screens/auth/register.dart';
 import 'package:fudikoclient/screens/home/homepage.dart';
 import 'package:fudikoclient/service/auth/login-service.dart';
+import 'package:fudikoclient/service/notification/device_token_service.dart';
 import 'package:fudikoclient/utils/constants.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 import 'package:fudikoclient/utils/tokens.dart';
 
 class Login extends StatefulWidget {
@@ -44,30 +48,14 @@ class _LoginState extends State<Login> {
     if (email.isEmpty || password.isEmpty) {
       if (!mounted) return;
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: AppText(
-            text: 'Please fill out all fields',
-            size: 13,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-      );
+      showErrorSnack(context, 'Please fill out all fields');
       return;
     }
 
     if (password.length < 6) {
       if (!mounted) return;
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: AppText(
-            text: 'Password must be at least 6 characters long',
-            size: 13,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-      );
+      showErrorSnack(context, 'Password must be at least 6 characters long');
       return;
     }
 
@@ -80,15 +68,7 @@ class _LoginState extends State<Login> {
     if (response.status) {
       final token = response.token;
       if (token == null || token.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: AppText(
-              text: 'Login failed: missing access token',
-              size: 13,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        );
+        showErrorSnack(context, 'We could not sign you in. Please try again.');
         return;
       }
 
@@ -115,6 +95,10 @@ class _LoginState extends State<Login> {
       }
 
       await saveToken(token);
+      await clearCachedLocation();
+      // Not awaited: push-permission/registration failures must never block
+      // navigation into the app.
+      unawaited(DeviceTokenService().registerDeviceToken());
       if (!mounted) return;
 
       slideRightWidget(
@@ -125,15 +109,7 @@ class _LoginState extends State<Login> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: AppText(
-          text: response.message,
-          size: 13,
-          fontWeight: FontWeight.w400,
-        ),
-      ),
-    );
+    showErrorSnack(context, response.message);
   }
 
   @override

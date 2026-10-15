@@ -63,9 +63,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 final width = constraints.maxWidth;
                 final height = constraints.maxHeight;
                 final isCompactPhone = width < 390 || height < 640;
-final size = MediaQuery.sizeOf(context);
+                final size = MediaQuery.sizeOf(context);
 
-final isTablet = Breakpoints.isTabletDevice(size);
+                final isTablet = Breakpoints.isTabletDevice(size);
                 final isDesktop = Breakpoints.isDesktop(width);
                 final horizontalPadding = isDesktop
                     ? width * 0.14
@@ -290,10 +290,7 @@ class _NotificationPoster extends StatelessWidget {
 }
 
 class _NotificationItem {
-  const _NotificationItem({
-    required this.label,
-    required this.imagePath,
-  });
+  const _NotificationItem({required this.label, required this.imagePath});
 
   final String label;
   final String imagePath;

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/core/responsive/app_dimensions.dart';
 import 'package:fudikoclient/core/responsive/breakpoints.dart';
-import 'package:fudikoclient/routetransitions.dart';
 import 'package:fudikoclient/screens/home/homepage.dart';
 import 'package:fudikoclient/utils/constants.dart';
 
@@ -17,7 +16,7 @@ class AppSearchBar extends StatefulWidget {
     this.searchController,
     this.searchHintText = 'Search',
     this.isLocationLoading = false,
-  }); 
+  });
 
   final String city;
   final VoidCallback? onLocationTap;
@@ -137,6 +136,26 @@ class _AppSearchBarState extends State<AppSearchBar> {
     }
 
     setState(() => _searchDragOffset = 0);
+  }
+
+  /// Default back action: leave the current tab shell and land on the root
+  /// [HomePage].
+  ///
+  /// Pushing a HomePage onto the nearest navigator instead would mount it
+  /// *inside* the shell, so the shell's bottom nav stayed on screen over the
+  /// home screen — and any later stack reset (logout, language change) would
+  /// then rebuild around that same shell.
+  void _returnToRootHome() {
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    if (rootNavigator.canPop()) {
+      rootNavigator.pop();
+      return;
+    }
+
+    rootNavigator.pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const HomePage()),
+      (route) => false,
+    );
   }
 
   @override
@@ -334,11 +353,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
                         child: GestureDetector(
                           onTap: _isSearching
                               ? null
-                              : widget.onBackTap ??
-                                    () => slideLeftWidget(
-                                      newPage: HomePage(),
-                                      context: context,
-                                    ),
+                              : widget.onBackTap ?? _returnToRootHome,
                           child: Image.asset(
                             backOrange,
                             width: metrics.backIconSize,
@@ -431,24 +446,33 @@ class _DefaultModeContent extends StatelessWidget {
                     Flexible(
                       child: LayoutBuilder(
                         builder: (context, constraints) {
-                          final adjustedSize = _resolveCityFontSize(
-                            city: city,
-                            baseSize: cityTextSize,
-                            maxWidth: constraints.maxWidth,
-                          );
+                          return TranslatedBuilder(
+                            text: city,
+                            builder: (context, translatedCity) {
+                              // Sized off the translated string: a longer
+                              // rendering needs its own fit pass.
+                              final adjustedSize = _resolveCityFontSize(
+                                city: translatedCity,
+                                baseSize: cityTextSize,
+                                maxWidth: constraints.maxWidth,
+                              );
 
-                          return Text(
-                            city,
-                            maxLines: 2,
-                            softWrap: true,
-                            textAlign: TextAlign.center,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: adjustedSize,
-                              fontWeight: FontWeight.w400,
-                              color: locationTextColor.withValues(alpha: 0.7),
-                              height: 1.0,
-                            ),
+                              return Text(
+                                translatedCity,
+                                maxLines: 2,
+                                softWrap: true,
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: adjustedSize,
+                                  fontWeight: FontWeight.w400,
+                                  color: locationTextColor.withValues(
+                                    alpha: 0.7,
+                                  ),
+                                  height: 1.0,
+                                ),
+                              );
+                            },
                           );
                         },
                       ),
@@ -523,24 +547,27 @@ class _SearchModeContent extends StatelessWidget {
       children: [
         SizedBox(width: sideMinWidth + 8),
         Expanded(
-          child: TextField(
-            controller: controller,
-            focusNode: focusNode,
-            textInputAction: TextInputAction.search,
-            onSubmitted: onSubmitted,
-            decoration: InputDecoration(
-              hintText: hintText,
-              border: InputBorder.none,
-              isCollapsed: true,
-              hintStyle: TextStyle(
-                color: locationTextColor.withValues(alpha: 0.55),
-                fontSize: textSize,
+          child: TranslatedBuilder(
+            text: hintText,
+            builder: (context, translatedHint) => TextField(
+              controller: controller,
+              focusNode: focusNode,
+              textInputAction: TextInputAction.search,
+              onSubmitted: onSubmitted,
+              decoration: InputDecoration(
+                hintText: translatedHint,
+                border: InputBorder.none,
+                isCollapsed: true,
+                hintStyle: TextStyle(
+                  color: locationTextColor.withValues(alpha: 0.55),
+                  fontSize: textSize,
+                ),
               ),
-            ),
-            style: TextStyle(
-              color: locationTextColor,
-              fontSize: textSize,
-              fontWeight: FontWeight.w400,
+              style: TextStyle(
+                color: locationTextColor,
+                fontSize: textSize,
+                fontWeight: FontWeight.w400,
+              ),
             ),
           ),
         ),

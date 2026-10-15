@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/api/dio_client.dart';
 import 'package:fudikoclient/components/apptext.dart';
+import 'package:fudikoclient/components/error_state.dart';
 import 'package:fudikoclient/core/responsive/breakpoints.dart';
 import 'package:fudikoclient/model/menu/menu_model.dart';
 import 'package:fudikoclient/screens/tabs/profile/menucard.dart';
@@ -21,6 +22,7 @@ class _MenuState extends State<Menu> {
   String selectedStatus = "PDF Menu";
   String _previousStatus = "PDF Menu";
   bool isLoading = true;
+  String _loadError = '';
   List<MenuPdfModel> pdfList = [];
   List<MenuItemModel> menuItems = [];
 
@@ -31,12 +33,20 @@ class _MenuState extends State<Menu> {
   }
 
   Future<void> _fetchMenu() async {
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+        _loadError = '';
+      });
+    }
+
     final response = await MenuService().getMenu(widget.restaurantId);
     if (!mounted) return;
     setState(() {
       pdfList = response.pdfs;
       menuItems = response.individualMenu;
       isLoading = false;
+      _loadError = response.status ? '' : response.message;
     });
   }
 
@@ -49,6 +59,8 @@ class _MenuState extends State<Menu> {
         backgroundColor: appSecondaryBackgroundColor,
         body: isLoading
             ? const Center(child: CircularProgressIndicator())
+            : _loadError.isNotEmpty
+            ? ErrorStateView(message: _loadError, onRetry: _fetchMenu)
             : Center(
                 child: SizedBox(
                   width: metrics.contentWidth,
@@ -429,7 +441,9 @@ class _MenuMetrics {
 
   factory _MenuMetrics.fromContext(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final isTablet = Breakpoints.isTablet(size.width);
+    final isTablet = Breakpoints.isTabletDevice(size);
+    final isWideShortPhone =
+        !isTablet && size.width >= 500 && size.height <= 760;
     final isCompactPhone = size.width < 390 || size.height < 700;
 
     if (isTablet) {
@@ -459,6 +473,37 @@ class _MenuMetrics {
         pdfShadowOffset: s(4),
         pdfIconSize: s(50),
         pdfTextSize: s(16),
+      );
+    }
+
+    if (isWideShortPhone) {
+      // Cap content width so PDF/menu cards don't stretch edge-to-edge
+      // across the wide landscape viewport, and tighten vertical chrome
+      // since height is the constrained dimension here.
+      final contentWidth = (size.width * 0.72).clamp(380.0, 620.0).toDouble();
+
+      return _MenuMetrics(
+        contentWidth: contentWidth,
+        headerHorizontalPadding: 24,
+        headerVerticalPadding: 14,
+        headerBottomGap: 14,
+        tabGap: 10,
+        tabHeight: 34,
+        tabRadius: 10,
+        tabTextSize: 12.5,
+        tabShadowBlur: 5,
+        tabShadowOffset: 1.5,
+        listHorizontalPadding: 24,
+        listBottomPadding: 16,
+        emptyTextSize: 12.5,
+        pdfGap: 8,
+        pdfBoxHeight: 56,
+        pdfBoxPadding: 12,
+        pdfBoxRadius: 16,
+        pdfShadowBlur: 7,
+        pdfShadowOffset: 2.5,
+        pdfIconSize: 32,
+        pdfTextSize: 12.5,
       );
     }
 

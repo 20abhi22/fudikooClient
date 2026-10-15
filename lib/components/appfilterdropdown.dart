@@ -44,11 +44,13 @@ class _AppFilterDropDownState extends State<AppFilterDropDown> {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         GestureDetector(
           onTap: widget.toggleDropdown,
           child: Container(
             height: height,
+            padding: EdgeInsets.symmetric(horizontal: metrics.sideInset),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(metrics.radius),
@@ -61,51 +63,44 @@ class _AppFilterDropDownState extends State<AppFilterDropDown> {
                 ),
               ],
             ),
-            child: Stack(
-              alignment: Alignment.center,
+            // Row + mainAxisSize.min instead of Stack/Positioned/Center:
+            // the old layout absolutely positioned the icon/arrow and
+            // centered the text, which only works when the container is
+            // given a fixed width from outside. This sizes the whole pill
+            // to whatever text is actually selected.
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                if (widget.imageIconPath != null || widget.icon != null)
-                  Positioned(
-                    left: metrics.sideInset,
-                    child: widget.imageIconPath != null
-                        ? Image.asset(
-                            widget.imageIconPath!,
-                            width: iconSize,
-                            fit: BoxFit.cover,
-                            height: iconSize,
-                          )
-                        : Icon(
-                            widget.icon,
-                            size: iconSize,
-                            color: Colors.black87,
-                          ),
-                  ),
-
-                Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: metrics.centerHorizontalPadding,
-                    ),
-                    child: AppText(
-                      text: selectedValue ?? widget.hint,
-                      size: textSize,
-                      color: widget.textColor ?? Colors.black87,
-                      fontWeight: FontWeight.w500,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                if (widget.imageIconPath != null || widget.icon != null) ...[
+                  widget.imageIconPath != null
+                      ? Image.asset(
+                          widget.imageIconPath!,
+                          width: iconSize,
+                          fit: BoxFit.cover,
+                          height: iconSize,
+                        )
+                      : Icon(
+                          widget.icon,
+                          size: iconSize,
+                          color: Colors.black87,
+                        ),
+                  SizedBox(width: metrics.sideInset),
+                ],
+                Flexible(
+                  child: AppText(
+                    text: selectedValue ?? widget.hint,
+                    size: textSize,
+                    color: widget.textColor ?? Colors.black87,
+                    fontWeight: FontWeight.w500,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-
-                Positioned(
-                  right: metrics.sideInset,
-                  child: Icon(
-                    isOpen
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    size: metrics.arrowSize,
-                    color: Colors.black87,
-                  ),
+                SizedBox(width: metrics.sideInset),
+                Icon(
+                  isOpen ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  size: metrics.arrowSize,
+                  color: Colors.black87,
                 ),
               ],
             ),
@@ -123,7 +118,6 @@ class _AppFilterDropDownMetrics {
     required this.shadowBlur,
     required this.shadowSpread,
     required this.sideInset,
-    required this.centerHorizontalPadding,
     required this.iconSize,
     required this.arrowSize,
     required this.textSize,
@@ -134,77 +128,70 @@ class _AppFilterDropDownMetrics {
   final double shadowBlur;
   final double shadowSpread;
   final double sideInset;
-  final double centerHorizontalPadding;
   final double iconSize;
   final double arrowSize;
   final double textSize;
 
   factory _AppFilterDropDownMetrics.fromContext(BuildContext context) {
-  final size = MediaQuery.sizeOf(context);
+    final size = MediaQuery.sizeOf(context);
 
-  // Device classification should use shortestSide, not width.
-  final isTablet = Breakpoints.isTabletDevice(size);
+    // Device classification should use shortestSide, not width.
+    final isTablet = Breakpoints.isTabletDevice(size);
 
-  final isCompactPhone = size.width < 390 || size.height < 700;
+    final isCompactPhone = size.width < 390 || size.height < 700;
 
-  // Short landscape phones (e.g. 844×390)
-  final isShortLandscape =
-      !isTablet &&
-      size.width > size.height &&
-      size.height < 450;
+    // Short landscape phones (e.g. 844×390)
+    final isShortLandscape =
+        !isTablet && size.width > size.height && size.height < 450;
 
-  if (isTablet) {
-    return const _AppFilterDropDownMetrics(
-      height: 52,
-      radius: 12,
-      shadowBlur: 12,
+    if (isTablet) {
+      return const _AppFilterDropDownMetrics(
+        height: 52,
+        radius: 12,
+        shadowBlur: 12,
+        shadowSpread: 2,
+        sideInset: 16,
+        iconSize: 22,
+        arrowSize: 28,
+        textSize: 16,
+      );
+    }
+
+    if (isShortLandscape) {
+      return const _AppFilterDropDownMetrics(
+        height: 36,
+        radius: 9,
+        shadowBlur: 8,
+        shadowSpread: 1,
+        sideInset: 10,
+        iconSize: 16,
+        arrowSize: 20,
+        textSize: 12,
+      );
+    }
+
+    if (isCompactPhone) {
+      return const _AppFilterDropDownMetrics(
+        height: 38,
+        radius: 9,
+        shadowBlur: 8,
+        shadowSpread: 1.5,
+        sideInset: 10,
+        iconSize: 17,
+        arrowSize: 21,
+        textSize: 12.5,
+      );
+    }
+
+    return _AppFilterDropDownMetrics(
+      height: 45,
+      radius: 10.r,
+      shadowBlur: 10,
       shadowSpread: 2,
-      sideInset: 16,
-      centerHorizontalPadding: 48,
-      iconSize: 22,
-      arrowSize: 28,
-      textSize: 16,
+      sideInset: 12,
+      iconSize: 20,
+      arrowSize: 24,
+      textSize: 14,
     );
   }
-
-  if (isShortLandscape) {
-    return const _AppFilterDropDownMetrics(
-      height: 36,
-      radius: 9,
-      shadowBlur: 8,
-      shadowSpread: 1,
-      sideInset: 10,
-      centerHorizontalPadding: 34,
-      iconSize: 16,
-      arrowSize: 20,
-      textSize: 12,
-    );
-  }
-
-  if (isCompactPhone) {
-    return const _AppFilterDropDownMetrics(
-      height: 38,
-      radius: 9,
-      shadowBlur: 8,
-      shadowSpread: 1.5,
-      sideInset: 10,
-      centerHorizontalPadding: 34,
-      iconSize: 17,
-      arrowSize: 21,
-      textSize: 12.5,
-    );
-  }
-
-  return _AppFilterDropDownMetrics(
-    height: 45,
-    radius: 10.r,
-    shadowBlur: 10,
-    shadowSpread: 2,
-    sideInset: 12,
-    centerHorizontalPadding: 40,
-    iconSize: 20,
-    arrowSize: 24,
-    textSize: 14,
-  );
-}
 }

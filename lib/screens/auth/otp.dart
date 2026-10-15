@@ -10,6 +10,7 @@ import 'package:fudikoclient/screens/auth/changepassword.dart';
 import 'package:fudikoclient/screens/auth/info.dart';
 import 'package:fudikoclient/service/auth/otp_auth-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class Otp extends StatefulWidget {
   // null = registration flow, provided = forgot password flow.
@@ -50,23 +51,17 @@ class _OtpState extends State<Otp> {
     if (result.status) {
       _otpId = result.otpId;
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result.message)));
+      showErrorSnack(context, result.message);
     }
   }
 
   Future<void> _verifyOtp() async {
     if (_otp.length < 4) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter complete OTP')),
-      );
+      showErrorSnack(context, 'Please enter complete OTP');
       return;
     }
     if (_otpId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('OTP not ready, please wait')),
-      );
+      showErrorSnack(context, 'OTP not ready, please wait');
       return;
     }
     setState(() => _isVerifying = true);
@@ -78,27 +73,23 @@ class _OtpState extends State<Otp> {
     if (!mounted) return;
     setState(() => _isVerifying = false);
     if (result.status) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result.message)));
+      showSuccessSnack(context, result.message);
       if (widget.token != null) {
         // Forgot password flow goes to ChangePassword.
-        slideRightWidget(
+        replaceWidget(
           newPage: ChangePassword(token: widget.token),
           context: context,
         );
       } else {
         // registration flow → go to InfoPage
-        slideRightWidget(
+        replaceWidget(
           newPage: InfoPage(authToken: widget.authToken),
           context: context,
           // clearStack: widget.authToken != null,
         );
       }
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result.message)));
+      showErrorSnack(context, result.message);
     }
   }
 

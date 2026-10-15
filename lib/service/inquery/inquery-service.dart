@@ -1,3 +1,4 @@
+import 'package:fudikoclient/utils/error_messages.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fudikoclient/api/dio_client.dart';
@@ -33,14 +34,14 @@ class InqueryService {
         print(response.data);
         return CreateInqueryModelResponse(
           status: false,
-          message: 'Reservation failed: ${response.statusCode}',
+          message: statusCodeMessage(response.statusCode),
         );
       }
     } catch (e) {
       print(e);
       return CreateInqueryModelResponse(
         status: false,
-        message: 'Something went wrong: $e',
+        message: friendlyErrorMessage(e),
       );
     }
   }
@@ -85,14 +86,14 @@ class InqueryService {
         print(response.data);
         return DeleteInqueryModelResponse(
           status: false,
-          message: 'Deleting inquery failed: ${response.statusCode}',
+          message: statusCodeMessage(response.statusCode),
         );
       }
     } catch (e) {
       print(e);
       return DeleteInqueryModelResponse(
         status: false,
-        message: 'Something went wrong: $e',
+        message: friendlyErrorMessage(e),
       );
     }
   }
@@ -115,14 +116,14 @@ class InqueryService {
         print(response.data);
         return UpdateInqueryModelResponse(
           status: false,
-          message: 'Updating inquery failed: ${response.statusCode}',
+          message: statusCodeMessage(response.statusCode),
         );
       }
     } catch (e) {
       print(e);
       return UpdateInqueryModelResponse(
         status: false,
-        message: 'Something went wrong: $e',
+        message: friendlyErrorMessage(e),
       );
     }
   }
@@ -144,14 +145,14 @@ class InqueryService {
       } else {
         return CreateCateringInqueryModelResponse(
           status: false,
-          message: 'Catering enquiry failed: ${response.statusCode}',
+          message: statusCodeMessage(response.statusCode),
         );
       }
     } catch (e) {
       print(e);
       return CreateCateringInqueryModelResponse(
         status: false,
-        message: 'Something went wrong: $e',
+        message: friendlyErrorMessage(e),
       );
     }
   }
@@ -210,35 +211,38 @@ class InqueryService {
       } else {
         return UpdateInqueryModelResponse(
           status: false,
-          message: 'Update failed: ${response.statusCode}',
+          message: statusCodeMessage(response.statusCode),
         );
       }
     } catch (e) {
       return UpdateInqueryModelResponse(
         status: false,
-        message: 'Something went wrong: $e',
+        message: friendlyErrorMessage(e),
       );
     }
   }
-Future<Map<String, dynamic>> confirmEnquiry(String enquiryId) async {
-  final token = await getToken();
-  try {
-    final response = await DioClient.dio.post(
-      '/customer/enquiry/confirm',
-      data: FormData.fromMap({'response_id': enquiryId}),
-      options: Options(headers: {'Authorization': 'Bearer $token'}),
-    );
-    print('CONFIRM RESPONSE: ${response.data}');
-    return response.data as Map<String, dynamic>;
-  } catch (e) {
-    if (e is DioException && e.response != null) {
-      print('CONFIRM ERROR BODY: ${e.response?.data}');  // ← this shows exact validation message
-      return e.response?.data as Map<String, dynamic>? ?? 
-             {'status': false, 'message': e.toString()};
+
+  Future<Map<String, dynamic>> confirmEnquiry(String enquiryId) async {
+    final token = await getToken();
+    try {
+      final response = await DioClient.dio.post(
+        '/customer/enquiry/confirm',
+        data: FormData.fromMap({'response_id': enquiryId}),
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      print('CONFIRM RESPONSE: ${response.data}');
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      if (e is DioException && e.response != null) {
+        print(
+          'CONFIRM ERROR BODY: ${e.response?.data}',
+        ); // ← this shows exact validation message
+        return e.response?.data as Map<String, dynamic>? ??
+            {'status': false, 'message': e.toString()};
+      }
+      return {'status': false, 'message': e.toString()};
     }
-    return {'status': false, 'message': e.toString()};
   }
-}
 
   Future<Map<String, dynamic>> declineEnquiry(String responseId) async {
     final token = await getToken();
@@ -252,10 +256,8 @@ Future<Map<String, dynamic>> confirmEnquiry(String enquiryId) async {
       return response.data as Map<String, dynamic>;
     } catch (e) {
       if (e is DioException && e.response != null) {
-        return e.response?.data as Map<String, dynamic>? ?? {
-          'status': false,
-          'message': e.toString(),
-        };
+        return e.response?.data as Map<String, dynamic>? ??
+            {'status': false, 'message': e.toString()};
       }
 
       return {'status': false, 'message': e.toString()};
@@ -276,81 +278,66 @@ Future<Map<String, dynamic>> confirmEnquiry(String enquiryId) async {
 
       return EnquiryResponsesListModel(
         status: false,
-        message: 'Failed to fetch responses: ${response.statusCode}',
+        message: statusCodeMessage(response.statusCode),
         responses: [],
       );
     } catch (e) {
       return EnquiryResponsesListModel(
         status: false,
-        message: 'Something went wrong: $e',
+        message: friendlyErrorMessage(e),
         responses: [],
       );
     }
   }
 
-  Future<EnquiryResponsesListModel> fetchDeclinedCateringEnquiryResponses() async {
-  final token = await getToken();
+  Future<EnquiryResponsesListModel>
+  fetchDeclinedCateringEnquiryResponses() async {
+    final token = await getToken();
 
-  try {
-    final response = await DioClient.dio.get(
-      '/customer/catering-enquiry/declined-responses',
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-      ),
-    );
+    try {
+      final response = await DioClient.dio.get(
+        '/customer/catering-enquiry/declined-responses',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
 
-    if (response.statusCode == 200) {
-      return EnquiryResponsesListModel.fromJson(response.data);
+      if (response.statusCode == 200) {
+        return EnquiryResponsesListModel.fromJson(response.data);
+      }
+
+      return EnquiryResponsesListModel(
+        status: false,
+        message: 'Failed to fetch declined responses',
+        responses: [],
+      );
+    } catch (e) {
+      return EnquiryResponsesListModel(
+        status: false,
+        message: e.toString(),
+        responses: [],
+      );
     }
-
-    return EnquiryResponsesListModel(
-      status: false,
-      message: 'Failed to fetch declined responses',
-      responses: [],
-    );
-  } catch (e) {
-    return EnquiryResponsesListModel(
-      status: false,
-      message: e.toString(),
-      responses: [],
-    );
   }
-}
 
   Future<Map<String, dynamic>> declineCateringEnquiry(String responseId) async {
-  final token = await getToken();
+    final token = await getToken();
 
-  try {
-    final response = await DioClient.dio.post(
-      '/customer/catering-enquiry/decline',
-      data: FormData.fromMap({
-        'response_id': responseId,
-      }),
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-      ),
-    );
+    try {
+      final response = await DioClient.dio.post(
+        '/customer/catering-enquiry/decline',
+        data: FormData.fromMap({'response_id': responseId}),
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
 
-    return response.data as Map<String, dynamic>;
-  } catch (e) {
-    if (e is DioException && e.response != null) {
-      return e.response?.data as Map<String, dynamic>? ??
-          {
-            'status': false,
-            'message': e.toString(),
-          };
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      if (e is DioException && e.response != null) {
+        return e.response?.data as Map<String, dynamic>? ??
+            {'status': false, 'message': e.toString()};
+      }
+
+      return {'status': false, 'message': e.toString()};
     }
-
-    return {
-      'status': false,
-      'message': e.toString(),
-    };
   }
-}
 
   Future<Map<String, dynamic>> restoreCateringEnquiryResponse(
     String responseId,
@@ -366,10 +353,8 @@ Future<Map<String, dynamic>> confirmEnquiry(String enquiryId) async {
       return response.data as Map<String, dynamic>;
     } catch (e) {
       if (e is DioException && e.response != null) {
-        return e.response?.data as Map<String, dynamic>? ?? {
-          'status': false,
-          'message': e.toString(),
-        };
+        return e.response?.data as Map<String, dynamic>? ??
+            {'status': false, 'message': e.toString()};
       }
 
       return {'status': false, 'message': e.toString()};
@@ -390,10 +375,8 @@ Future<Map<String, dynamic>> confirmEnquiry(String enquiryId) async {
       return response.data as Map<String, dynamic>;
     } catch (e) {
       if (e is DioException && e.response != null) {
-        return e.response?.data as Map<String, dynamic>? ?? {
-          'status': false,
-          'message': e.toString(),
-        };
+        return e.response?.data as Map<String, dynamic>? ??
+            {'status': false, 'message': e.toString()};
       }
 
       return {'status': false, 'message': e.toString()};
@@ -454,14 +437,13 @@ Future<Map<String, dynamic>> confirmEnquiry(String enquiryId) async {
 
       return EnquiryResponsesListModel(
         status: false,
-        message:
-            'Failed to fetch declined responses: ${response.statusCode}',
+        message: statusCodeMessage(response.statusCode),
         responses: [],
       );
     } catch (e) {
       return EnquiryResponsesListModel(
         status: false,
-        message: 'Something went wrong: $e',
+        message: friendlyErrorMessage(e),
         responses: [],
       );
     }
@@ -485,14 +467,14 @@ Future<Map<String, dynamic>> confirmEnquiry(String enquiryId) async {
       print('Catering responses error: ${response.statusCode}');
       return EnquiryResponsesListModel(
         status: false,
-        message: 'Failed to fetch catering responses: ${response.statusCode}',
+        message: statusCodeMessage(response.statusCode),
         responses: [],
       );
     } catch (e) {
       print('Catering responses exception: $e');
       return EnquiryResponsesListModel(
         status: false,
-        message: 'Something went wrong: $e',
+        message: friendlyErrorMessage(e),
         responses: [],
       );
     }
@@ -524,14 +506,13 @@ Future<Map<String, dynamic>> confirmEnquiry(String enquiryId) async {
 
       return EnquiryResponsesListModel(
         status: false,
-        message:
-            'Failed to search catering responses: ${response.statusCode}',
+        message: statusCodeMessage(response.statusCode),
         responses: [],
       );
     } catch (e) {
       return EnquiryResponsesListModel(
         status: false,
-        message: 'Something went wrong: $e',
+        message: friendlyErrorMessage(e),
         responses: [],
       );
     }
@@ -549,38 +530,34 @@ Future<Map<String, dynamic>> confirmEnquiry(String enquiryId) async {
       return response.data as Map<String, dynamic>;
     } catch (e) {
       if (e is DioException && e.response != null) {
-        return e.response?.data as Map<String, dynamic>? ?? {
-          'status': false,
-          'message': e.toString(),
-        };
+        return e.response?.data as Map<String, dynamic>? ??
+            {'status': false, 'message': e.toString()};
       }
 
       return {'status': false, 'message': e.toString()};
     }
   }
 
-
   Future<List<BookingModel>> fetchEnquiryBookings() async {
-  final token = await getToken();
-  try {
-    final response = await DioClient.dio.get(
-      '/customer/enquiry/responses',
-      options: Options(headers: {'Authorization': 'Bearer $token'}),
-    );
+    final token = await getToken();
+    try {
+      final response = await DioClient.dio.get(
+        '/customer/enquiry/responses',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
 
-    if (response.statusCode == 200) {
-      final List<dynamic> raw =
-          (response.data['responses'] as List<dynamic>?) ?? [];
-      return raw
-          .whereType<Map<String, dynamic>>()
-          .map((item) => BookingModel.fromJson(item))
-          .toList();
+      if (response.statusCode == 200) {
+        final List<dynamic> raw =
+            (response.data['responses'] as List<dynamic>?) ?? [];
+        return raw
+            .whereType<Map<String, dynamic>>()
+            .map((item) => BookingModel.fromJson(item))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      if (kDebugMode) print(e);
+      return [];
     }
-    return [];
-  } catch (e) {
-    if (kDebugMode) print(e);
-    return [];
   }
-}
-  
 }

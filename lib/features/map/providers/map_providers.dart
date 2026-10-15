@@ -6,7 +6,9 @@ import 'package:fudikoclient/model/restaurant/restaurant-model.dart';
 
 final mapExpandedProvider = StateProvider<bool>((ref) => false);
 
-final selectedRestaurantProvider = StateProvider<RestaurantModel?>((ref) => null);
+final selectedRestaurantProvider = StateProvider<RestaurantModel?>(
+  (ref) => null,
+);
 final userLocationProvider = StateProvider<LatLng?>((ref) => null);
 
 class SelectedLocation {
@@ -21,9 +23,13 @@ class SelectedLocation {
   final double? longitude;
 }
 
-final selectedLocationProvider = StateProvider<SelectedLocation?>((ref) => null);
+final selectedLocationProvider = StateProvider<SelectedLocation?>(
+  (ref) => null,
+);
 final mapZoomProvider = StateProvider<double>((ref) => 15.5);
-final userLocationIconProvider = StateProvider<BitmapDescriptor?>((ref) => null);
+final userLocationIconProvider = StateProvider<BitmapDescriptor?>(
+  (ref) => null,
+);
 
 final mapMarkersProvider = StateProvider<Set<Marker>>(
   (ref) => const <Marker>{},
@@ -34,7 +40,9 @@ final collapsedMarkersProvider = StateProvider<Set<Marker>>(
 );
 
 // Now returns List<RestaurantModel> — single source of truth
-final nearbyRestaurantsProvider = FutureProvider<List<RestaurantModel>>((ref) async {
+final nearbyRestaurantsProvider = FutureProvider<List<RestaurantModel>>((
+  ref,
+) async {
   final response = await RestaurantService().getRestaurantList();
   return response.restaurant
       .where((r) => r.lat.isNotEmpty && r.lng.isNotEmpty)
@@ -57,16 +65,18 @@ final markerSpecsProvider = Provider<List<MarkerSpec>>((ref) {
       (a, b) => a.discountPercentage >= b.discountPercentage ? a : b,
     );
 
-    specs.add(MarkerSpec(
-      restaurantId: r.uuid,
-      position: LatLng(
-        double.tryParse(r.lat) ?? 0,
-        double.tryParse(r.lng) ?? 0,
+    specs.add(
+      MarkerSpec(
+        restaurantId: r.uuid,
+        position: LatLng(
+          double.tryParse(r.lat) ?? 0,
+          double.tryParse(r.lng) ?? 0,
+        ),
+        discountLabel: '-${bestOffer.discountPercentage.toStringAsFixed(0)}%',
+        isSelected: selected?.uuid == r.uuid,
+        isDimmed: selected != null && selected.uuid != r.uuid,
       ),
-      discountLabel: '-${bestOffer.discountPercentage.toStringAsFixed(0)}%',
-      isSelected: selected?.uuid == r.uuid,
-      isDimmed: selected != null && selected.uuid != r.uuid,
-    ));
+    );
   }
   return specs;
 });

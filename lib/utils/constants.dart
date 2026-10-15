@@ -8,6 +8,13 @@ final Color appTextColor5 = Color(0xFF1E1E1A);
 final Color appTextColor6 = Color(0xFFC95F05);
 final Color appTextColor3 = Color(0xFFC95F05);
 final Color appRingColor = Color.fromARGB(122, 249, 123, 13);
+
+// Snack bar palette
+final Color snackSuccessColor = Color(0xFF1E9E4A);
+final Color snackErrorColor = Color(0xFFCE3F3F);
+final Color snackInfoColor = Color(0xFF3F7DCE);
+final Color snackTextColor = Color(0xFFFFFFFF);
+
 final Color appButtonColor = Color(0xFFF97A0D);
 final Color appButtonColor2 = Color(0xFF987743);
 final Color appToggleColor = Color(0xFF00A52C);
@@ -74,8 +81,6 @@ final String lockIcon = 'assets/icons/common/lock_icon.png';
 final String rateAppIcon = 'assets/icons/common/rateApp_icon.png';
 final String rewardsIcon = 'assets/icons/common/rewards_icon.png';
 
-
-
 final String emailIcon = 'assets/icons/common/email_icon.png';
 final String mappingIcon = 'assets/icons/common/mappin_icon.png';
 final String padlockOutlineIcon = 'assets/icons/common/padlock_icon.png';
@@ -86,7 +91,7 @@ final String radiusIcon = 'assets/icons/radius_icon.png';
 final String editIcon = 'assets/icons/editpen_icon.png';
 final String stopwatchIcon = 'assets/icons/common/stopwatch_icon.png';
 
-// Selected 
+// Selected
 final String badgeChamp = 'assets/images/badgeChamp.png';
 final String badgeClimber = 'assets/images/badgeClimber.png';
 final String badgeLumina = 'assets/images/badgeLumina.png';
@@ -98,4 +103,3 @@ final String pizzaUp2 = 'assets/images/pizzaup23.png';
 final String pizzaDn2 = 'assets/images/page23_pizza.png';
 final String pizzaUp1 = 'assets/images/page1_pizza.jpg';
 final String Pizza4 = 'assets/images/pizza4.png';
-

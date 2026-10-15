@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:fudikoclient/api/dio_client.dart';
 import 'package:fudikoclient/model/menu/menu_model.dart';
+import 'package:fudikoclient/utils/error_messages.dart';
 import 'package:fudikoclient/utils/tokens.dart';
 
 class MenuService {
@@ -15,10 +16,25 @@ class MenuService {
       if (response.statusCode == 200) {
         return MenuResponse.fromJson(response.data);
       }
-      return MenuResponse(status: false, pdfs: [], individualMenu: []);
+      return MenuResponse(
+        status: false,
+        pdfs: const [],
+        individualMenu: const [],
+        message: statusCodeMessage(
+          response.statusCode,
+          fallback: 'We could not load this menu. Please try again.',
+        ),
+      );
     } catch (e) {
-      print('Menu fetch error: $e');
-      return MenuResponse(status: false, pdfs: [], individualMenu: []);
+      return MenuResponse(
+        status: false,
+        pdfs: const [],
+        individualMenu: const [],
+        message: friendlyErrorMessage(
+          e,
+          fallback: 'We could not load this menu. Please try again.',
+        ),
+      );
     }
   }
 }

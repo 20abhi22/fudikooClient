@@ -79,61 +79,66 @@ class _FilterBottomModalState extends State<FilterBottomModal> {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final isLandscape = size.width > size.height;
-    final isCompactLandscape = isLandscape && size.height < 500;
+    // Any landscape orientation on a phone gets the tightened spacing below —
+    // a phone's landscape height is its shortest side, which is always
+    // constrained relative to portrait, not just the sub-500 band.
+    final isCompactLandscape = isLandscape;
     final isTablet = Breakpoints.isTabletDevice(size);
     final isCompactPhone = size.width < 390 || size.height < 700;
     final horizontalPadding = isTablet
-      ? (isLandscape ? 22.0 : 28.0)
-      : isCompactLandscape
-      ? 14.0
-      : 20.w;
+        ? (isLandscape ? 22.0 : 28.0)
+        : isCompactLandscape
+        ? 14.0
+        : 20.w;
     final verticalPadding = isTablet
-      ? (isLandscape ? 14.0 : 20.0)
-      : isCompactLandscape
-      ? 10.0
-      : 16.h;
+        ? (isLandscape ? 14.0 : 20.0)
+        : isCompactLandscape
+        ? 10.0
+        : 16.h;
     final handleWidth = isTablet
-      ? (isLandscape ? 40.0 : 48.0)
-      : isCompactLandscape
-      ? 34.0
-      : 40.w;
+        ? (isLandscape ? 40.0 : 48.0)
+        : isCompactLandscape
+        ? 34.0
+        : 40.w;
     final handleHeight = isTablet
-      ? 5.0
-      : isCompactLandscape
-      ? 4.0
-      : 5.h;
+        ? 5.0
+        : isCompactLandscape
+        ? 4.0
+        : 5.h;
     final contentHeight = isTablet
-      ? (isLandscape
-          ? (size.height * 0.58).clamp(320.0, 460.0).toDouble()
-          : (size.height * 0.46).clamp(430.0, 560.0).toDouble())
-      : isCompactLandscape
-      ? (size.height * 0.78).clamp(260.0, 380.0).toDouble()
+        ? (isLandscape
+              ? (size.height * 0.58).clamp(320.0, 460.0).toDouble()
+              : (size.height * 0.46).clamp(430.0, 560.0).toDouble())
+        : isCompactLandscape
+        ? (size.height * 0.78).clamp(260.0, 380.0).toDouble()
         : MediaQuery.of(context).size.height.h * 0.5;
     final contentPadding = isTablet
-      ? (isLandscape ? 18.0 : 24.0)
-      : isCompactLandscape
-      ? 12.0
-      : 16.w;
+        ? (isLandscape ? 18.0 : 24.0)
+        : isCompactLandscape
+        ? 12.0
+        : 16.w;
     final titleSize = isTablet
-      ? (isLandscape ? AppDimensions.body(context) : AppDimensions.body(context) + 1)
+        ? (isLandscape
+              ? AppDimensions.body(context)
+              : AppDimensions.body(context) + 1)
         : isCompactPhone
         ? 13.0
         : 14.0;
     final iconSize = isTablet
-      ? (isLandscape ? 20.0 : 22.0)
-      : isCompactLandscape
-      ? 18.0
-      : 20.w;
+        ? (isLandscape ? 20.0 : 22.0)
+        : isCompactLandscape
+        ? 18.0
+        : 20.w;
     final sectionGap = isTablet
-      ? (isLandscape ? 20.0 : 36.0)
-      : isCompactLandscape
-      ? 18.0
-      : 50.h;
+        ? (isLandscape ? 20.0 : 36.0)
+        : isCompactLandscape
+        ? 18.0
+        : 50.h;
     final wrapGap = isTablet
-      ? (isLandscape ? 10.0 : 12.0)
-      : isCompactLandscape
-      ? 8.0
-      : 10.0;
+        ? (isLandscape ? 10.0 : 12.0)
+        : isCompactLandscape
+        ? 8.0
+        : 10.0;
     final chipTextSize = isTablet
         ? AppDimensions.caption(context)
         : isCompactPhone
@@ -141,15 +146,15 @@ class _FilterBottomModalState extends State<FilterBottomModal> {
         : 12.sp;
     final optionTextSize = isTablet ? AppDimensions.caption(context) : 13.0;
     final buttonWidth = isTablet
-      ? (isLandscape ? 160.0 : 180.0)
-      : isCompactLandscape
-      ? 132.0
-      : 150.w;
+        ? (isLandscape ? 160.0 : 180.0)
+        : isCompactLandscape
+        ? 132.0
+        : 150.w;
     final buttonHeight = isTablet
-      ? (isLandscape ? 46.0 : 54.0)
-      : isCompactLandscape
-      ? 42.0
-      : 50.h;
+        ? (isLandscape ? 46.0 : 54.0)
+        : isCompactLandscape
+        ? 42.0
+        : 50.h;
     final buttonTextSize = isTablet ? AppDimensions.body(context) : 15.0;
 
     return Padding(
@@ -186,7 +191,9 @@ class _FilterBottomModalState extends State<FilterBottomModal> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.tune, size: iconSize, color: Colors.black),
-                      SizedBox(width: isTablet ? (isLandscape ? 8.0 : 12.0) : 10.w),
+                      SizedBox(
+                        width: isTablet ? (isLandscape ? 8.0 : 12.0) : 10.w,
+                      ),
                       AppText(
                         text: "Filter",
                         size: titleSize,
@@ -320,7 +327,9 @@ class _FilterBottomModalState extends State<FilterBottomModal> {
                             isCentered: true,
                           ),
                         ),
-                        SizedBox(height: isTablet ? (isLandscape ? 14.0 : 22.0) : 20.h),
+                        SizedBox(
+                          height: isTablet ? (isLandscape ? 14.0 : 22.0) : 20.h,
+                        ),
                         SizedBox(
                           width: buttonWidth,
                           height: buttonHeight,
@@ -338,7 +347,9 @@ class _FilterBottomModalState extends State<FilterBottomModal> {
                             size: buttonTextSize,
                           ),
                         ),
-                        SizedBox(height: isTablet ? (isLandscape ? 14.0 : 22.0) : 20.h),
+                        SizedBox(
+                          height: isTablet ? (isLandscape ? 14.0 : 22.0) : 20.h,
+                        ),
                       ],
                     ),
                   ),

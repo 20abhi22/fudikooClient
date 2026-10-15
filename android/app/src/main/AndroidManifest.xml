@@ -1,15 +1,23 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:label="Fudikoo"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"
-        android:fullBackupContent="false"
-        android:usesCleartextTraffic="true">
+        android:fullBackupContent="false">
+        <!-- windowSoftInputMode is adjustNothing, not adjustResize: the
+             keyboard draws over the window instead of shrinking it. Resizing
+             forces the Google Map platform view on the location picker to
+             relayout every time the keyboard opens, and leaves no room for the
+             radius panel pinned at the bottom of that screen. Flutter still
+             reports the keyboard through MediaQuery.viewInsets, so Scaffolds
+             that ask to inset for it keep working. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -18,7 +26,7 @@
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustNothing">
             <!-- Specifies an Android theme to apply to this Activity as soon as
                  the Android process has started. This theme is visible to the user
                  while the Flutter UI initializes. After that, this theme continues
@@ -36,6 +44,9 @@
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data android:name="com.google.android.geo.API_KEY"
                android:value="AIzaSyAHuxPvcWL8s0Ye2fGbiDNJ9cTdcSoxvEw"/>
+        <uses-library
+            android:name="org.apache.http.legacy"
+            android:required="false" />
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

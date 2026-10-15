@@ -22,84 +22,98 @@ class TimeBottomModal extends StatefulWidget {
 
 class _TimeBottomModalState extends State<TimeBottomModal> {
   late DateTime _selectedDateTime;
+  // Fixed once when the modal opens rather than recomputed every rebuild —
+  // CupertinoDatePicker asserts minimumDate <= initialDateTime, and a live
+  // DateTime.now() on each rebuild could drift past an already-selected
+  // _selectedDateTime (e.g. selecting "now" then rebuilding a second later),
+  // crashing the picker.
+  late final DateTime _minimumDateTime;
   int? selectedDiscountIndex = 0;
   int? selectedTypeIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _selectedDateTime = widget.initialDateTime;
+    _minimumDateTime = DateTime.now();
+    _selectedDateTime = widget.initialDateTime.isBefore(_minimumDateTime)
+        ? _minimumDateTime
+        : widget.initialDateTime;
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final isLandscape = size.width > size.height;
-    final isCompactLandscape = isLandscape && size.height < 500;
+    // Any landscape orientation on a phone gets the tightened spacing below —
+    // a phone's landscape height is its shortest side, which is always
+    // constrained relative to portrait, not just the sub-500 band.
+    final isCompactLandscape = isLandscape;
     final isTablet = Breakpoints.isTabletDevice(size);
     final isCompactPhone = size.width < 390 || size.height < 700;
     final horizontalPadding = isTablet
-      ? (isLandscape ? 22.0 : 28.0)
-      : isCompactLandscape
-      ? 14.0
-      : 20.w;
+        ? (isLandscape ? 22.0 : 28.0)
+        : isCompactLandscape
+        ? 14.0
+        : 20.w;
     final verticalPadding = isTablet
-      ? (isLandscape ? 14.0 : 20.0)
-      : isCompactLandscape
-      ? 10.0
-      : 16.h;
+        ? (isLandscape ? 14.0 : 20.0)
+        : isCompactLandscape
+        ? 10.0
+        : 16.h;
     final handleWidth = isTablet
-      ? (isLandscape ? 40.0 : 48.0)
-      : isCompactLandscape
-      ? 34.0
-      : 40.w;
+        ? (isLandscape ? 40.0 : 48.0)
+        : isCompactLandscape
+        ? 34.0
+        : 40.w;
     final handleHeight = isTablet
-      ? 5.0
-      : isCompactLandscape
-      ? 4.0
-      : 5.h;
+        ? 5.0
+        : isCompactLandscape
+        ? 4.0
+        : 5.h;
     final contentPadding = isTablet
-      ? (isLandscape ? 18.0 : 24.0)
-      : isCompactLandscape
-      ? 12.0
-      : 16.w;
+        ? (isLandscape ? 18.0 : 24.0)
+        : isCompactLandscape
+        ? 12.0
+        : 16.w;
     final titleSize = isTablet
-      ? (isLandscape ? AppDimensions.body(context) : AppDimensions.body(context) + 1)
+        ? (isLandscape
+              ? AppDimensions.body(context)
+              : AppDimensions.body(context) + 1)
         : isCompactPhone
         ? 13.0
         : 14.0;
     final iconSize = isTablet
-      ? (isLandscape ? 20.0 : 22.0)
-      : isCompactLandscape
-      ? 18.0
-      : 20.w;
+        ? (isLandscape ? 20.0 : 22.0)
+        : isCompactLandscape
+        ? 18.0
+        : 20.w;
     final pickerHeight = isTablet
-      ? (isLandscape
-          ? (size.height * 0.18).clamp(210.0, 260.0).toDouble()
-          : (size.height * 0.24).clamp(260.0, 330.0).toDouble())
-      : isCompactLandscape
-      ? (size.height * 0.34).clamp(180.0, 240.0).toDouble()
+        ? (isLandscape
+              ? (size.height * 0.18).clamp(210.0, 260.0).toDouble()
+              : (size.height * 0.24).clamp(260.0, 330.0).toDouble())
+        : isCompactLandscape
+        ? (size.height * 0.34).clamp(180.0, 240.0).toDouble()
         : 250.h;
     final sectionGap = isTablet
-      ? (isLandscape ? 22.0 : 38.0)
-      : isCompactLandscape
-      ? 18.0
-      : 50.h;
+        ? (isLandscape ? 22.0 : 38.0)
+        : isCompactLandscape
+        ? 18.0
+        : 50.h;
     final clearTextSize = isTablet
         ? AppDimensions.caption(context)
         : isCompactPhone
         ? 11.0
         : 12.0;
     final buttonWidth = isTablet
-      ? (isLandscape ? 160.0 : 180.0)
-      : isCompactLandscape
-      ? 132.0
-      : 150.w;
+        ? (isLandscape ? 160.0 : 180.0)
+        : isCompactLandscape
+        ? 132.0
+        : 150.w;
     final buttonHeight = isTablet
-      ? (isLandscape ? 46.0 : 54.0)
-      : isCompactLandscape
-      ? 42.0
-      : 50.h;
+        ? (isLandscape ? 46.0 : 54.0)
+        : isCompactLandscape
+        ? 42.0
+        : 50.h;
     final buttonTextSize = isTablet ? AppDimensions.body(context) : 15.0;
 
     return Padding(
@@ -156,18 +170,26 @@ class _TimeBottomModalState extends State<TimeBottomModal> {
                       ),
                     ],
                   ),
-                  SizedBox(height: isTablet ? (isLandscape ? 12.0 : 20.0) : 16.h),
+                  SizedBox(
+                    height: isTablet ? (isLandscape ? 12.0 : 20.0) : 16.h,
+                  ),
                   SizedBox(
                     height: pickerHeight,
                     child: CupertinoDatePicker(
                       mode: CupertinoDatePickerMode.dateAndTime,
                       // initialDateTime: DateTime.now(),
                       initialDateTime: _selectedDateTime,
+                      minimumDate: _minimumDateTime,
                       use24hFormat: false,
                       onDateTimeChanged: (DateTime newDateTime) {
                         // Handle date & time change
                         setState(() {
-                          _selectedDateTime = newDateTime; // save selection
+                          // Belt-and-suspenders: the picker itself already
+                          // can't scroll below minimumDate.
+                          _selectedDateTime =
+                              newDateTime.isBefore(_minimumDateTime)
+                              ? _minimumDateTime
+                              : newDateTime;
                         });
                       },
                     ),
@@ -199,7 +221,9 @@ class _TimeBottomModalState extends State<TimeBottomModal> {
                             ),
                           ),
                         ),
-                        SizedBox(height: isTablet ? (isLandscape ? 14.0 : 22.0) : 20.h),
+                        SizedBox(
+                          height: isTablet ? (isLandscape ? 14.0 : 22.0) : 20.h,
+                        ),
                         SizedBox(
                           width: buttonWidth,
                           height: buttonHeight,

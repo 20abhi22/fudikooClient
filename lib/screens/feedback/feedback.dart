@@ -6,16 +6,13 @@ import 'package:fudikoclient/core/responsive/breakpoints.dart';
 import 'package:fudikoclient/model/restaurant/review_model.dart';
 import 'package:fudikoclient/service/reservation/review_service.dart';
 import 'package:fudikoclient/utils/constants.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class FeedBack extends StatefulWidget {
   final String? restaurantId;
   final String? restaurantName;
 
-  const FeedBack({
-    super.key,
-    this.restaurantId,
-    this.restaurantName,
-  });
+  const FeedBack({super.key, this.restaurantId, this.restaurantName});
 
   @override
   State<FeedBack> createState() => _FeedBackState();
@@ -25,7 +22,8 @@ class _FeedBackState extends State<FeedBack> {
   int _selectedRating = 0;
   bool _isSubmitting = false;
   bool _isSubmitClicked = false; // ← fixed: was undeclared
-  final TextEditingController _commentController = TextEditingController(); // ← fixed: was _feedbackController
+  final TextEditingController _commentController =
+      TextEditingController(); // ← fixed: was _feedbackController
   final ReviewService _reviewService = ReviewService();
 
   @override
@@ -36,21 +34,15 @@ class _FeedBackState extends State<FeedBack> {
 
   Future<void> _submitReview() async {
     if (_selectedRating == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a rating first')),
-      );
+      showErrorSnack(context, 'Please select a rating first');
       return;
     }
     if (_commentController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please write a comment')),
-      );
+      showErrorSnack(context, 'Please write a comment');
       return;
     }
     if (widget.restaurantId == null || widget.restaurantId!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Restaurant ID missing')),
-      );
+      showErrorSnack(context, 'Restaurant ID missing');
       return;
     }
 
@@ -70,19 +62,16 @@ class _FeedBackState extends State<FeedBack> {
       if (response.status) {
         setState(() => _isSubmitClicked = true); // show thank-you modal
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response.message.isNotEmpty
-                ? response.message
-                : 'Failed to submit review'),
-          ),
+        showErrorSnack(
+          context,
+          response.message.isNotEmpty
+              ? response.message
+              : 'Failed to submit review',
         );
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      showErrorSnack(context, 'Error: ${e.toString()}');
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -192,22 +181,28 @@ class _FeedBackState extends State<FeedBack> {
                               metrics.commentRadius,
                             ),
                           ),
-                          child: TextField(
-                            controller: _commentController,
-                            maxLines: metrics.commentMaxLines,
-                            maxLength: 300,
-                            decoration: InputDecoration(
-                              hintText: 'How was your experience?',
-                              hintStyle: TextStyle(
-                                color: Colors.grey.shade600,
+                          // Hint text is a plain String, so it needs
+                          // TranslatedBuilder to go through the translator the
+                          // way AppText does.
+                          child: TranslatedBuilder(
+                            text: 'How was your experience?',
+                            builder: (context, hintText) => TextField(
+                              controller: _commentController,
+                              maxLines: metrics.commentMaxLines,
+                              maxLength: 300,
+                              decoration: InputDecoration(
+                                hintText: hintText,
+                                hintStyle: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: metrics.commentTextSize,
+                                ),
+                                border: InputBorder.none,
+                                counterText: '',
+                              ),
+                              style: TextStyle(
+                                color: appTextColor2,
                                 fontSize: metrics.commentTextSize,
                               ),
-                              border: InputBorder.none,
-                              counterText: '',
-                            ),
-                            style: TextStyle(
-                              color: appTextColor2,
-                              fontSize: metrics.commentTextSize,
                             ),
                           ),
                         ),
@@ -216,9 +211,7 @@ class _FeedBackState extends State<FeedBack> {
                           width: metrics.submitButtonWidth,
                           height: metrics.submitButtonHeight,
                           child: _isSubmitting
-                              ? const Center(
-                                  child: CircularProgressIndicator(),
-                                )
+                              ? const Center(child: CircularProgressIndicator())
                               : AppButton(
                                   text: "Submit",
                                   onPressed: _submitReview,
@@ -278,16 +271,18 @@ class _FeedBackState extends State<FeedBack> {
                   GestureDetector(
                     onTap: () {
                       setState(() => _isSubmitClicked = false);
-                      Navigator.pop(context, true); // return success to RatingPage
+                      Navigator.pop(
+                        context,
+                        true,
+                      ); // return success to RatingPage
                     },
                     child: Align(
                       alignment: Alignment.centerRight,
-                      child:
-                          Icon(
-                            Icons.close,
-                            size: metrics.modalCloseIconSize,
-                            color: appTextColor3,
-                          ),
+                      child: Icon(
+                        Icons.close,
+                        size: metrics.modalCloseIconSize,
+                        color: appTextColor3,
+                      ),
                     ),
                   ),
                   Image.asset(

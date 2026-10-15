@@ -63,19 +63,13 @@ class _AppShellState extends State<AppShell> {
     final screens = _buildScreens();
 
     return ResponsiveBuilder(
-  mobile: (context, constraints, orientation) {
-    return _MobileShell(
-      selectedIndex: _selectedIndex,
-      screens: screens,
+      mobile: (context, constraints, orientation) {
+        return _MobileShell(selectedIndex: _selectedIndex, screens: screens);
+      },
+      tablet: (context, constraints, orientation) {
+        return _TabletShell(selectedIndex: _selectedIndex, screens: screens);
+      },
     );
-  },
-  tablet: (context, constraints, orientation) {
-    return _TabletShell(
-      selectedIndex: _selectedIndex,
-      screens: screens,
-    );
-  },
-);
   }
 }
 
@@ -97,10 +91,7 @@ class _MobileShell extends StatelessWidget {
 }
 
 class _TabletShell extends StatelessWidget {
-  const _TabletShell({
-    required this.selectedIndex,
-    required this.screens,
-  });
+  const _TabletShell({required this.selectedIndex, required this.screens});
 
   final int selectedIndex;
   final List<Widget> screens;
@@ -109,10 +100,7 @@ class _TabletShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: IndexedStack(
-          index: selectedIndex,
-          children: screens,
-        ),
+        child: IndexedStack(index: selectedIndex, children: screens),
       ),
     );
   }

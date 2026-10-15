@@ -5,11 +5,6 @@ class Home extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        'Comming Soon',
-        style: TextStyle(fontSize: 24),
-      ),
-    );
+    return Center(child: Text('Comming Soon', style: TextStyle(fontSize: 24)));
   }
 }

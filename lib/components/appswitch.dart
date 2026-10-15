@@ -38,9 +38,7 @@ class _AppSwitchState extends State<AppSwitch> {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: appToggleColor, width: 1),
-        borderRadius: BorderRadius.circular(
-          30.0,
-        ),
+        borderRadius: BorderRadius.circular(30.0),
       ),
       child: FlutterSwitch(
         value: isOn,
@@ -62,5 +60,4 @@ class _AppSwitchState extends State<AppSwitch> {
       ),
     );
   }
-
 }

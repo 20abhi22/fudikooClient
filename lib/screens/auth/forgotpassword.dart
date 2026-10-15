@@ -10,6 +10,7 @@ import 'package:fudikoclient/routetransitions.dart';
 import 'package:fudikoclient/screens/auth/otp.dart';
 import 'package:fudikoclient/service/auth/forgotpassword-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class ForgotPassword extends StatefulWidget {
   const ForgotPassword({super.key});
@@ -44,9 +45,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
 
     if (username.isEmpty || email.isEmpty) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Enter username and email")));
+      showErrorSnack(context, "Enter username and email");
       return;
     }
 
@@ -70,17 +69,13 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     if (response.status &&
         response.token != null &&
         response.token!.isNotEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("User found!")));
+      showSuccessSnack(context, "User found!");
       slideRightWidget(
         newPage: Otp(token: response.token),
         context: context,
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response.message ?? "No user found")),
-      );
+      showErrorSnack(context, response.message ?? "No user found");
     }
   }
 

@@ -27,7 +27,7 @@ class CreateInqueryModel {
 
   FormData toFormData() {
     return FormData.fromMap({
-       "lat": lat.toString(),
+      "lat": lat.toString(),
       "lng": lng.toString(),
       "menu_items": menuItems,
       "people": people.toString(),
@@ -45,10 +45,7 @@ class CreateInqueryModelResponse {
   final bool status;
   final String message;
 
-  CreateInqueryModelResponse({
-    required this.status,
-    required this.message,
-  });
+  CreateInqueryModelResponse({required this.status, required this.message});
 
   factory CreateInqueryModelResponse.fromJson(Map<String, dynamic> json) {
     return CreateInqueryModelResponse(

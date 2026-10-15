@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:fudikoclient/components/apptext.dart';
 
 class LocationDropdown extends StatefulWidget {
   final void Function(String)? onLocationSelected;
@@ -22,7 +23,7 @@ class LocationDropdown extends StatefulWidget {
     this.hintText,
     this.onChange,
     this.type,
-    this.isLoading
+    this.isLoading,
   }) : super(key: key);
 
   @override
@@ -32,10 +33,16 @@ class LocationDropdown extends StatefulWidget {
 class _LocationDropdownState extends State<LocationDropdown> {
   final TextEditingController _controller = TextEditingController();
 
-
   @override
   Widget build(BuildContext context) {
-    final locations = widget.locations ?? [] ;
+    return TranslatedBuilder(
+      text: widget.hintText ?? 'Location',
+      builder: (context, translatedHint) => _build(context, translatedHint),
+    );
+  }
+
+  Widget _build(BuildContext context, String translatedHint) {
+    final locations = widget.locations ?? [];
 
     return Container(
       // padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -57,12 +64,14 @@ class _LocationDropdownState extends State<LocationDropdown> {
             child: TypeAheadField<String>(
               controller: _controller,
               suggestionsCallback: (pattern) async {
-                  if (widget.isLoading == true) {
+                if (widget.isLoading == true) {
                   return [];
                 }
                 return locations
-                    .where((loc) =>
-                    loc.toLowerCase().contains(pattern.toLowerCase()))
+                    .where(
+                      (loc) =>
+                          loc.toLowerCase().contains(pattern.toLowerCase()),
+                    )
                     .toList();
               },
               itemBuilder: (context, suggestion) {
@@ -105,7 +114,7 @@ class _LocationDropdownState extends State<LocationDropdown> {
               },
               builder: (context, controller, focusNode) {
                 return TextField(
-                  onChanged: (value){
+                  onChanged: (value) {
                     widget.onChange?.call(value);
                   },
                   controller: controller,
@@ -117,7 +126,7 @@ class _LocationDropdownState extends State<LocationDropdown> {
                     color: Colors.black,
                   ),
                   decoration: InputDecoration(
-                     prefixIcon: widget.icon != null
+                    prefixIcon: widget.icon != null
                         ? Padding(
                             padding: const EdgeInsets.only(left: 16, right: 8),
                             child: Icon(
@@ -126,7 +135,7 @@ class _LocationDropdownState extends State<LocationDropdown> {
                             ),
                           )
                         : null,
-                    hintText: widget.hintText ?? 'Location',
+                    hintText: translatedHint,
                     hintStyle: TextStyle(
                       fontSize: widget.fontSize ?? 16,
                       fontWeight: FontWeight.w500,
@@ -134,8 +143,10 @@ class _LocationDropdownState extends State<LocationDropdown> {
                     ),
                     border: InputBorder.none,
                     isCollapsed: true,
-                    contentPadding:
-                    const EdgeInsets.symmetric(vertical: 16,horizontal: 40),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 40,
+                    ),
                   ),
                 );
               },
@@ -144,7 +155,9 @@ class _LocationDropdownState extends State<LocationDropdown> {
                 elevation: 4,
                 borderRadius: BorderRadius.circular(12),
                 child: ConstrainedBox(
-                  constraints:  BoxConstraints(minWidth: MediaQuery.of(context).size.width),
+                  constraints: BoxConstraints(
+                    minWidth: MediaQuery.of(context).size.width,
+                  ),
                   child: child,
                 ),
               ),

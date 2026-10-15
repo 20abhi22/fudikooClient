@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:fudikoclient/api/dio_client.dart';
 import 'package:fudikoclient/model/auth/complete-registration.dart';
 import 'package:fudikoclient/model/auth/registration-model.dart';
+import 'package:fudikoclient/utils/error_messages.dart';
 import 'package:fudikoclient/utils/tokens.dart';
 
 class RegistrationAuthService {
@@ -13,18 +16,31 @@ class RegistrationAuthService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         print(response.data);
-        return RegistrationResponseModel.fromJson(response.data);
+        // Some responses arrive as a raw string (e.g. non-JSON content-type),
+        // which would make fromJson throw.
+        final raw = response.data;
+        final Map<String, dynamic> json = raw is String
+            ? Map<String, dynamic>.from(jsonDecode(raw) as Map)
+            : Map<String, dynamic>.from(raw as Map);
+        return RegistrationResponseModel.fromJson(json);
       } else {
         return RegistrationResponseModel(
           status: false,
-          message: 'Registration failed: ${response.statusCode}',
+          message: statusCodeMessage(
+            response.statusCode,
+            fallback: 'We could not create your account. Please try again.',
+          ),
           token: null,
         );
       }
-    } catch (e) {
+    } catch (e, st) {
+      print('registerUser failed: $e\n$st');
       return RegistrationResponseModel(
         status: false,
-        message: 'Something went wrong: $e',
+        message: friendlyErrorMessage(
+          e,
+          fallback: 'We could not create your account. Please try again.',
+        ),
         token: null,
       );
     }
@@ -65,7 +81,10 @@ class RegistrationAuthService {
 
       return CompleteRegistrationModelResponse(
         status: false,
-        message: "Something went wrong : $e",
+        message: friendlyErrorMessage(
+          e,
+          fallback: 'We could not finish your registration. Please try again.',
+        ),
       );
     }
   }

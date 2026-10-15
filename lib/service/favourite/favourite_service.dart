@@ -5,10 +5,14 @@ import 'package:fudikoclient/model/favorite/favoraite_model.dart';
 import 'package:fudikoclient/model/reservation/new-reservation-model.dart';
 import 'package:fudikoclient/model/restaurant/restaurant-model.dart';
 import 'package:fudikoclient/model/restaurant/restaurant_liked.dart';
+import 'package:fudikoclient/utils/error_messages.dart';
 import 'package:fudikoclient/utils/tokens.dart';
 
 class FavouriteRestaurantService {
-  Future<FavouriteRestaurantModelResponse> getFavouriteRestaurants({double? lat, double? lng}) async {
+  Future<FavouriteRestaurantModelResponse> getFavouriteRestaurants({
+    double? lat,
+    double? lng,
+  }) async {
     final token = await getToken();
     try {
       final queryParameters = <String, dynamic>{};
@@ -27,19 +31,30 @@ class FavouriteRestaurantService {
         print(response.data);
         return FavouriteRestaurantModelResponse(
           status: false,
-          restaurant: []
+          restaurant: const [],
+          message: statusCodeMessage(
+            response.statusCode,
+            fallback: 'We could not load your favourites. Please try again.',
+          ),
         );
       }
     } catch (e) {
-      print(e);
       return FavouriteRestaurantModelResponse(
         status: false,
-        restaurant: []
+        restaurant: const [],
+        message: friendlyErrorMessage(
+          e,
+          fallback: 'We could not load your favourites. Please try again.',
+        ),
       );
     }
   }
 
-  Future<FavouriteRestaurantModelResponse> searchFavouriteRestaurants(String name, {double? lat, double? lng}) async {
+  Future<FavouriteRestaurantModelResponse> searchFavouriteRestaurants(
+    String name, {
+    double? lat,
+    double? lng,
+  }) async {
     final token = await getToken();
     try {
       final queryParameters = <String, dynamic>{'name': name};
@@ -58,14 +73,21 @@ class FavouriteRestaurantService {
         print(response.data);
         return FavouriteRestaurantModelResponse(
           status: false,
-          restaurant: [],
+          restaurant: const [],
+          message: statusCodeMessage(
+            response.statusCode,
+            fallback: 'We could not search your favourites. Please try again.',
+          ),
         );
       }
     } catch (e) {
-      print('Favourite search error: $e');
       return FavouriteRestaurantModelResponse(
         status: false,
-        restaurant: [],
+        restaurant: const [],
+        message: friendlyErrorMessage(
+          e,
+          fallback: 'We could not search your favourites. Please try again.',
+        ),
       );
     }
   }

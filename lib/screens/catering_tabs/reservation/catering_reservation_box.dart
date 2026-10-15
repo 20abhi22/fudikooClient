@@ -15,11 +15,16 @@ class CateringReservationBox extends StatelessWidget {
   final VoidCallback? onCancelTap;
   final VoidCallback? onRequestTap;
 
+  /// Called once the QR coupon page opened from this card is popped, so the
+  /// list behind it can refresh with whatever changed there.
+  final VoidCallback? onCouponClosed;
+
   const CateringReservationBox({
     super.key,
     required this.reservation,
     this.onCancelTap,
     this.onRequestTap,
+    this.onCouponClosed,
   });
 
   @override
@@ -371,7 +376,7 @@ class CateringReservationBox extends StatelessWidget {
                   pricePerPerson: reservation.pricePerPerson,
                 ),
                 context: context,
-              );
+              ).then((_) => onCouponClosed?.call());
             },
           ),
         ),

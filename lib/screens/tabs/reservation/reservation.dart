@@ -5,22 +5,23 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/appfilterdropdown.dart';
 import 'package:fudikoclient/components/apptext.dart';
-import 'package:fudikoclient/components/apptextfeild.dart';
 import 'package:fudikoclient/components/cancel_circle_x.dart';
 import 'package:fudikoclient/core/responsive/breakpoints.dart';
 import 'package:fudikoclient/model/banquet/banquet_booking_modal.dart';
 import 'package:fudikoclient/screens/tabs/reservation/searchBox.dart';
 import 'package:fudikoclient/service/reservation/reservation-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
+import 'package:fudikoclient/utils/route_observer.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class Reservation extends StatefulWidget {
   const Reservation({super.key});
 
   @override
-  State<Reservation> createState() => _ReservationState();
+  State<Reservation> createState() => ReservationState();
 }
 
-class _ReservationState extends State<Reservation> {
+class ReservationState extends State<Reservation> with RouteAware {
   bool isDeletePressed = false;
   bool isConfirmedPressed = false;
   bool isBookingCanceled = false;
@@ -74,6 +75,20 @@ class _ReservationState extends State<Reservation> {
     _fetchBookings();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+  }
+
+  @override
+  void didPopNext() {
+    // Fires whenever a route pushed on top of this one (e.g. the QR coupon
+    // page) is popped and this screen becomes visible again — refresh so
+    // any status change made there is reflected immediately.
+    _fetchBookings();
+  }
+
   void _onSearchChanged() {
     final String query = _couponController.text.trim();
 
@@ -110,6 +125,9 @@ class _ReservationState extends State<Reservation> {
       });
     });
   }
+
+  /// Re-fetches reservations. Called by the bottom nav when this tab is tapped.
+  Future<void> refresh() => _fetchBookings();
 
   Future<void> _fetchBookings() async {
     setState(() {
@@ -190,9 +208,7 @@ class _ReservationState extends State<Reservation> {
     });
 
     if (!isDeclined) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to cancel this reservation.')),
-      );
+      showErrorSnack(context, 'Unable to cancel this reservation.');
       return;
     }
 
@@ -224,6 +240,7 @@ class _ReservationState extends State<Reservation> {
 
   @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _couponController.removeListener(_onSearchChanged);
     _couponController.dispose();
     _searchDebounce?.cancel();
@@ -316,101 +333,97 @@ class _ReservationState extends State<Reservation> {
 
             SizedBox(height: metrics.sectionGap),
 
-            // ── Filter dropdown ──
-            SizedBox(
-              width: metrics.filterWidth,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(metrics.filterRadius),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0x1A000000),
-                      offset: const Offset(0, 0),
-                      blurRadius: metrics.filterShadowBlur,
-                      spreadRadius: metrics.filterShadowSpread,
-                    ),
-                  ],
-                ),
-                child: AppFilterDropDown(
-                  height: metrics.filterHeight,
-                  hint: selectedFilter,
-                  imageIconPath: filterIcon,
-                  imageIconSize: metrics.filterIconSize,
-                  toggleDropdown: () {
-                    showModalBottomSheet(
-                      backgroundColor: Colors.white,
-                      context: context,
-                      isScrollControlled: true,
-                      constraints: metrics.sheetWidth == null
-                          ? null
-                          : BoxConstraints(
-                              maxWidth: metrics.sheetWidth!,
-                              // maxWidth: metrics.sheetWidth!,
-                            ),
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(25),
-                        ),
+            // ── Filter dropdown ── (sizes to the selected label's own
+            // content width now — no fixed-width wrapper)
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(metrics.filterRadius),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0x1A000000),
+                    offset: const Offset(0, 0),
+                    blurRadius: metrics.filterShadowBlur,
+                    spreadRadius: metrics.filterShadowSpread,
+                  ),
+                ],
+              ),
+              child: AppFilterDropDown(
+                height: metrics.filterHeight,
+                hint: selectedFilter,
+                imageIconPath: filterIcon,
+                imageIconSize: metrics.filterIconSize,
+                toggleDropdown: () {
+                  showModalBottomSheet(
+                    backgroundColor: Colors.white,
+                    context: context,
+                    isScrollControlled: true,
+                    constraints: metrics.sheetWidth == null
+                        ? null
+                        : BoxConstraints(
+                            maxWidth: metrics.sheetWidth!,
+                            // maxWidth: metrics.sheetWidth!,
+                          ),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(25),
                       ),
-                      builder: (context) {
-                        return SafeArea(
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                      maxWidth: metrics.sheetWidth ?? 420,
-                                    ),
-                              child: SingleChildScrollView(
-                                child: Padding(
-                                  padding: EdgeInsets.all(metrics.sheetPadding),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        width: metrics.sheetHandleWidth,
-                                        height: metrics.sheetHandleHeight,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[300],
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                      SizedBox(height: metrics.sheetGap),
-                                      Container(
-                                        width: double.infinity,
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        padding: EdgeInsets.all(
-                                          metrics.sheetInnerPadding,
-                                        ),
-                                        child: Column(
-                                          children: [
-                                            _buildFilterOption("All Bookings", metrics),
-                                            Divider(color: Colors.grey[200]),
-                                            _buildFilterOption("Confirmed", metrics),
-                                            Divider(color: Colors.grey[200]),
-                                            _buildFilterOption("Completed", metrics),
-                                            Divider(color: Colors.grey[200]),
-                                            _buildFilterOption("Canceled", metrics),
-                                            Divider(color: Colors.grey[200]),
-                                            _buildFilterOption("Rejected", metrics),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                    ),
+                    builder: (context) {
+                      // No Align/Center here: showModalBottomSheet hands
+                      // the builder a bounded full-screen height, and
+                      // Align/Center always fill that bound regardless of
+                      // content size — which is what made this sheet cover
+                      // the whole page. Column(mainAxisSize.min) shrink-
+                      // wraps to content instead; width capping for
+                      // tablets is already handled above via the
+                      // `constraints:` param on showModalBottomSheet.
+                      return SingleChildScrollView(
+                        child: Padding(
+                          padding: EdgeInsets.all(metrics.sheetPadding),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: metrics.sheetHandleWidth,
+                                height: metrics.sheetHandleHeight,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                               ),
-                            ),
+                              SizedBox(height: metrics.sheetGap),
+                              Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                padding: EdgeInsets.all(
+                                  metrics.sheetInnerPadding,
+                                ),
+                                child: Column(
+                                  children: [
+                                    _buildFilterOption("All Bookings", metrics),
+                                    Divider(color: Colors.grey[200]),
+                                    _buildFilterOption("Confirmed", metrics),
+                                    Divider(color: Colors.grey[200]),
+                                    _buildFilterOption("Completed", metrics),
+                                    Divider(color: Colors.grey[200]),
+                                    _buildFilterOption("Canceled", metrics),
+                                    Divider(color: Colors.grey[200]),
+                                    _buildFilterOption("Rejected", metrics),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                    );
-                  },
-                ),
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
             ),
-
             SizedBox(height: metrics.sectionGap),
 
             // ── Booking list ──
@@ -461,6 +474,7 @@ class _ReservationState extends State<Reservation> {
                               });
                             }
                           },
+                          onCouponClosed: _fetchBookings,
                           onRequestTap: () => setState(
                             () =>
                                 isPartyRequestPressed = !isPartyRequestPressed,
@@ -475,39 +489,44 @@ class _ReservationState extends State<Reservation> {
     );
   }
 
-  // ── Coupon number input (shown after tapping Search Restaurant) ──
+  // ── Coupon number input (shown after tapping the search button) ──
+  //
+  // Both states share one Container shell (height/decoration) and center
+  // their text via Alignment.center, so the label sits in the exact same
+  // spot whether the box is showing the placeholder or the live input.
+  // The close icon is a Positioned overlay rather than a Row sibling —
+  // that keeps it from claiming layout space that would push the
+  // centered text off-center.
   Widget _couponInputField(_ReservationMetrics metrics) {
+    final BoxDecoration boxDecoration = BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(metrics.searchRadius),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: metrics.searchShadowAlpha),
+          offset: Offset(0, metrics.searchShadowOffsetY),
+          blurRadius: metrics.searchShadowBlur,
+          spreadRadius: metrics.searchShadowSpread,
+        ),
+      ],
+    );
+
     if (!_isSearchActive) {
-      // ── "Search Restaurant" button ──
+      // Label matches what the search actually queries by (reservation /
+      // coupon id, per ReservationService.searchReservations) and the
+      // "Enter the Coupon Number" hint shown once active — the previous
+      // "Search Restaurant" label described a different search entirely.
       return GestureDetector(
         onTap: () => setState(() => _isSearchActive = true),
         child: Container(
           height: metrics.searchHeight,
-          padding: EdgeInsets.symmetric(
-            vertical: metrics.searchVerticalPadding,
-            horizontal: metrics.searchHorizontalPadding,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(metrics.searchRadius),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(
-                  alpha: metrics.searchShadowAlpha,
-                ),
-                offset: Offset(0, metrics.searchShadowOffsetY),
-                blurRadius: metrics.searchShadowBlur,
-                spreadRadius: metrics.searchShadowSpread,
-              ),
-            ],
-          ),
-          child: Center(
-            child: AppText(
-              text: "Search Restaurant",
-              size: metrics.searchTextSize,
-              fontWeight: FontWeight.w400,
-              color: menuIconColor.withValues(alpha: .7),
-            ),
+          alignment: Alignment.center,
+          decoration: boxDecoration,
+          child: AppText(
+            text: "Search by Coupon Number",
+            size: metrics.searchTextSize,
+            fontWeight: FontWeight.w400,
+            color: menuIconColor.withValues(alpha: .7),
           ),
         ),
       );
@@ -516,55 +535,50 @@ class _ReservationState extends State<Reservation> {
     // ── Coupon input (shown after tap) ──
     return Container(
       height: metrics.searchHeight,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(metrics.searchRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: metrics.searchShadowAlpha),
-            offset: Offset(0, metrics.searchShadowOffsetY),
-            blurRadius: metrics.searchShadowBlur,
-            spreadRadius: metrics.searchShadowSpread,
-          ),
-        ],
-      ),
-      child: Row(
+      decoration: boxDecoration,
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          GestureDetector(
-            onTap: () {
-              _couponController.clear(); // clear search results
-              setState(() => _isSearchActive = false); // go back to button
-            },
-            child: Padding(
-              padding: EdgeInsets.only(left: metrics.closeIconLeftPadding),
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: metrics.searchHorizontalPadding,
+            ),
+            child: TranslatedBuilder(
+              text: 'Enter the Coupon Number',
+              builder: (context, translatedHint) => TextField(
+                controller: _couponController,
+                textAlign: TextAlign.center,
+                onChanged: (_) {},
+                cursorColor: appTextColor,
+                style: TextStyle(
+                  fontSize: metrics.searchInputTextSize,
+                  color: menuIconColor.withValues(alpha: .7),
+                ),
+                decoration: InputDecoration(
+                  isCollapsed: true,
+                  border: InputBorder.none,
+                  hintText: translatedHint,
+                  hintStyle: TextStyle(
+                    fontWeight: FontWeight.w400,
+                    fontSize: metrics.searchInputTextSize,
+                    color: menuIconColor.withValues(alpha: .7),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: metrics.closeIconLeftPadding,
+            child: GestureDetector(
+              onTap: () {
+                _couponController.clear(); // clear search results
+                setState(() => _isSearchActive = false); // go back to button
+              },
               child: Icon(
                 Icons.close,
                 size: metrics.closeIconSize,
                 color: appTextColor3,
               ),
-            ),
-          ),
-          Expanded(
-            child: AppTextFeild(
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.00),
-                  offset: const Offset(0, 0), // X: 0, Y: 0
-                  blurRadius: 0, // Blur
-                  spreadRadius: 0, // Spread
-                ),
-              ],
-              controller: _couponController,
-              text: 'Enter the Coupon Number',
-              isTextCenter: true,
-              onChanged: (_) {},
-              size: metrics.searchInputTextSize,
-              textColor: menuIconColor.withValues(alpha: .7),
-              inputContentPadding: EdgeInsets.symmetric(
-                vertical: metrics.searchVerticalPadding,
-                horizontal: metrics.searchHorizontalPadding,
-              ),
-              backgroundColor: Colors.transparent,
             ),
           ),
         ],
@@ -647,12 +661,13 @@ class _ReservationState extends State<Reservation> {
       child: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 30.w),
         child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 500),
-        
+          constraints: const BoxConstraints(maxWidth: 500),
+
           child: Container(
             width: double.infinity,
             constraints: BoxConstraints(
-    maxHeight: MediaQuery.of(context).size.height * 0.9,),
+              maxHeight: MediaQuery.of(context).size.height * 0.9,
+            ),
             padding: EdgeInsets.symmetric(horizontal: 25.w, vertical: 30.h),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -668,9 +683,9 @@ class _ReservationState extends State<Reservation> {
                   color: Colors.black,
                   isCentered: true,
                 ),
-          
+
                 SizedBox(height: 25.h),
-          
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -688,9 +703,9 @@ class _ReservationState extends State<Reservation> {
                         onPressed: _declineSelectedBooking,
                       ),
                     ),
-          
+
                     SizedBox(width: 15.w),
-          
+
                     SizedBox(
                       width: 80.w,
                       height: 28.h,
@@ -751,7 +766,11 @@ class _ReservationState extends State<Reservation> {
                       children: [
                         GestureDetector(
                           onTap: _closeBookingCanceledPopup,
-                          child: Icon(Icons.close, size: 30, color: appTextColor),
+                          child: Icon(
+                            Icons.close,
+                            size: 30,
+                            color: appTextColor,
+                          ),
                         ),
                       ],
                     ),
@@ -787,11 +806,12 @@ class _ReservationState extends State<Reservation> {
           child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(horizontal: 30.w),
             child: ConstrainedBox(
-               constraints: const BoxConstraints(maxWidth: 500),
+              constraints: const BoxConstraints(maxWidth: 500),
               child: Container(
                 width: double.infinity,
                 constraints: BoxConstraints(
-    maxHeight: MediaQuery.of(context).size.height * 0.9,),
+                  maxHeight: MediaQuery.of(context).size.height * 0.9,
+                ),
                 padding: EdgeInsets.only(
                   left: 40.w,
                   right: 40.w,

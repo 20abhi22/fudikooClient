@@ -24,7 +24,12 @@ void pushNamed({
   Navigator.of(context).pushNamed(newPage);
 }
 
-/// Push a widget while removing all previous routes
+/// Push a widget while removing all previous routes.
+///
+/// Always targets the root navigator: this is an app-level reset (logout,
+/// login, language change), and running it on a tab shell's nested navigator
+/// would clear only that tab, leaving the shell and its bottom nav on screen
+/// around the new page.
 void pushWidgetWhileRemove({
   required Widget newPage,
   required BuildContext context,
@@ -33,13 +38,15 @@ void pushWidgetWhileRemove({
   if (pushBackPrevPage) {
     Navigator.of(context).pop();
   }
-  Navigator.of(context).pushAndRemoveUntil(
+  Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
     MaterialPageRoute(builder: (context) => newPage),
     (route) => false,
   );
 }
 
-/// Push a named route while removing all previous routes
+/// Push a named route while removing all previous routes.
+///
+/// Root-navigator targeted for the same reason as [pushWidgetWhileRemove].
 void pushNamedWhileRemove({
   required String newPage,
   required BuildContext context,
@@ -48,7 +55,10 @@ void pushNamedWhileRemove({
   if (pushBackPrevPage) {
     Navigator.of(context).pop();
   }
-  Navigator.of(context).pushNamedAndRemoveUntil(newPage, (route) => false);
+  Navigator.of(
+    context,
+    rootNavigator: true,
+  ).pushNamedAndRemoveUntil(newPage, (route) => false);
 }
 
 /// Push a widget and await for data returned from `Navigator.pop()`
@@ -124,7 +134,8 @@ Future slideRightWidget({
   required Widget newPage,
   required BuildContext context,
   bool opaque = true,
-  bool clearStack = false,//makes the new page the root of the navigation stack, preventing users from navigating back to previous pages
+  bool clearStack =
+      false, //makes the new page the root of the navigation stack, preventing users from navigating back to previous pages
 }) {
   // return Navigator.of(context).push(
   //   PageRouteBuilder(
@@ -160,14 +171,15 @@ Future slideRightWidget({
   );
 
   if (clearStack) {
-    return Navigator.of(context).pushAndRemoveUntil(
+    // Root navigator: clearing the stack is an app-level reset, so any tab
+    // shell wrapping the current route has to come down with it.
+    return Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
       route,
-      (route) => false,       // ← clears all previous routes
+      (route) => false, // ← clears all previous routes
     );
   }
 
   return Navigator.of(context).push(route);
-
 }
 
 /// Custom page animation with new page sliding in from lef side
@@ -203,7 +215,6 @@ Future slideUpWidget({
   required Widget newPage,
   required BuildContext context,
   bool opaque = true,
-  
 }) {
   return Navigator.of(context).push(
     PageRouteBuilder(

@@ -1,3 +1,4 @@
+import 'package:fudikoclient/utils/error_messages.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fudikoclient/api/dio_client.dart';
@@ -70,7 +71,7 @@ class OfferCodeService {
         status: response.statusCode == 200,
         message: response.statusCode == 200
             ? ''
-            : 'Failed to load QR code: ${response.statusCode}',
+            : statusCodeMessage(response.statusCode),
       );
     } catch (e) {
       if (kDebugMode) {
@@ -83,10 +84,7 @@ class OfferCodeService {
         );
       }
 
-      return OfferCodeResponse(
-        status: false,
-        message: 'Something went wrong: $e',
-      );
+      return OfferCodeResponse(status: false, message: friendlyErrorMessage(e));
     }
   }
 }

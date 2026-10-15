@@ -1,3 +1,4 @@
+import 'package:fudikoclient/utils/error_messages.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fudikoclient/api/dio_client.dart';
@@ -20,7 +21,7 @@ class CateringReservationService {
 
       return BanquetReservationListResponse(
         status: false,
-        message: 'Failed to fetch reservations: ${response.statusCode}',
+        message: statusCodeMessage(response.statusCode),
         reservations: [],
       );
     } catch (e) {
@@ -29,7 +30,7 @@ class CateringReservationService {
       }
       return BanquetReservationListResponse(
         status: false,
-        message: 'Something went wrong: $e',
+        message: friendlyErrorMessage(e),
         reservations: [],
       );
     }
@@ -60,7 +61,7 @@ class CateringReservationService {
 
       return BanquetReservationListResponse(
         status: false,
-        message: 'Failed to search reservations: ${response.statusCode}',
+        message: statusCodeMessage(response.statusCode),
         reservations: [],
       );
     } catch (e) {
@@ -69,7 +70,7 @@ class CateringReservationService {
       }
       return BanquetReservationListResponse(
         status: false,
-        message: 'Something went wrong: $e',
+        message: friendlyErrorMessage(e),
         reservations: [],
       );
     }
@@ -108,7 +109,7 @@ class CateringReservationService {
       if (kDebugMode) {
         print('Catering reservation cancel error: $e');
       }
-      return {'status': false, 'message': 'Something went wrong: $e'};
+      return {'status': false, 'message': friendlyErrorMessage(e)};
     }
   }
 }

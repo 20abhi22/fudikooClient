@@ -25,7 +25,8 @@ class DescriptionTextArea extends StatefulWidget {
     this.maxLines,
     this.height,
     this.topHintText,
-    this.controller, this.imageIconPath,
+    this.controller,
+    this.imageIconPath,
   });
 
   @override
@@ -74,25 +75,30 @@ class _DescriptionTextAreaState extends State<DescriptionTextArea> {
   Widget _buildTextField() {
     if (widget.height != null) {
       return Expanded(
-        child: TextField(
-          controller: widget.controller,
-          maxLines: null,
-          expands: true,
-          maxLength: widget.maxLength,
-          onChanged: (val) {
-            setState(() => _charCount = val.length);
-            if (widget.onChanged != null) widget.onChanged!(val);
-          },
-          decoration: InputDecoration(
-            counterText: "",
-            hintText: _translatedHint,
-            hintStyle: const TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
+        child: Scrollbar(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.zero,
+            child: TextField(
+              controller: widget.controller,
+              maxLines: null,
+              minLines: 1,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
+              maxLength: widget.maxLength,
+              onChanged: (val) {
+                setState(() => _charCount = val.length);
+                if (widget.onChanged != null) widget.onChanged!(val);
+              },
+              decoration: InputDecoration(
+                counterText: "",
+                hintText: _translatedHint,
+                hintStyle: const TextStyle(color: Colors.grey, fontSize: 12),
+                border: InputBorder.none,
+                isCollapsed: true,
+              ),
+              textAlignVertical: TextAlignVertical.top,
             ),
-            border: InputBorder.none,
           ),
-          textAlignVertical: TextAlignVertical.top,
         ),
       );
     }
@@ -108,10 +114,7 @@ class _DescriptionTextAreaState extends State<DescriptionTextArea> {
       decoration: InputDecoration(
         counterText: "",
         hintText: _translatedHint,
-        hintStyle: const TextStyle(
-          color: Colors.grey,
-          fontSize: 12,
-        ),
+        hintStyle: const TextStyle(color: Colors.grey, fontSize: 12),
         border: InputBorder.none,
       ),
     );
@@ -125,10 +128,22 @@ class _DescriptionTextAreaState extends State<DescriptionTextArea> {
     final isCompactPhone = width < 390 || height < 640;
     final isTablet = width >= 600;
 
-    final containerPadding = isTablet ? 20.0 : isCompactPhone ? 14.0 : 16.0;
+    final containerPadding = isTablet
+        ? 20.0
+        : isCompactPhone
+        ? 14.0
+        : 16.0;
     final radius = isTablet ? 14.0 : 10.0;
-    final iconSize = isTablet ? 22.0 : isCompactPhone ? 18.0 : 20.0;
-    final headerGap = isTablet ? 12.0 : isCompactPhone ? 8.0 : 10.0;
+    final iconSize = isTablet
+        ? 22.0
+        : isCompactPhone
+        ? 18.0
+        : 20.0;
+    final headerGap = isTablet
+        ? 12.0
+        : isCompactPhone
+        ? 8.0
+        : 10.0;
     final topGap = isTablet ? 10.0 : 8.0;
     final titleSize = isTablet ? 15.0 : 14.0;
     final counterSize = isTablet ? 13.0 : 12.0;

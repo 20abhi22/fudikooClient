@@ -11,6 +11,7 @@ import 'package:fudikoclient/service/inquery/catering_reservation_service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class CancelCircleX extends StatefulWidget {
   const CancelCircleX({
@@ -248,10 +249,10 @@ class CateringReservation extends StatefulWidget {
   const CateringReservation({super.key});
 
   @override
-  State<CateringReservation> createState() => _CateringReservationState();
+  State<CateringReservation> createState() => CateringReservationState();
 }
 
-class _CateringReservationState extends State<CateringReservation> {
+class CateringReservationState extends State<CateringReservation> {
   // ── Overlay visibility flags ─────────────────────────────────────────────
   bool isDeletePressed = false;
   bool isConfirmedPressed = false;
@@ -264,6 +265,13 @@ class _CateringReservationState extends State<CateringReservation> {
   String selectedStatus = "Entered the wrong details";
   String mainSelectedStatus = "Party";
   String selectedFilter = "All Bookings";
+  final List<String> _cancelReasons = const [
+    "I changed my mind",
+    "I need to reschedule the event",
+    "Entered the wrong details",
+    "I booked by mistake",
+    "Other Reasons",
+  ];
 
   // ── Loading / error / search state ──────────────────────────────────────
   bool _isLoadingReservations = false;
@@ -356,6 +364,13 @@ class _CateringReservationState extends State<CateringReservation> {
 
   // ── API calls ────────────────────────────────────────────────────────────
 
+  Future<void> refreshReservations() {
+    if (_isReservationSearchActive) {
+      return _searchReservations(_reservationSearchController.text);
+    }
+    return _fetchReservations();
+  }
+
   Future<void> _fetchReservations() async {
     setState(() {
       _isLoadingReservations = true;
@@ -408,12 +423,7 @@ class _CateringReservationState extends State<CateringReservation> {
       }
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isSuccess ? Colors.green : Colors.red,
-      ),
-    );
+    showStatusSnack(context, isSuccess, message);
 
     if (isSuccess) {
       await _fetchReservations();
@@ -524,83 +534,87 @@ class _CateringReservationState extends State<CateringReservation> {
             side: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
           ),
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: metrics.popupMaxWidth),
+            constraints: BoxConstraints(
+              maxWidth: metrics.popupMaxWidth,
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+            ),
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: metrics.popupContentHorizontalPadding,
                 vertical: metrics.popupContentVerticalPadding,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AppText(
-                          text: "Reason for accepting another response",
-                          size: metrics.popupBodyTextSize,
-                          fontWeight: FontWeight.w600,
-                          color: appTextColor3,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: AppText(
+                            text: "Reason for accepting another response",
+                            size: metrics.popupBodyTextSize,
+                            fontWeight: FontWeight.w600,
+                            color: appTextColor3,
+                          ),
                         ),
-                      ),
-                      GestureDetector(
-                        onTap: () => Navigator.pop(dialogContext),
-                        child: Icon(
-                          Icons.close,
-                          size: metrics.popupCloseIconSize,
-                          color: appTextColor3,
+                        GestureDetector(
+                          onTap: () => Navigator.pop(dialogContext),
+                          child: Icon(
+                            Icons.close,
+                            size: metrics.popupCloseIconSize,
+                            color: appTextColor3,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: metrics.popupRowGap),
-                  TextField(
-                    controller: _acceptAnotherReasonController,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      hintText: "Type your reason",
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: metrics.reasonFieldHorizontalPadding,
-                        vertical: metrics.reasonFieldVerticalPadding,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          metrics.reasonFieldRadius,
-                        ),
-                        borderSide: BorderSide.none,
-                      ),
+                      ],
                     ),
-                  ),
-                  SizedBox(height: metrics.popupRowGap),
-                  SizedBox(
-                    width: double.infinity,
-                    height: metrics.popupButtonHeight,
-                    child: AppButton(
-                      text: "Submit",
-                      bgColor1: appButtonColor,
-                      bgColor2: appButtonColor,
-                      size: metrics.popupButtonTextSize,
-                      borderRadius: metrics.popupButtonRadius,
-                      onPressed: () {
-                        final reason = _acceptAnotherReasonController.text
-                            .trim();
-                        if (reason.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Please type a reason"),
+                    SizedBox(height: metrics.popupRowGap),
+                    TranslatedBuilder(
+                      text: "Type your reason",
+                      builder: (context, translatedHint) => TextField(
+                        controller: _acceptAnotherReasonController,
+                        maxLines: 4,
+                        decoration: InputDecoration(
+                          hintText: translatedHint,
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: metrics.reasonFieldHorizontalPadding,
+                            vertical: metrics.reasonFieldVerticalPadding,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                              metrics.reasonFieldRadius,
                             ),
-                          );
-                          return;
-                        }
-                        setState(() => selectedStatus = reason);
-                        Navigator.pop(dialogContext);
-                      },
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                    SizedBox(height: metrics.popupRowGap),
+                    SizedBox(
+                      width: double.infinity,
+                      height: metrics.popupButtonHeight,
+                      child: AppButton(
+                        text: "Submit",
+                        bgColor1: appButtonColor,
+                        bgColor2: appButtonColor,
+                        size: metrics.popupButtonTextSize,
+                        borderRadius: metrics.popupButtonRadius,
+                        onPressed: () {
+                          final reason = _acceptAnotherReasonController.text
+                              .trim();
+                          if (reason.isEmpty) {
+                            showErrorSnack(context, "Please type a reason");
+                            return;
+                          }
+                          setState(() => selectedStatus = reason);
+                          Navigator.pop(dialogContext);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -659,18 +673,17 @@ class _CateringReservationState extends State<CateringReservation> {
                   ),
                 ),
 
-              if (isPartyRequestPressed)
-                Positioned.fill(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => setState(() => isPartyRequestPressed = false),
-                    child: Container(
-                      color: Colors.black54,
-                      child: _viewPartyRequestWidget(),
-                    ),
-                  ),
-                ),
-
+              // if (isPartyRequestPressed)
+              //   Positioned.fill(
+              //     child: GestureDetector(
+              //       behavior: HitTestBehavior.opaque,
+              //       onTap: () => setState(() => isPartyRequestPressed = false),
+              //       child: Container(
+              //         color: Colors.black54,
+              //         child: _viewPartyRequestWidget(),
+              //       ),
+              //     ),
+              //   ),
               if (isCateringRequestPressed)
                 Positioned.fill(
                   child: GestureDetector(
@@ -854,6 +867,7 @@ class _CateringReservationState extends State<CateringReservation> {
             _dismissSearchKeyboard();
             _openCateringRequest(booking);
           },
+          onCouponClosed: refreshReservations,
         );
       },
     );
@@ -1073,33 +1087,26 @@ class _CateringReservationState extends State<CateringReservation> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        SizedBox(
-                          height: metrics.reasonButtonHeight,
-                          child: _buildStatusButton("I changed my mind"),
-                        ),
-                        SizedBox(height: metrics.reasonButtonGap),
-                        SizedBox(
-                          height: metrics.reasonButtonHeight,
-                          child: _buildStatusButton(
-                            "I need to reschedule the event",
-                          ),
-                        ),
-                        SizedBox(height: metrics.reasonButtonGap),
-                        SizedBox(
-                          height: metrics.reasonButtonHeight,
-                          child: _buildStatusButton(
-                            "Entered the wrong details",
-                          ),
-                        ),
-                        SizedBox(height: metrics.reasonButtonGap),
-                        SizedBox(
-                          height: metrics.reasonButtonHeight,
-                          child: _buildStatusButton("I booked by mistake"),
-                        ),
-                        SizedBox(height: metrics.reasonButtonGap),
-                        SizedBox(
-                          height: metrics.reasonButtonHeight,
-                          child: _buildStatusButton("Other Reasons"),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final size = MediaQuery.sizeOf(context);
+                            final isLandscape = size.width > size.height;
+
+                            return GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _cancelReasons.length,
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: isLandscape ? 3 : 1,
+                                    crossAxisSpacing: metrics.reasonButtonGap,
+                                    mainAxisSpacing: metrics.reasonButtonGap,
+                                    mainAxisExtent: metrics.reasonButtonHeight,
+                                  ),
+                              itemBuilder: (_, index) =>
+                                  _buildStatusButton(_cancelReasons[index]),
+                            );
+                          },
                         ),
                         SizedBox(height: metrics.reasonTextTopGap),
                         AppText(
@@ -1406,6 +1413,7 @@ class _CateringReservationState extends State<CateringReservation> {
     required String icon,
     required String label,
     required String value,
+    int? maxLines,
   }) {
     final metrics = _CateringReservationMetrics.fromContext(context);
 
@@ -1436,6 +1444,7 @@ class _CateringReservationState extends State<CateringReservation> {
                 fontWeight: FontWeight.w500,
                 color: appTextColor2,
                 lineSpacing: 1.5,
+                maxLines: maxLines,
               ),
             ],
           ),
@@ -1444,120 +1453,120 @@ class _CateringReservationState extends State<CateringReservation> {
     );
   }
 
-  Widget _viewPartyRequestWidget() {
-    final metrics = _CateringReservationMetrics.fromContext(context);
+  // Widget _viewPartyRequestWidget() {
+  //   final metrics = _CateringReservationMetrics.fromContext(context);
 
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: metrics.popupHorizontalPadding,
-        ),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {},
-          child: Container(
-            width: double.infinity,
-            constraints: BoxConstraints(
-              maxWidth: metrics.popupMaxWidth,
-              maxHeight: MediaQuery.of(context).size.height * 0.85,
-            ),
-            padding: EdgeInsets.symmetric(
-              horizontal: metrics.popupContentHorizontalPadding,
-              vertical: metrics.popupContentVerticalPadding,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(metrics.popupRadius),
-              border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: metrics.popupShadowBlur,
-                  offset: Offset(0, 4.r),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    AppText(
-                      text: "Requested party",
-                      size: metrics.popupBodyTextSize,
-                      fontWeight: FontWeight.w500,
-                      color: appTextColor2,
-                    ),
-                    GestureDetector(
-                      onTap: () =>
-                          setState(() => isPartyRequestPressed = false),
-                      child: Icon(
-                        Icons.close,
-                        color: appTextColor3,
-                        size: metrics.popupCloseIconSize,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: metrics.popupRowGap),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: AppText(
-                    text: "P17854",
-                    size: metrics.popupTitleTextSize,
-                    fontWeight: FontWeight.w700,
-                    color: appTextColor3,
-                  ),
-                ),
-                SizedBox(height: metrics.popupRowGap),
-                Flexible(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        _buildDetailRow(
-                          icon: menuIcon,
-                          label: "Your Menu",
-                          value:
-                              "Chicken Biriyani , Porotta, Rotti ,Salad, Payasam, Butter Chicken , Ice cream.",
-                        ),
-                        SizedBox(height: metrics.detailRowGap),
-                        _buildDetailRow(
-                          icon: peopleIcon,
-                          label: "Number of Persons",
-                          value: "12 Person",
-                        ),
-                        SizedBox(height: metrics.detailRowGap),
-                        _buildDetailRow(
-                          icon: calenderIcon,
-                          label: "Date and Time",
-                          value: "April 12 - 2:30 pm",
-                        ),
-                        SizedBox(height: metrics.detailRowGap),
-                        _buildDetailRow(
-                          icon: walletIcon,
-                          label: "Expected amount per person",
-                          value: "1000 Per person",
-                        ),
-                        SizedBox(height: metrics.detailRowGap),
-                        _buildDetailRow(
-                          icon: radiusIcon,
-                          label: "Enquiry Radius",
-                          value: "Moscow City - 20km Radius",
-                        ),
-                        SizedBox(height: metrics.detailRowGap),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  //   return Center(
+  //     child: Padding(
+  //       padding: EdgeInsets.symmetric(
+  //         horizontal: metrics.popupHorizontalPadding,
+  //       ),
+  //       child: GestureDetector(
+  //         behavior: HitTestBehavior.opaque,
+  //         onTap: () {},
+  //         child: Container(
+  //           width: double.infinity,
+  //           constraints: BoxConstraints(
+  //             maxWidth: metrics.popupMaxWidth,
+  //             maxHeight: MediaQuery.of(context).size.height * 0.85,
+  //           ),
+  //           padding: EdgeInsets.symmetric(
+  //             horizontal: metrics.popupContentHorizontalPadding,
+  //             vertical: metrics.popupContentVerticalPadding,
+  //           ),
+  //           decoration: BoxDecoration(
+  //             color: Colors.white,
+  //             borderRadius: BorderRadius.circular(metrics.popupRadius),
+  //             border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+  //             boxShadow: [
+  //               BoxShadow(
+  //                 color: Colors.black.withValues(alpha: 0.1),
+  //                 blurRadius: metrics.popupShadowBlur,
+  //                 offset: Offset(0, 4.r),
+  //               ),
+  //             ],
+  //           ),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               // header
+  //               Row(
+  //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                 children: [
+  //                   AppText(
+  //                     text: "Requested party",
+  //                     size: metrics.popupBodyTextSize,
+  //                     fontWeight: FontWeight.w500,
+  //                     color: appTextColor2,
+  //                   ),
+  //                   GestureDetector(
+  //                     onTap: () =>
+  //                         setState(() => isPartyRequestPressed = false),
+  //                     child: Icon(
+  //                       Icons.close,
+  //                       color: appTextColor3,
+  //                       size: metrics.popupCloseIconSize,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //               SizedBox(height: metrics.popupRowGap),
+  //               Align(
+  //                 alignment: Alignment.centerLeft,
+  //                 child: AppText(
+  //                   text: "P17854",
+  //                   size: metrics.popupTitleTextSize,
+  //                   fontWeight: FontWeight.w700,
+  //                   color: appTextColor3,
+  //                 ),
+  //               ),
+  //               SizedBox(height: metrics.popupRowGap),
+  //               Flexible(
+  //                 child: SingleChildScrollView(
+  //                   child: Column(
+  //                     children: [
+  //                       _buildDetailRow(
+  //                         icon: menuIcon,
+  //                         label: "Your Menu",
+  //                         value:
+  //                             "Chicken Biriyani , Porotta, Rotti ,Salad, Payasam, Butter Chicken , Ice cream.",
+  //                       ),
+  //                       SizedBox(height: metrics.detailRowGap),
+  //                       _buildDetailRow(
+  //                         icon: peopleIcon,
+  //                         label: "Number of Persons",
+  //                         value: "12 Person",
+  //                       ),
+  //                       SizedBox(height: metrics.detailRowGap),
+  //                       _buildDetailRow(
+  //                         icon: calenderIcon,
+  //                         label: "Date and Time",
+  //                         value: "April 12 - 2:30 pm",
+  //                       ),
+  //                       SizedBox(height: metrics.detailRowGap),
+  //                       _buildDetailRow(
+  //                         icon: walletIcon,
+  //                         label: "Expected amount per person",
+  //                         value: "1000 Per person",
+  //                       ),
+  //                       SizedBox(height: metrics.detailRowGap),
+  //                       _buildDetailRow(
+  //                         icon: radiusIcon,
+  //                         label: "Enquiry Radius",
+  //                         value: "Moscow City - 20km Radius",
+  //                       ),
+  //                       SizedBox(height: metrics.detailRowGap),
+  //                     ],
+  //                   ),
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _viewCateringRequestWidget() {
     final metrics = _CateringReservationMetrics.fromContext(context);
@@ -1567,9 +1576,17 @@ class _CateringReservationState extends State<CateringReservation> {
         : 'Request details';
     final menuItems = reservation?.menuItems.trim().isNotEmpty == true
         ? reservation!.menuItems
+              .split(RegExp(r'[,\n]'))
+              .map((item) => item.trim())
+              .where((item) => item.isNotEmpty)
+              .join(', ')
         : 'No menu details available';
     final otherServices = reservation?.otherServices.trim().isNotEmpty == true
         ? reservation!.otherServices
+              .split(RegExp(r'[,\n]'))
+              .map((item) => item.trim())
+              .where((item) => item.isNotEmpty)
+              .join(', ')
         : 'No other services available';
     final persons = reservation == null
         ? 'No person count available'
@@ -1657,12 +1674,14 @@ class _CateringReservationState extends State<CateringReservation> {
                           icon: menuIcon,
                           label: "Your Menu",
                           value: menuItems,
+                          maxLines: 20,
                         ),
                         SizedBox(height: metrics.detailRowGap),
                         _buildDetailRow(
                           icon: handshakeIcon,
                           label: "Other Services",
                           value: otherServices,
+                          maxLines: 20,
                         ),
                         SizedBox(height: metrics.detailRowGap),
                         _buildDetailRow(

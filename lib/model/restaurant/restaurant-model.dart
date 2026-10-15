@@ -126,7 +126,14 @@ class RestaurantListResponse {
   final bool status;
   final List<RestaurantModel> restaurant;
 
-  RestaurantListResponse({required this.status, required this.restaurant});
+  /// Why the request failed, ready to show to the user. Empty on success.
+  final String message;
+
+  RestaurantListResponse({
+    required this.status,
+    required this.restaurant,
+    this.message = '',
+  });
 
   factory RestaurantListResponse.fromJson(Map<String, dynamic> json) {
     return RestaurantListResponse(

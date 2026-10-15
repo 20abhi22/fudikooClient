@@ -23,6 +23,7 @@ import 'package:fudikoclient/screens/tabs/inquery/inquery/viewinquery.dart';
 import 'package:fudikoclient/screens/tabs/main_restaurant_nav.dart';
 import 'package:fudikoclient/service/inquery/inquery-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class Inquery extends StatefulWidget {
   const Inquery({super.key});
@@ -74,11 +75,7 @@ class _InqueryState extends State<Inquery> {
       if (_ctSeconds <= 0) {
         timer.cancel();
         setState(() => isCtReviewOnClick = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Review time expired. Please try again.'),
-          ),
-        );
+        showErrorSnack(context, 'Review time expired. Please try again.');
       } else {
         setState(() => _ctSeconds--);
       }
@@ -105,11 +102,7 @@ class _InqueryState extends State<Inquery> {
       if (_partySeconds <= 0) {
         timer.cancel();
         setState(() => isReviewOnClick = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Review time expired. Please try again.'),
-          ),
-        );
+        showErrorSnack(context, 'Review time expired. Please try again.');
       } else {
         setState(() => _partySeconds--);
       }
@@ -158,13 +151,9 @@ class _InqueryState extends State<Inquery> {
 
     if (response.status) {
       setState(() => isCtReviewOnClick = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enquiry submitted successfully!')),
-      );
+      showSuccessSnack(context, 'Enquiry submitted successfully!');
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(response.message)));
+      showErrorSnack(context, response.message);
     }
   }
 
@@ -192,13 +181,9 @@ class _InqueryState extends State<Inquery> {
     final response = await service.createInquery(model);
     if (response.status) {
       setState(() => isReviewOnClick = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Party enquiry submitted successfully!')),
-      );
+      showSuccessSnack(context, 'Party enquiry submitted successfully!');
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(response.message)));
+      showErrorSnack(context, response.message);
     }
   }
 

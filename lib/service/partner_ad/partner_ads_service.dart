@@ -1,44 +1,46 @@
+import 'package:flutter/foundation.dart';
 import 'package:fudikoclient/api/dio_client.dart';
 import 'package:fudikoclient/model/partner_ad/partner_ad_model.dart';
-
+import 'package:fudikoclient/utils/error_messages.dart';
+import 'package:fudikoclient/utils/service_result.dart';
 
 class PartnerAdsService {
   PartnerAdsService._internal();
   static final PartnerAdsService _instance = PartnerAdsService._internal();
   factory PartnerAdsService() => _instance;
 
-  // Future<List<PartnerAdModel>> getPartnerAds() async {
-  //   try {
-  //     final response = await DioClient.dio.get('/customer/partner-ads');
-
-  //     if (response.statusCode == 200 && response.data != null) {
-  //       final List<dynamic> list = response.data['partnerAds'] ?? [];
-  //       return list.map((e) => PartnerAdModel.fromJson(e)).toList();
-  //     }
-  //     return [];
-  //   } catch (e) {
-  //     print('PartnerAdsService.getPartnerAds error: $e');
-  //     return [];
-  //   }
-  // }
-
-  Future<List<PartnerAdModel>> getPartnerAds() async {
-    print('PartnerAdsService: starting request');
+  Future<ServiceResult<List<PartnerAdModel>>> fetchPartnerAds() async {
     try {
       final response = await DioClient.dio.get('/customer/partner-ads');
-      print('PartnerAdsService: status ${response.statusCode}');
-      print('PartnerAdsService: data ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         final List<dynamic> list = response.data['partnerAds'] ?? [];
-        print('PartnerAdsService: parsed ${list.length} ads');
-        return list.map((e) => PartnerAdModel.fromJson(e)).toList();
+        return ServiceResult.success(
+          list.map((e) => PartnerAdModel.fromJson(e)).toList(),
+        );
       }
-      return [];
+      return ServiceResult.failure(
+        statusCodeMessage(
+          response.statusCode,
+          fallback: 'We could not load offers. Please try again.',
+        ),
+        data: const <PartnerAdModel>[],
+      );
     } catch (e, st) {
-      print('PartnerAdsService.getPartnerAds error: $e');
-      print(st);
-      return [];
+      if (kDebugMode) {
+        debugPrint('PartnerAdsService.fetchPartnerAds error: $e');
+        debugPrint('$st');
+      }
+      return ServiceResult.failure(
+        friendlyErrorMessage(
+          e,
+          fallback: 'We could not load offers. Please try again.',
+        ),
+        data: const <PartnerAdModel>[],
+      );
     }
   }
+
+  Future<List<PartnerAdModel>> getPartnerAds() async =>
+      (await fetchPartnerAds()).data ?? const <PartnerAdModel>[];
 }

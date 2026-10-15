@@ -111,17 +111,17 @@ class _AboutBadgePageState extends State<AboutBadgePage> {
                             ),
                             child: ConstrainedBox(
                               constraints: BoxConstraints(
-                                minHeight: (constraints.maxHeight -
-                                        metrics.topPadding -
-                                        metrics.bottomPadding)
-                                    .clamp(0.0, double.infinity),
+                                minHeight:
+                                    (constraints.maxHeight -
+                                            metrics.topPadding -
+                                            metrics.bottomPadding)
+                                        .clamp(0.0, double.infinity),
                               ),
                               child: Center(
                                 child: SizedBox(
                                   width: metrics.contentWidth,
                                   child: Column(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     crossAxisAlignment:
                                         CrossAxisAlignment.center,
                                     children: [
@@ -133,9 +133,7 @@ class _AboutBadgePageState extends State<AboutBadgePage> {
                                         isCentered: true,
                                         maxLines: 1,
                                       ),
-                                      SizedBox(
-                                        height: metrics.descriptionGap,
-                                      ),
+                                      SizedBox(height: metrics.descriptionGap),
                                       AppText(
                                         text:
                                             'In App, users can earn special badges based on their activity, engagement, and points collected through the app. These badges are a fun and rewarding way to recognize loyal customers who regularly explore new restaurants, place orders, send banquet requests, or participate in offers and promotions. For example, the Food Explorer badge is given to users who try a wide variety of restaurants, while the Quick Booker badge is awarded to those who frequently make banquet or party bookings. Other badges may highlight consistent takeaway ordering, early access to deals, or providing helpful reviews. As you continue to use the app and earn more points, you unlock more badges and exclusive benefits, such as special discounts or early access to top deals.',
@@ -147,17 +145,17 @@ class _AboutBadgePageState extends State<AboutBadgePage> {
                                         maxLines: 40,
                                       ),
                                       SizedBox(height: metrics.tilesTopGap),
-                                      for (var index = 0;
-                                          index < _badges.length;
-                                          index++) ...[
+                                      for (
+                                        var index = 0;
+                                        index < _badges.length;
+                                        index++
+                                      ) ...[
                                         _BadgeTile(
                                           item: _badges[index],
                                           metrics: metrics,
                                         ),
                                         if (index != _badges.length - 1)
-                                          SizedBox(
-                                            height: metrics.tileGap,
-                                          ),
+                                          SizedBox(height: metrics.tileGap),
                                       ],
                                     ],
                                   ),
@@ -192,10 +190,7 @@ class _AboutBadgePageState extends State<AboutBadgePage> {
 }
 
 class _BadgeTile extends StatelessWidget {
-  const _BadgeTile({
-    required this.item,
-    required this.metrics,
-  });
+  const _BadgeTile({required this.item, required this.metrics});
 
   final _BadgeItem item;
   final _AboutBadgeMetrics metrics;
@@ -325,10 +320,10 @@ class _AboutBadgeMetrics {
     final pageHorizontalPadding = isTablet
         ? width * 0.08
         : isPhoneLandscape
-            ? width * 0.08
-            : isCompactPhone
-                ? width * 0.06
-                : width * 0.075;
+        ? width * 0.08
+        : isCompactPhone
+        ? width * 0.06
+        : width * 0.075;
 
     return _AboutBadgeMetrics(
       pageHorizontalPadding: pageHorizontalPadding,
@@ -339,98 +334,98 @@ class _AboutBadgeMetrics {
       contentWidth: isTablet
           ? width * (isTabletLandscape ? 0.66 : 0.74)
           : isPhoneLandscape
-              ? (width - pageHorizontalPadding * 2) * 0.86
-              : width - (pageHorizontalPadding * 2),
+          ? (width - pageHorizontalPadding * 2) * 0.86
+          : width - (pageHorizontalPadding * 2),
       backTop: isTablet
           ? 36.0
           : isCompactPhoneLandscape
-              ? 10.0
-              : isPhoneLandscape
-                  ? 16.0
-                  : isCompactPhone
-                      ? 22.0
-                      : 40.0,
+          ? 10.0
+          : isPhoneLandscape
+          ? 16.0
+          : isCompactPhone
+          ? 22.0
+          : 40.0,
       backSize: isTablet
           ? 34.0
           : isPhoneLandscape
-              ? 24.0
-              : isCompactPhone
-                  ? 26.0
-                  : 30.0,
+          ? 24.0
+          : isCompactPhone
+          ? 26.0
+          : 30.0,
       topPadding: isTablet
           ? 10.0
           : isPhoneLandscape
-              ? 8.0
-              : 16.0,
+          ? 8.0
+          : 16.0,
       bottomPadding: isTablet
           ? AppDimensions.margin(context)
           : isPhoneLandscape
-              ? 12.0
-              : 16.0,
+          ? 12.0
+          : 16.0,
       headerGap: isTablet
           ? 20.0
           : isPhoneLandscape
-              ? 14.0
-              : 24.0,
+          ? 14.0
+          : 24.0,
       descriptionGap: isTablet
           ? 32.0
           : isPhoneLandscape
-              ? 18.0
-              : 28.0,
+          ? 18.0
+          : 28.0,
       tilesTopGap: isTablet
           ? 44.0
           : isPhoneLandscape
-              ? 24.0
-              : 40.0,
+          ? 24.0
+          : 40.0,
       tileGap: isTablet
           ? 30.0
           : isPhoneLandscape
-              ? 18.0
-              : 28.0,
+          ? 18.0
+          : 28.0,
       scrollbarGap: isTablet
           ? 10.0
           : isPhoneLandscape
-              ? 10.0
-              : 0.0,
+          ? 10.0
+          : 0.0,
       titleSize: isTablet
           ? AppDimensions.title(context)
           : isPhoneLandscape
-              ? 18.0
-              : 22.0,
+          ? 18.0
+          : 22.0,
       bodySize: isTablet
           ? AppDimensions.body(context)
           : isPhoneLandscape
-              ? 12.0
-              : isCompactPhone
-                  ? 13.0
-                  : 14.0,
+          ? 12.0
+          : isCompactPhone
+          ? 13.0
+          : 14.0,
       tileTitleSize: isTablet
           ? 18.0
           : isPhoneLandscape
-              ? 15.0
-              : 17.0,
+          ? 15.0
+          : 17.0,
       tileDescriptionSize: isTablet
           ? AppDimensions.body(context)
           : isPhoneLandscape
-              ? 12.0
-              : isCompactPhone
-                  ? 13.0
-                  : 14.0,
+          ? 12.0
+          : isCompactPhone
+          ? 13.0
+          : 14.0,
       iconBoxSize: isTablet
           ? 42.0
           : isPhoneLandscape
-              ? 30.0
-              : 35.0,
+          ? 30.0
+          : 35.0,
       iconSize: isTablet
           ? 36.0
           : isPhoneLandscape
-              ? 26.0
-              : 30.0,
+          ? 26.0
+          : 30.0,
       tileItemGap: isTablet
           ? 18.0
           : isPhoneLandscape
-              ? 14.0
-              : 16.0,
+          ? 14.0
+          : 16.0,
       tileTextGap: isTablet ? 6.0 : 4.0,
       showThumb: isTablet || isPhoneLandscape,
       showTrack: isTablet || isPhoneLandscape,

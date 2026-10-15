@@ -14,10 +14,15 @@ class SearchBox extends StatelessWidget {
   final VoidCallback? onRequestTap;
   final BookingModel booking;
 
+  /// Called once the QR coupon page opened from this card is popped, so the
+  /// list behind it can refresh with whatever changed there.
+  final VoidCallback? onCouponClosed;
+
   const SearchBox({
     super.key,
     this.onCancelTap,
     this.onRequestTap,
+    this.onCouponClosed,
     required this.booking,
   });
 
@@ -211,6 +216,7 @@ class SearchBox extends StatelessWidget {
                               text: "Coupon",
                               size: metrics.couponButtonTextSize,
                               borderRadius: metrics.couponButtonRadius,
+                              horizontalPadding: metrics.couponButtonPadding,
                               onPressed: () {
                                 final offerText =
                                     '${booking.discount.toStringAsFixed(0)}% offer for ${booking.applicableFor ?? 'entire menu'}';
@@ -220,7 +226,7 @@ class SearchBox extends StatelessWidget {
                                     offerText: offerText,
                                   ),
                                   context: context,
-                                );
+                                ).then((_) => onCouponClosed?.call());
                               },
                             ),
                           ),
@@ -243,6 +249,7 @@ class SearchBox extends StatelessWidget {
                             text: "Coupon",
                             size: metrics.couponButtonTextSize,
                             borderRadius: metrics.couponButtonRadius,
+                            horizontalPadding: metrics.couponButtonPadding,
                             onPressed: () {
                               final offerText =
                                   '${booking.discount.toStringAsFixed(0)}% offer for ${booking.applicableFor ?? 'entire menu'}';
@@ -252,7 +259,7 @@ class SearchBox extends StatelessWidget {
                                   offerText: offerText,
                                 ),
                                 context: context,
-                              );
+                              ).then((_) => onCouponClosed?.call());
                             },
                           ),
                         ),
@@ -378,6 +385,7 @@ class _SearchBoxMetrics {
     required this.couponButtonIconSize,
     required this.couponButtonTextSize,
     required this.couponButtonRadius,
+    required this.couponButtonPadding,
   });
 
   final bool isTablet;
@@ -404,6 +412,7 @@ class _SearchBoxMetrics {
   final double couponButtonIconSize;
   final double couponButtonTextSize;
   final double couponButtonRadius;
+  final double couponButtonPadding;
 
   factory _SearchBoxMetrics.fromContext(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
@@ -438,6 +447,7 @@ class _SearchBoxMetrics {
         couponButtonIconSize: 26,
         couponButtonTextSize: 13,
         couponButtonRadius: 7,
+        couponButtonPadding: 10,
       );
     }
 
@@ -462,11 +472,12 @@ class _SearchBoxMetrics {
         statusTextSize: 13,
         cancelTextSize: 12.5,
         actionGap: 10,
-        couponButtonWidth: 132,
+        couponButtonWidth: 140,
         couponButtonHeight: 36,
         couponButtonIconSize: 24,
         couponButtonTextSize: 13,
         couponButtonRadius: 8,
+        couponButtonPadding: 8,
       );
     }
 
@@ -491,11 +502,12 @@ class _SearchBoxMetrics {
         statusTextSize: 13,
         cancelTextSize: 12,
         actionGap: 8,
-        couponButtonWidth: 104,
+        couponButtonWidth: 130,
         couponButtonHeight: 36,
-        couponButtonIconSize: 28,
-        couponButtonTextSize: 15,
+        couponButtonIconSize: 22,
+        couponButtonTextSize: 13,
         couponButtonRadius: 8,
+        couponButtonPadding: 8,
       );
     }
 
@@ -519,11 +531,12 @@ class _SearchBoxMetrics {
       statusTextSize: 15.sp,
       cancelTextSize: 14.sp,
       actionGap: 10.w,
-      couponButtonWidth: 121.w,
+      couponButtonWidth: 148.w,
       couponButtonHeight: 42.h,
-      couponButtonIconSize: 32,
-      couponButtonTextSize: 18,
+      couponButtonIconSize: 26,
+      couponButtonTextSize: 15,
       couponButtonRadius: 10.r,
+      couponButtonPadding: 10.w,
     );
   }
 }

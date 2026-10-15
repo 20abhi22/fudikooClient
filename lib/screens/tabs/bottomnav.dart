@@ -3,23 +3,94 @@ import 'package:flutter/material.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/core/responsive/app_dimensions.dart';
 import 'package:fudikoclient/core/responsive/breakpoints.dart';
+import 'package:fudikoclient/model/notification/notification_badges_model.dart';
+import 'package:fudikoclient/service/notification/badge_controller.dart';
 
 const Color _activeColor = Color(0xFFE8820C);
 const Color _inactiveColor = Color(0xFF545450);
 
-class Bottomnav extends StatelessWidget {
+/// The count each tab shows, by tab index. A null means the tab has no badge
+/// (Home, Profile, and — temporarily — Favourites).
+const List<int Function(NotificationBadgesModel)?> _badgeSelectors = [
+  null,
+  _restaurantReservations,
+  // Favourites badge temporarily disabled. To restore it, put
+  // `_restaurantFavourites` back here and uncomment the function below.
+  null,
+  null,
+];
+
+int _restaurantReservations(NotificationBadgesModel b) =>
+    b.restaurantReservations;
+// int _restaurantFavourites(NotificationBadgesModel b) =>
+//     b.restaurantFavourites;
+
+class Bottomnav extends StatefulWidget {
   const Bottomnav({
     super.key,
     required this.selectedIndex,
     required this.onTabSelected,
-    this.reservationBadgeCount = 0,
-    this.favoriteBadgeCount = 0,
+    this.onSelectedTabBadgeChanged,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onTabSelected;
-  final int reservationBadgeCount;
-  final int favoriteBadgeCount;
+
+  /// Fired when a poll finds the *selected* tab's badge count has changed — new
+  /// activity landed on the page the customer is looking at, so the shell can
+  /// reload it instead of leaving a stale list under a bumped badge.
+  final VoidCallback? onSelectedTabBadgeChanged;
+
+  @override
+  State<Bottomnav> createState() => _BottomnavState();
+}
+
+class _BottomnavState extends State<Bottomnav> {
+  final BadgeController _controller = BadgeController.instance;
+  late NotificationBadgesModel _badges;
+  late bool _hasSeenCounts;
+
+  @override
+  void initState() {
+    super.initState();
+    // Seed from whatever the controller already knows so a nav mounted later
+    // paints the right counts on its first frame.
+    _badges = _controller.badges;
+    _hasSeenCounts = _controller.hasFetchedOnce;
+    _controller.addListener(_onBadgesChanged);
+    _controller.subscribe();
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onBadgesChanged);
+    _controller.unsubscribe();
+    super.dispose();
+  }
+
+  void _onBadgesChanged() {
+    if (!mounted) return;
+
+    final previous = _badges;
+    final hadCounts = _hasSeenCounts;
+    _hasSeenCounts = true;
+    setState(() => _badges = _controller.badges);
+
+    // The first counts only seed — every non-zero badge would otherwise read
+    // as "changed" and refresh a page that just loaded.
+    if (hadCounts &&
+        _badgeFor(widget.selectedIndex, previous) !=
+            _badgeFor(widget.selectedIndex, _badges)) {
+      widget.onSelectedTabBadgeChanged?.call();
+    }
+  }
+
+  int _badgeFor(int index, NotificationBadgesModel badges) {
+    final selector = index >= 0 && index < _badgeSelectors.length
+        ? _badgeSelectors[index]
+        : null;
+    return selector == null ? 0 : selector(badges);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,12 +119,12 @@ class Bottomnav extends StatelessWidget {
       _BottomNavItem(
         label: 'Reservation',
         iconPath: 'assets/icons/reservation_inactive 1.png',
-        badge: reservationBadgeCount,
+        badge: _badgeFor(1, _badges),
       ),
       _BottomNavItem(
         label: 'Favorite',
         iconPath: 'assets/icons/heart_inactive 1.png',
-        badge: favoriteBadgeCount,
+        badge: _badgeFor(2, _badges),
       ),
       const _BottomNavItem(
         label: 'Profile',
@@ -80,7 +151,7 @@ class Bottomnav extends StatelessWidget {
           children: items.asMap().entries.map((entry) {
             final index = entry.key;
             final item = entry.value;
-            final isSelected = index == selectedIndex;
+            final isSelected = index == widget.selectedIndex;
             final color = isSelected ? _activeColor : _inactiveColor;
 
             return Expanded(
@@ -89,7 +160,7 @@ class Bottomnav extends StatelessWidget {
                 selected: isSelected,
                 label: item.label,
                 child: InkWell(
-                  onTap: () => onTabSelected(index),
+                  onTap: () => widget.onTabSelected(index),
                   child: Padding(
                     padding: EdgeInsets.symmetric(
                       vertical: metrics.itemVerticalPadding,

@@ -4,7 +4,7 @@ import 'package:fudikoclient/screens/banquet_tabs/inquery/banquet_inquery.dart';
 import 'package:fudikoclient/screens/banquet_tabs/reservartion/banquet_reservation.dart';
 import 'package:fudikoclient/screens/customerProfile/customerProfile.dart';
 import 'package:fudikoclient/screens/home/homepage.dart' as root_home;
-import 'package:fudikoclient/service/notification/notification_badges_service.dart';
+import 'package:fudikoclient/service/notification/badge_controller.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:fudikoclient/utils/tab_navigation.dart';
 
@@ -13,12 +13,7 @@ class MainBanquetNavPage extends StatefulWidget {
   final double? lat;
   final double? lng;
 
-  const MainBanquetNavPage({
-    super.key,
-    this.city,
-    this.lat,
-    this.lng,
-  });
+  const MainBanquetNavPage({super.key, this.city, this.lat, this.lng});
 
   @override
   State<MainBanquetNavPage> createState() => _MainBanquetNavPageState();
@@ -27,6 +22,7 @@ class MainBanquetNavPage extends StatefulWidget {
 class _MainBanquetNavPageState extends State<MainBanquetNavPage> {
   static const int _tabCount = 4;
   static const int _inquiryTabIndex = 1;
+  static const int _reservationTabIndex = 2;
 
   int currentIndex = _inquiryTabIndex;
 
@@ -35,12 +31,12 @@ class _MainBanquetNavPageState extends State<MainBanquetNavPage> {
 
   final GlobalKey<BanquetInqueryState> _inquiryKey =
       GlobalKey<BanquetInqueryState>();
+  final GlobalKey<BanquetReservationState> _reservationKey =
+      GlobalKey<BanquetReservationState>();
 
   late final List<GlobalKey<NavigatorState>> _navigatorKeys;
   late final List<TabStackObserver> _observers;
-
-  int _inquiryBadgeCount = 0;
-  int _reservationBadgeCount = 0;
+  int? _pendingRefreshTab;
 
   @override
   void initState() {
@@ -53,30 +49,60 @@ class _MainBanquetNavPageState extends State<MainBanquetNavPage> {
 
     _observers = List.generate(
       _tabCount,
-      (index) => TabStackObserver(
-        onStackChanged: () => _syncCanPop(index),
-      ),
+      (index) => TabStackObserver(onStackChanged: () => _syncCanPop(index)),
     );
-
-    _loadNotificationBadges();
+    // Listener only, no subscribe(): the bottom bar keeps the poll alive, and
+    // this just gives a popup-blocked refresh another chance each tick.
+    BadgeController.instance.addListener(_flushPendingRefresh);
   }
 
-  Future<void> _loadNotificationBadges() async {
-    final badges = await NotificationBadgesService().fetchBadges();
+  @override
+  void dispose() {
+    BadgeController.instance.removeListener(_flushPendingRefresh);
+    super.dispose();
+  }
 
-    if (!mounted) return;
+  /// Reloads whichever tab is open. Called when its badge count changes, so a
+  /// list never sits stale under a bumped badge.
+  ///
+  /// Held back while a dialog or bottom sheet covers the shell: reloading the
+  /// list underneath would pull the ground out from under whatever the customer
+  /// has open. The reload runs on the next badge poll once the popup is gone.
+  /// The Inquiries tab applies the same rule to its own inline overlays.
+  void _refreshTab(int index) {
+    if (_isPopupOpen) {
+      _pendingRefreshTab = index;
+      return;
+    }
 
-    setState(() {
-      _inquiryBadgeCount = badges.enquiryEnquiries;
-      _reservationBadgeCount = badges.enquiryReservations;
-    });
+    _pendingRefreshTab = null;
+    if (index == _inquiryTabIndex) {
+      _inquiryKey.currentState?.refresh();
+    } else if (index == _reservationTabIndex) {
+      _reservationKey.currentState?.refreshReservations();
+    }
+  }
+
+  /// True while a route (dialog, bottom sheet, pushed page) sits above the
+  /// shell.
+  bool get _isPopupOpen => ModalRoute.of(context)?.isCurrent == false;
+
+  /// Retries a refresh that a popup blocked. Driven by the badge poll, so it
+  /// gets a chance every tick until the popup closes.
+  void _flushPendingRefresh() {
+    final pending = _pendingRefreshTab;
+    if (pending == null || _isPopupOpen) return;
+    if (pending != currentIndex) {
+      _pendingRefreshTab = null;
+      return;
+    }
+    _refreshTab(pending);
   }
 
   void _syncCanPop(int index) {
     if (!mounted) return;
 
-    final canPop =
-        _navigatorKeys[index].currentState?.canPop() ?? false;
+    final canPop = _navigatorKeys[index].currentState?.canPop() ?? false;
 
     if (_tabCanPop[index] == canPop) return;
 
@@ -96,6 +122,10 @@ class _MainBanquetNavPageState extends State<MainBanquetNavPage> {
       return;
     }
 
+    if (index == _reservationTabIndex) {
+      _reservationKey.currentState?.refreshReservations();
+    }
+
     if (index == currentIndex) return;
 
     setState(() {
@@ -106,8 +136,7 @@ class _MainBanquetNavPageState extends State<MainBanquetNavPage> {
 
   Future<void> _handleBack() async {
     final didPop =
-        await _navigatorKeys[currentIndex].currentState?.maybePop() ??
-            false;
+        await _navigatorKeys[currentIndex].currentState?.maybePop() ?? false;
 
     if (didPop) return;
 
@@ -137,10 +166,7 @@ class _MainBanquetNavPageState extends State<MainBanquetNavPage> {
   }
 
   void _returnToRootHome() {
-    final rootNavigator = Navigator.of(
-      context,
-      rootNavigator: true,
-    );
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
 
     if (rootNavigator.canPop()) {
       rootNavigator.pop();
@@ -148,9 +174,7 @@ class _MainBanquetNavPageState extends State<MainBanquetNavPage> {
     }
 
     rootNavigator.pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (_) => const root_home.HomePage(),
-      ),
+      MaterialPageRoute(builder: (_) => const root_home.HomePage()),
       (_) => false,
     );
   }
@@ -160,7 +184,7 @@ class _MainBanquetNavPageState extends State<MainBanquetNavPage> {
     final screens = [
       const SizedBox.shrink(),
       BanquetInquery(key: _inquiryKey),
-      const BanquetReservation(),
+      BanquetReservation(key: _reservationKey),
       const CustomerProfile(),
     ];
 
@@ -178,42 +202,29 @@ class _MainBanquetNavPageState extends State<MainBanquetNavPage> {
         // (details/edit/etc.) is pushed.
         bottomNavigationBar: _tabCanPop[currentIndex]
             ? null
-            : const SafeArea(
+            : SafeArea(
                 top: false,
-                child: SizedBox.shrink(),
+                child: BanquetBottomnav(
+                  selectedIndex: currentIndex,
+                  onTabSelected: onTabChanged,
+                  onSelectedTabBadgeChanged: () => _refreshTab(currentIndex),
+                ),
               ),
 
         body: SafeArea(
           top: false,
           maintainBottomViewPadding: true,
-          child: Column(
-            children: [
-              Expanded(
-                child: buildNestedTabNavigators(
-                  currentIndex: currentIndex,
-                  navigatorKeys: _navigatorKeys,
-                  observers: _observers,
-                  children: screens,
-                ),
-              ),
-
-              if (!_tabCanPop[currentIndex])
-                BanquetBottomnav(
-                  selectedIndex: currentIndex,
-                  onTabSelected: onTabChanged,
-                  inquiryBadgeCount: _inquiryBadgeCount,
-                  reservationBadgeCount: _reservationBadgeCount,
-                ),
-            ],
+          child: buildNestedTabNavigators(
+            currentIndex: currentIndex,
+            navigatorKeys: _navigatorKeys,
+            observers: _observers,
+            children: screens,
           ),
         ),
       ),
     );
   }
 }
-
-
-
 
 // import 'package:flutter/material.dart';
 // import 'package:fudikoclient/screens/banquet_tabs/banquet_bottomnav.dart';

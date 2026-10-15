@@ -1,10 +1,12 @@
 import 'package:fudikoclient/screens/tabs/home/addnumberofpeople.dart';
 
 import 'package:flutter/material.dart';
+import 'package:fudikoclient/components/error_state.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/core/responsive/breakpoints.dart';
+import 'package:fudikoclient/model/restaurant/restaurant-model.dart';
 import 'package:fudikoclient/model/restaurant/restaurant_liked.dart';
 import 'package:fudikoclient/model/restaurant/restaurant_profile_model.dart';
 import 'package:fudikoclient/screens/tabs/home/rating.dart';
@@ -12,6 +14,7 @@ import 'package:fudikoclient/screens/tabs/profile/menu.dart';
 import 'package:fudikoclient/service/restaurant/restaurant-service.dart';
 import 'package:fudikoclient/service/restaurant/restaurant_profile_service.dart';
 import 'package:fudikoclient/utils/constants.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class RestaurantProfile extends StatefulWidget {
   final String uuid;
@@ -25,7 +28,7 @@ class RestaurantProfile extends StatefulWidget {
     this.deliveryServiceArea,
     this.averageReview,
     this.distance,
-    this.isFavourite = false, // ← ADDED isFavourite
+    this.isFavourite = false,
   });
 
   @override
@@ -33,26 +36,37 @@ class RestaurantProfile extends StatefulWidget {
 }
 
 class _RestaurantProfileState extends State<RestaurantProfile> {
-  //bool isRatingOnClick = false;
   bool _isLiked = false;
   final RestaurantService _restaurantService = RestaurantService();
   bool isMenuOpen = false;
   Restaurant? restaurant;
   bool isLoading = true;
-  Future<void> fetchRestaurantDetails() async {
-    final service = RestaurantDetailsService();
+  String _loadError = '';
 
+  Future<void> fetchRestaurantDetails() async {
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+        _loadError = '';
+      });
+    }
+
+    final service = RestaurantDetailsService();
     final response = await service.getRestaurantDetails(widget.uuid);
+    if (!mounted) return;
 
     if (response.status && response.restaurant != null) {
       setState(() {
-        //  _isLiked = response.restaurant!.isFavourite;
         restaurant = response.restaurant;
         isLoading = false;
+        _loadError = '';
       });
     } else {
       setState(() {
         isLoading = false;
+        _loadError = response.message.isNotEmpty
+            ? response.message
+            : 'We could not load this restaurant. Please try again.';
       });
     }
   }
@@ -63,61 +77,23 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
     if (response.status) {
       setState(() => _isLiked = !_isLiked);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: _isLiked ? Colors.green : Colors.red,
-          content: Text(
-            _isLiked ? 'Added to favourites' : 'Removed from favourites',
-          ),
-        ),
+      showStatusSnack(
+        context,
+        _isLiked,
+        _isLiked ? 'Added to favourites' : 'Removed from favourites',
       );
     }
   }
 
-  void _openImagePreview(String imageUrl, int index) {
+  void _openImagePreview(List<String> images, int initialIndex) {
     showDialog(
       context: context,
       barrierColor: Colors.black,
       builder: (_) => Dialog.fullscreen(
         backgroundColor: Colors.black,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: InteractiveViewer(
-                minScale: 0.8,
-                maxScale: 4,
-                child: Center(
-                  child: Hero(
-                    tag: 'restaurant-gallery-$index',
-                    child: Image.network(
-                      imageUrl,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Image.asset(
-                        'assets/images/restaurantPic.png',
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: MediaQuery.paddingOf(context).top + 12.h,
-              right: 16.w,
-              child: GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
-                child: Container(
-                  padding: EdgeInsets.all(8.w),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.close, color: Colors.white, size: 24.sp),
-                ),
-              ),
-            ),
-          ],
+        child: _ImagePreviewGallery(
+          images: images,
+          initialIndex: initialIndex,
         ),
       ),
     );
@@ -174,6 +150,13 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
       child: Scaffold(
         body: isLoading
             ? const Center(child: CircularProgressIndicator())
+            : _loadError.isNotEmpty
+            ? SafeArea(
+                child: ErrorStateView(
+                  message: _loadError,
+                  onRetry: fetchRestaurantDetails,
+                ),
+              )
             : isMenuOpen
             ? Menu(restaurantId: widget.uuid)
             : SingleChildScrollView(
@@ -182,7 +165,6 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
                     width: metrics.contentMaxWidth,
                     child: Column(
                       children: [
-                        // SizedBox(height: 20.h),
                         Stack(
                           children: [
                             restaurant?.image != null
@@ -219,7 +201,6 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
                                 shape: const CircleBorder(),
                                 clipBehavior: Clip.antiAlias,
                                 child: InkWell(
-                                  // ← was just Icon before
                                   onTap: _onFavouriteTap,
                                   child: SizedBox(
                                     width: favoriteButtonSize,
@@ -285,7 +266,6 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  //R name-------------------------
                                   AppText(
                                     text: restaurant?.name ?? "",
                                     size: metrics.heroNameSize,
@@ -294,7 +274,6 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  //R type---------------------------
                                   AppText(
                                     text: restaurant?.type ?? "",
                                     size: metrics.heroTypeSize,
@@ -314,8 +293,6 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
                                         height: metrics.heroAddressIconSize,
                                       ),
                                       SizedBox(width: metrics.tinyGap),
-
-                                      //R addresss---------------------------
                                       Expanded(
                                         child: AppText(
                                           text: restaurant?.address ?? "",
@@ -362,14 +339,19 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
                                     right: metrics.contentPadding,
                                     bottom: metrics.offerBottomPadding,
                                   ),
-                                  itemCount: restaurant!.offers.length,
+                                  itemCount: _offerSlotTickets(
+                                    restaurant!.offers,
+                                  ).length,
                                   itemBuilder: (context, index) {
-                                    final offer = restaurant!.offers[index];
+                                    final ticket = _offerSlotTickets(
+                                      restaurant!.offers,
+                                    )[index];
+                                    final offer = ticket.offer;
                                     final discountStr =
                                         '-${offer.discountPercentage.toStringAsFixed(0)}%';
                                     final forText =
                                         'for ${offer.applicableFor}';
-                                    final timeStr = offer.startTime;
+                                    final timeStr = ticket.startTime;
                                     const days2 = [
                                       'Mon',
                                       'Tue',
@@ -395,136 +377,118 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
                                         ? offer.uuid
                                         : null;
 
-                                    return Padding(
-                                      padding: EdgeInsets.only(
-                                        right: metrics.offerGap,
+                                    return GestureDetector(
+                                      onTap: () => _bookOffer(
+                                        offerId: offerId,
+                                        offer: ticket.offerForBooking,
                                       ),
-                                      child: Container(
-                                        width: metrics.offerWidth,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF417629),
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(
-                                              metrics.offerTopRadius,
-                                            ),
-                                            topRight: Radius.circular(
-                                              metrics.offerTopRadius,
-                                            ),
-                                            bottomLeft: Radius.circular(
-                                              metrics.offerBottomRadius,
-                                            ),
-                                            bottomRight: Radius.circular(
-                                              metrics.offerBottomRadius,
+                                      child: Padding(
+                                        padding: EdgeInsets.only(
+                                          right: metrics.offerGap,
+                                        ),
+                                        child: Container(
+                                          width: metrics.offerWidth,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF417629),
+                                            borderRadius: BorderRadius.only(
+                                              topLeft: Radius.circular(
+                                                metrics.offerTopRadius,
+                                              ),
+                                              topRight: Radius.circular(
+                                                metrics.offerTopRadius,
+                                              ),
+                                              bottomLeft: Radius.circular(
+                                                metrics.offerBottomRadius,
+                                              ),
+                                              bottomRight: Radius.circular(
+                                                metrics.offerBottomRadius,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        child: Stack(
-                                          children: [
-                                            Padding(
-                                              padding: EdgeInsets.all(
-                                                metrics.offerPadding,
-                                              ),
-                                              child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Column(
-                                                    children: [
-                                                      AppText(
-                                                        text: discountStr,
-                                                        size: metrics
-                                                            .offerDiscountSize,
-                                                        color: Colors.white,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                      SizedBox(
-                                                        height: metrics.tinyGap,
-                                                      ),
-                                                      SizedBox(
-                                                        width: double.infinity,
-                                                        child: Text(
-                                                          forText,
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: metrics
-                                                                .offerForSize,
-                                                            fontWeight:
-                                                                FontWeight.w400,
+                                          child: Stack(
+                                            children: [
+                                              Padding(
+                                                padding: EdgeInsets.all(
+                                                  metrics.offerPadding,
+                                                ),
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Column(
+                                                      children: [
+                                                        AppText(
+                                                          text: discountStr,
+                                                          size: metrics
+                                                              .offerDiscountSize,
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                        SizedBox(
+                                                          height:
+                                                              metrics.tinyGap,
+                                                        ),
+                                                        SizedBox(
+                                                          width:
+                                                              double.infinity,
+                                                          child: Text(
+                                                            forText,
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            textAlign: TextAlign
+                                                                .center,
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontSize: metrics
+                                                                  .offerForSize,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w400,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    Row(
+                                                      children: List.generate(
+                                                        15,
+                                                        (i) => Expanded(
+                                                          child: Container(
+                                                            height: metrics
+                                                                .ticketDashHeight,
+                                                            color: i % 2 == 0
+                                                                ? Colors.white
+                                                                : Colors
+                                                                      .transparent,
                                                           ),
                                                         ),
                                                       ),
-                                                    ],
-                                                  ),
-                                                  Row(
-                                                    children: List.generate(
-                                                      15,
-                                                      (i) => Expanded(
-                                                        child: Container(
-                                                          height: metrics
-                                                              .ticketDashHeight,
-                                                          color: i % 2 == 0
-                                                              ? Colors.white
-                                                              : Colors
-                                                                    .transparent,
-                                                        ),
-                                                      ),
                                                     ),
-                                                  ),
-                                                  Column(
-                                                    children: [
-                                                      SizedBox(
-                                                        height:
-                                                            metrics.tinyGap / 2,
-                                                      ),
-                                                      AppText(
-                                                        text: dateLabel,
-                                                        size: metrics
-                                                            .offerDateSize,
-                                                        color: Colors.white70,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                      SizedBox(
-                                                        height: metrics
-                                                            .offerDateGap,
-                                                      ),
-
-                                                      GestureDetector(
-                                                        onTap: () {
-                                                          showModalBottomSheet(
-                                                            backgroundColor:
-                                                                Colors.white,
-                                                            context: context,
-                                                            isScrollControlled:
-                                                                true,
-                                                            shape: const RoundedRectangleBorder(
-                                                              // ← ADD
-                                                              borderRadius:
-                                                                  BorderRadius.vertical(
-                                                                    // ← ADD
-                                                                    top: Radius.circular(
-                                                                      25,
-                                                                    ), // ← ADD
-                                                                  ), // ← ADD
-                                                            ),
-                                                            builder: (_) =>
-                                                                NumberOfPeopleModal(
-                                                                  uuid: widget
-                                                                      .uuid,
-                                                                  offerId:
-                                                                      offerId,
-                                                                  offer: offer,
-                                                                ),
-                                                          );
-                                                        },
-                                                        child: Container(
+                                                    Column(
+                                                      children: [
+                                                        SizedBox(
+                                                          height:
+                                                              metrics.tinyGap /
+                                                              2,
+                                                        ),
+                                                        AppText(
+                                                          text: dateLabel,
+                                                          size: metrics
+                                                              .offerDateSize,
+                                                          color: Colors.white70,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                        SizedBox(
+                                                          height: metrics
+                                                              .offerDateGap,
+                                                        ),
+                                                        Container(
                                                           padding: EdgeInsets.symmetric(
                                                             horizontal: metrics
                                                                 .offerTimeHorizontalPadding,
@@ -562,46 +526,51 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
                                                             ),
                                                           ),
                                                         ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                            Positioned(
-                                              left: -metrics.ticketHoleSize / 2,
-                                              top: 20,
-                                              bottom: 0,
-                                              child: Center(
-                                                child: Container(
-                                                  width: metrics.ticketHoleSize,
-                                                  height:
-                                                      metrics.ticketHoleSize,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.grey.shade100,
-                                                    shape: BoxShape.circle,
+                                              Positioned(
+                                                left:
+                                                    -metrics.ticketHoleSize / 2,
+                                                top: 20,
+                                                bottom: 0,
+                                                child: Center(
+                                                  child: Container(
+                                                    width:
+                                                        metrics.ticketHoleSize,
+                                                    height:
+                                                        metrics.ticketHoleSize,
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          Colors.grey.shade100,
+                                                      shape: BoxShape.circle,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
-                                            ),
-                                            Positioned(
-                                              right:
-                                                  -metrics.ticketHoleSize / 2,
-                                              top: 20,
-                                              bottom: 0,
-                                              child: Center(
-                                                child: Container(
-                                                  width: metrics.ticketHoleSize,
-                                                  height:
-                                                      metrics.ticketHoleSize,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.grey.shade100,
-                                                    shape: BoxShape.circle,
+                                              Positioned(
+                                                right:
+                                                    -metrics.ticketHoleSize / 2,
+                                                top: 20,
+                                                bottom: 0,
+                                                child: Center(
+                                                  child: Container(
+                                                    width:
+                                                        metrics.ticketHoleSize,
+                                                    height:
+                                                        metrics.ticketHoleSize,
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          Colors.grey.shade100,
+                                                      shape: BoxShape.circle,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     );
@@ -634,7 +603,7 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
                                       ),
                                       child: GestureDetector(
                                         onTap: () => _openImagePreview(
-                                          restaurant!.images[index],
+                                          restaurant!.images,
                                           index,
                                         ),
                                         child: Hero(
@@ -779,7 +748,6 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
                                     left: metrics.infoTextHorizontalPadding,
                                     bottom: metrics.infoTextVerticalPadding,
                                   ),
-                                  //addresss----------------------------------
                                   child: AppText(
                                     text: restaurant?.address ?? "",
                                     size: metrics.infoTextSize,
@@ -813,7 +781,6 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
                                     left: metrics.infoTextHorizontalPadding,
                                     bottom: metrics.infoTextVerticalPadding,
                                   ),
-                                  //contact-----------------------------
                                   child: AppText(
                                     text: restaurant?.phone ?? "",
                                     size: metrics.infoTextSize,
@@ -843,7 +810,6 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
                                 isMenuOpen = !isMenuOpen;
                               });
                             },
-                            // icon: Icons.fastfood,
                           ),
                         ),
                         SizedBox(height: metrics.bottomGap),
@@ -852,6 +818,96 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
                   ),
                 ),
               ),
+      ),
+    );
+  }
+
+  List<_OfferSlotTicket> _offerSlotTickets(List<OfferModel> offers) {
+    return offers.expand((offer) {
+      final slots = offer.slots
+          .where((slot) => slot.startTime.trim().isNotEmpty)
+          .toList();
+      if (slots.isEmpty) {
+        return [
+          _OfferSlotTicket(
+            offer: offer,
+            startTime: offer.startTime,
+            endTime: offer.endTime,
+          ),
+        ];
+      }
+
+      return slots.map(
+        (slot) => _OfferSlotTicket(
+          offer: offer,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+        ),
+      );
+    }).toList();
+  }
+
+  void _bookOffer({
+    required String? offerId,
+    required OfferModel? offer,
+    DateTime? reservationDate,
+  }) {
+    final sheetSize = MediaQuery.sizeOf(context);
+    final isTabletSheet = Breakpoints.isTabletDevice(sheetSize);
+    final tabletSheetWidth = sheetSize.width * 0.88;
+    showModalBottomSheet(
+      backgroundColor: Colors.white,
+      context: context,
+      isScrollControlled: true,
+      constraints: isTabletSheet
+          ? BoxConstraints(
+              minWidth: tabletSheetWidth,
+              maxWidth: tabletSheetWidth,
+            )
+          : null,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (_) => NumberOfPeopleModal(
+        uuid: widget.uuid,
+        reservationDate: reservationDate,
+        allowSlotSelection: false,
+        offerId: offerId,
+        offer: offer,
+      ),
+    );
+  }
+
+  Widget _offerTimeChip(
+    String label,
+    _RestaurantProfileMetrics metrics,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: metrics.offerTimeHorizontalPadding,
+          vertical: metrics.offerTimeVerticalPadding,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(metrics.offerTimeRadius),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.visible,
+            style: TextStyle(
+              fontSize: metrics.offerTimeSize,
+              color: Colors.green.shade700,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -900,6 +956,21 @@ class _RestaurantProfileState extends State<RestaurantProfile> {
       ),
     );
   }
+}
+
+class _OfferSlotTicket {
+  const _OfferSlotTicket({
+    required this.offer,
+    required this.startTime,
+    required this.endTime,
+  });
+
+  final OfferModel offer;
+  final String startTime;
+  final String endTime;
+
+  OfferModel get offerForBooking =>
+      offer.copyWith(startTime: startTime, endTime: endTime);
 }
 
 class _RestaurantProfileMetrics {
@@ -1031,7 +1102,8 @@ class _RestaurantProfileMetrics {
 
   factory _RestaurantProfileMetrics.fromContext(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final isTablet = Breakpoints.isTablet(size.width);
+    final screenHeight = size.height;
+    final isTablet = Breakpoints.isTabletDevice(size);
     final isWideShortPhone =
         !isTablet && size.width >= 500 && size.height <= 760;
     final isCompactPhone = size.width < 390 || size.height < 700;
@@ -1041,10 +1113,13 @@ class _RestaurantProfileMetrics {
       final scale = (contentWidth / 1024).clamp(1.0, 1.18).toDouble();
       double s(double value) => value * scale;
 
+      // Dynamic hero: 30–36% of screen height, clamped to a sensible range
+      final heroHeight = (screenHeight * 0.33).clamp(280.0, 480.0);
+
       return _RestaurantProfileMetrics(
         contentMaxWidth: contentWidth,
         pagePadding: s(42),
-        heroHeight: s(360),
+        heroHeight: heroHeight,
         heroTopInset: s(42),
         heroSideInset: s(46),
         heroBottomInset: s(38),
@@ -1107,11 +1182,17 @@ class _RestaurantProfileMetrics {
     }
 
     if (isWideShortPhone) {
-      return const _RestaurantProfileMetrics(
+      // Dynamic hero: ~22% of screen height, clamped for short wide phones.
+      // Floor raised from 130 to 160 so the favorite icon (top-anchored) and
+      // the distance/rating badges (bottom-anchored) both get enough room
+      // instead of being squeezed to a few px of clearance from the top.
+      final heroHeight = (screenHeight * 0.24).clamp(160.0, 200.0);
+
+      return _RestaurantProfileMetrics(
         contentMaxWidth: double.infinity,
         pagePadding: 24,
-        heroHeight: 168,
-        heroTopInset: 24,
+        heroHeight: heroHeight,
+        heroTopInset: 34,
         heroSideInset: 24,
         heroBottomInset: 16,
         heroTextRightInset: 128,
@@ -1176,10 +1257,13 @@ class _RestaurantProfileMetrics {
       final scale = (size.width / 390).clamp(0.88, 1.0).toDouble();
       double s(double value) => value * scale;
 
+      // Dynamic hero: ~24% of screen height, clamped for compact phones
+      final heroHeight = (screenHeight * 0.24).clamp(130.0, 200.0);
+
       return _RestaurantProfileMetrics(
         contentMaxWidth: double.infinity,
         pagePadding: s(14),
-        heroHeight: s(155),
+        heroHeight: heroHeight,
         heroTopInset: s(22),
         heroSideInset: s(14),
         heroBottomInset: s(12),
@@ -1241,10 +1325,13 @@ class _RestaurantProfileMetrics {
       );
     }
 
+    // Standard phones: dynamic hero = 28% of screen height, clamped 180–300px
+    final heroHeight = (screenHeight * 0.28).clamp(180.0, 300.0);
+
     return _RestaurantProfileMetrics(
       contentMaxWidth: double.infinity,
       pagePadding: 20.r,
-      heroHeight: 180.h,
+      heroHeight: heroHeight,
       heroTopInset: 30.h,
       heroSideInset: 20.w,
       heroBottomInset: 20.h,
@@ -1303,6 +1390,122 @@ class _RestaurantProfileMetrics {
       menuButtonRadius: 15.r,
       bottomGap: 20.h,
       tinyGap: 4.w,
+    );
+  }
+}
+
+class _ImagePreviewGallery extends StatefulWidget {
+  final List<String> images;
+  final int initialIndex;
+
+  const _ImagePreviewGallery({required this.images, required this.initialIndex});
+
+  @override
+  State<_ImagePreviewGallery> createState() => _ImagePreviewGalleryState();
+}
+
+class _ImagePreviewGalleryState extends State<_ImagePreviewGallery> {
+  late final PageController _pageController;
+  late final TransformationController _transformationController;
+  late int _currentIndex;
+  bool _isZoomed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+    _transformationController = TransformationController()
+      ..addListener(_onTransformChanged);
+  }
+
+  void _onTransformChanged() {
+    final zoomed = _transformationController.value.getMaxScaleOnAxis() > 1.01;
+    if (zoomed != _isZoomed) {
+      setState(() => _isZoomed = zoomed);
+    }
+  }
+
+  @override
+  void dispose() {
+    _transformationController.removeListener(_onTransformChanged);
+    _transformationController.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: widget.images.length,
+            physics: _isZoomed
+                ? const NeverScrollableScrollPhysics()
+                : const BouncingScrollPhysics(),
+            onPageChanged: (index) {
+              _transformationController.value = Matrix4.identity();
+              setState(() => _currentIndex = index);
+            },
+            itemBuilder: (context, index) {
+              final image = Center(
+                child: Image.network(
+                  widget.images[index],
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Image.asset(
+                    'assets/images/restaurantPic.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              );
+
+              return InteractiveViewer(
+                transformationController: index == _currentIndex
+                    ? _transformationController
+                    : null,
+                panEnabled: index == _currentIndex && _isZoomed,
+                minScale: 1,
+                maxScale: 4,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    if (!_isZoomed) Navigator.of(context).pop();
+                  },
+                  child: index == widget.initialIndex
+                      ? Hero(tag: 'restaurant-gallery-$index', child: image)
+                      : image,
+                ),
+              );
+            },
+          ),
+        ),
+        if (widget.images.length > 1)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.paddingOf(context).bottom + 24.h,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(widget.images.length, (index) {
+                final isActive = index == _currentIndex;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: EdgeInsets.symmetric(horizontal: 3.w),
+                  height: 6.w,
+                  width: isActive ? 18.w : 6.w,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(
+                      alpha: isActive ? 0.95 : 0.4,
+                    ),
+                    borderRadius: BorderRadius.circular(3.w),
+                  ),
+                );
+              }),
+            ),
+          ),
+      ],
     );
   }
 }

@@ -34,10 +34,7 @@ class MenuCard extends StatelessWidget {
             offset: Offset(0, metrics.shadowOffset),
           ),
         ],
-        border: Border.all(
-          color: Colors.grey.shade200,
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey.shade200, width: 1),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,7 +176,9 @@ class _MenuCardMetrics {
 
   factory _MenuCardMetrics.fromContext(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final isTablet = Breakpoints.isTablet(size.width);
+    final isTablet = Breakpoints.isTabletDevice(size);
+    final isWideShortPhone =
+        !isTablet && size.width >= 500 && size.height <= 760;
     final isCompactPhone = size.width < 390 || size.height < 700;
 
     if (isTablet) {
@@ -198,6 +197,28 @@ class _MenuCardMetrics {
         priceDescriptionGap: 12,
         descriptionSize: 14,
         descriptionMaxLines: 4,
+      );
+    }
+
+    if (isWideShortPhone) {
+      // Shorter image height than the standard-phone tier since height is
+      // the constrained dimension in landscape — keeps card height down so
+      // more of the list is visible without scrolling.
+      return const _MenuCardMetrics(
+        bottomMargin: 10,
+        radius: 14,
+        shadowBlur: 6,
+        shadowOffset: 2,
+        imageWidth: 110,
+        imageHeight: 100,
+        contentHorizontalPadding: 12,
+        contentVerticalPadding: 8,
+        nameSize: 13.5,
+        namePriceGap: 3,
+        priceSize: 12,
+        priceDescriptionGap: 5,
+        descriptionSize: 10,
+        descriptionMaxLines: 2,
       );
     }
 

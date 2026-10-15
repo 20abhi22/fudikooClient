@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -7,28 +6,20 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fudikoclient/components/appbutton.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/components/apptextfeild.dart';
-import 'package:fudikoclient/components/descriptionBox.dart';
 import 'package:fudikoclient/core/responsive/breakpoints.dart';
-import 'package:fudikoclient/model/inquery/create-catering-inquery-model.dart';
 import 'package:fudikoclient/model/inquery/create-inquery-model.dart';
-import 'package:fudikoclient/model/inquery/list-catering-inquery-model.dart';
-import 'package:fudikoclient/model/inquery/list-party-inquery-modal.dart';
+// import 'package:fudikoclient/model/inquery/list-catering-inquery-model.dart';
 import 'package:fudikoclient/model/inquery/response_model.dart';
 import 'package:fudikoclient/screens/tabs/inquery/common/responseBox.dart';
-import 'package:fudikoclient/screens/tabs/inquery/ctInquery/ctInquery.dart';
-import 'package:fudikoclient/screens/tabs/inquery/ctInquery/ctInqueryBox.dart';
-import 'package:fudikoclient/screens/tabs/inquery/ctInquery/ctdecline.dart';
-import 'package:fudikoclient/screens/tabs/inquery/ctInquery/ctresponseBox.dart';
 import 'package:fudikoclient/screens/tabs/inquery/common/declineBox.dart';
-import 'package:fudikoclient/screens/tabs/inquery/common/locationselect.dart';
 import 'package:fudikoclient/components/appfilterdropdown.dart';
 import 'package:fudikoclient/screens/tabs/inquery/inquery/planaparty.dart';
 import 'package:fudikoclient/screens/tabs/inquery/inquery/viewinquery.dart';
-import 'package:fudikoclient/screens/tabs/main_restaurant_nav.dart';
 import 'package:fudikoclient/service/inquery/inquery-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:intl/intl.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class BookingSuccessTick extends StatefulWidget {
   const BookingSuccessTick({
@@ -341,6 +332,9 @@ class BanquetInqueryState extends State<BanquetInquery> {
         viewCtEnquiryOnClick = false;
       }
     });
+
+    // Nothing covering the list any more — safe to apply a held-back reload.
+    _flushPendingRefresh();
   }
 
   void resetToPlanAParty() {
@@ -377,15 +371,15 @@ class BanquetInqueryState extends State<BanquetInquery> {
   Timer? _confirmCloseTimer;
 
   // -- Pending booking state ---------------------------------
-  String? _pendingEnquiryId;
+  // String? _pendingEnquiryId;
   String? _pendingEnquiryUuid;
   String _pendingRestaurantName = '';
   bool _hasExistingBooking = false;
 
   // -- Catering enquiries ------------------------------------
   Map<String, String> ctEnquiryData = {};
-  List<CateringInqueryModel> _ctEnquiries = [];
-  bool _ctEnquiriesLoading = false;
+  // List<CateringInqueryModel> _ctEnquiries = [];
+  // bool _ctEnquiriesLoading = false;
 
   // -- Party review timer ------------------------------------
   Map<String, String> partyEnquiryData = {};
@@ -721,6 +715,9 @@ class BanquetInqueryState extends State<BanquetInquery> {
                 ? 12.5
                 : 14.sp;
 
+            final dialogWidth =
+                calendarMetrics.calendarWidth + (dialogHorizontalPadding * 2);
+
             return PopScope(
               canPop: true,
               child: Dialog(
@@ -728,16 +725,16 @@ class BanquetInqueryState extends State<BanquetInquery> {
                   horizontal: dialogHorizontalPadding,
                   vertical: dialogVerticalPadding,
                 ),
-                constraints: BoxConstraints.tightFor(
-                  width:
-                      calendarMetrics.calendarWidth +
-                      (dialogHorizontalPadding * 2),
+                constraints: BoxConstraints(
+                  minWidth: dialogWidth,
+                  maxWidth: dialogWidth,
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.9,
                 ),
                 backgroundColor: const Color(0xFFF5F5F5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(isTablet ? 10 : 10.r),
                 ),
-                child: Padding(
+                child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(
                     horizontal: dialogHorizontalPadding,
                     vertical: dialogVerticalPadding,
@@ -948,9 +945,9 @@ class BanquetInqueryState extends State<BanquetInquery> {
 
   String _requestRadius(ResponseModel? response) {
     if (response == null) return '-';
-    final radius = response.requestSearchRadius?.trim() ?? '';
-    final lat = response.requestLat?.trim() ?? '';
-    final lng = response.requestLng?.trim() ?? '';
+    final radius = response.requestSearchRadius.trim();
+    final lat = response.requestLat.trim();
+    final lng = response.requestLng.trim();
     if (lat.isEmpty && lng.isEmpty && radius.isEmpty) return '-';
     final key = '$lat,$lng';
     final placeName =
@@ -973,6 +970,39 @@ class BanquetInqueryState extends State<BanquetInquery> {
     _confirmCloseTimer?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// Set when a refresh arrives while an overlay is open, so the reload can
+  /// run once the customer closes it.
+  bool _refreshPending = false;
+
+  /// Re-pulls the responses behind this tab. Called by the shell when the
+  /// Inquiries badge changes while this tab is open.
+  ///
+  /// Only the Response tab is reloaded. The other tab is the enquiry form, and
+  /// rebuilding it under a half-filled form would throw away what the customer
+  /// has typed — nothing there reflects the badge anyway, and switching to
+  /// Response fetches on its own.
+  ///
+  /// A reload underneath an open review/request/search overlay would swap the
+  /// data out from under whatever the customer is reading, so it waits for the
+  /// overlay to close instead.
+  Future<void> refresh() {
+    if (selectedStatus != 'Response') return Future<void>.value();
+    if (_isAnyOverlayOpen) {
+      _refreshPending = true;
+      return Future<void>.value();
+    }
+    return _fetchPartyResponses();
+  }
+
+  /// Runs a refresh that was held back while an overlay was open.
+  void _flushPendingRefresh() {
+    if (!_refreshPending || _isAnyOverlayOpen) return;
+    _refreshPending = false;
+    // The customer may have moved to the form tab while the overlay was up.
+    if (selectedStatus != 'Response') return;
+    _fetchPartyResponses();
   }
 
   // -- Data fetching -----------------------------------------
@@ -1070,11 +1100,7 @@ class BanquetInqueryState extends State<BanquetInquery> {
       if (_partySeconds <= 0) {
         timer.cancel();
         setState(() => isReviewOnClick = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Review time expired. Please try again.'),
-          ),
-        );
+        showErrorSnack(context, 'Review time expired. Please try again.');
       } else {
         setState(() => _partySeconds--);
       }
@@ -1112,13 +1138,9 @@ class BanquetInqueryState extends State<BanquetInquery> {
       try {
         (planPartyKey.currentState as dynamic)?.clearFields();
       } catch (_) {}
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Party enquiry submitted successfully!')),
-      );
+      showSuccessSnack(context, 'Party enquiry submitted successfully!');
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(response.message)));
+      showErrorSnack(context, response.message);
     }
   }
 
@@ -1400,18 +1422,14 @@ class BanquetInqueryState extends State<BanquetInquery> {
                                 declined[index].uuid,
                               );
                           if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(resp['message'] ?? '')),
-                          );
+                          showErrorSnack(context, resp['message'] ?? '');
                           await _fetchDeclinedResponses();
                         },
                         onRestoreTap: () async {
                           final resp = await InqueryService()
                               .restoreEnquiryResponse(declined[index].uuid);
                           if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(resp['message'] ?? '')),
-                          );
+                          showErrorSnack(context, resp['message'] ?? '');
                           await _fetchDeclinedResponses();
                         },
                       ),
@@ -1563,7 +1581,7 @@ class BanquetInqueryState extends State<BanquetInquery> {
           ),
           child: Center(
             child: AppText(
-              text: "Search by coupon code or hotel name",
+              text: "Search by coupon code",
               size: metrics.searchTextSize,
               color: appTextColor3,
               fontWeight: FontWeight.w400,
@@ -1642,7 +1660,7 @@ class BanquetInqueryState extends State<BanquetInquery> {
               decoration: InputDecoration(
                 border: InputBorder.none,
 
-                hintText: "Search by coupon code ",
+                hintText: "Search by coupon code",
 
                 hintStyle: TextStyle(
                   fontSize: metrics.searchTextSize,
@@ -1834,7 +1852,7 @@ class BanquetInqueryState extends State<BanquetInquery> {
 
   // -- Accept tap shared logic -------------------------------
   void _handleAcceptTap(ResponseModel r) {
-    _pendingEnquiryId = r.couponId;
+    // _pendingEnquiryId = r.couponId;
     _pendingRestaurantName = r.restaurantName;
     _pendingEnquiryUuid = r.uuid;
     if (_hasExistingBooking) {
@@ -1853,7 +1871,6 @@ class BanquetInqueryState extends State<BanquetInquery> {
     VoidCallback? onDismiss,
   }) {
     final metrics = _BanquetInqueryMetrics.fromContext(context);
-    final content = scrollable ? SingleChildScrollView(child: child) : child;
 
     return Positioned.fill(
       child: GestureDetector(
@@ -1868,34 +1885,46 @@ class BanquetInqueryState extends State<BanquetInquery> {
               child: GestureDetector(
                 onTap: () {},
                 behavior: HitTestBehavior.opaque,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: metrics.overlayMaxWidth,
-                  ),
-                  child: Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: metrics.overlayPaddingHorizontal,
-                      vertical: metrics.overlayPaddingVertical,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(
-                        metrics.overlayRadius,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final maxHeight = constraints.maxHeight.isFinite
+                        ? constraints.maxHeight * 0.94
+                        : MediaQuery.sizeOf(context).height * 0.94;
+                    final content = scrollable
+                        ? SingleChildScrollView(child: child)
+                        : child;
+
+                    return ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: metrics.overlayMaxWidth,
+                        maxHeight: maxHeight,
                       ),
-                      border: Border.all(
-                        color: Colors.black.withValues(alpha: 0.08),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.18),
-                          blurRadius: 18,
-                          offset: const Offset(0, 8),
+                      child: Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: metrics.overlayPaddingHorizontal,
+                          vertical: metrics.overlayPaddingVertical,
                         ),
-                      ],
-                    ),
-                    child: content,
-                  ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(
+                            metrics.overlayRadius,
+                          ),
+                          border: Border.all(
+                            color: Colors.black.withValues(alpha: 0.08),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.18),
+                              blurRadius: 18,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: content,
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -1941,7 +1970,16 @@ class BanquetInqueryState extends State<BanquetInquery> {
             ],
           ),
           SizedBox(height: metrics.overlayRowGap),
-          _reviewRow(menuIcon, "Your Menu", partyEnquiryData['menu'] ?? ''),
+          _reviewRow(
+            menuIcon,
+            "Your Menu",
+            (partyEnquiryData['menu'] ?? '')
+                .split(RegExp(r'[,\n]'))
+                .map((item) => item.trim())
+                .where((item) => item.isNotEmpty)
+                .join(', '),
+            maxLines: 20,
+          ),
           SizedBox(height: metrics.overlayRowGap),
           _reviewRow(
             peopleIcon,
@@ -1952,7 +1990,7 @@ class BanquetInqueryState extends State<BanquetInquery> {
           _reviewRow(
             calenderIcon,
             "Date and Time",
-            partyEnquiryData['dateTime'] ?? '',
+            _formatReviewDateTime(partyEnquiryData['dateTime'] ?? ''),
           ),
           SizedBox(height: metrics.overlayRowGap),
           _reviewRow(
@@ -2090,21 +2128,17 @@ class BanquetInqueryState extends State<BanquetInquery> {
                       _autoCloseConfirmBox();
                     } else {
                       setState(() => _isConfirmLoading = false);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            result['message'] ?? 'Confirmation failed',
-                          ),
-                        ),
+                      showErrorSnack(
+                        context,
+                        result['message'] ?? 'Confirmation failed',
                       );
                     }
                   } catch (_) {
                     if (!mounted) return;
                     setState(() => _isConfirmLoading = false);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Confirmation failed. Please try again.'),
-                      ),
+                    showErrorSnack(
+                      context,
+                      'Confirmation failed. Please try again.',
                     );
                   }
                 },
@@ -2197,6 +2231,7 @@ class BanquetInqueryState extends State<BanquetInquery> {
         viewRequest = false;
         _selectedResponse = null;
       }),
+      scrollable: true,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -2240,11 +2275,17 @@ class BanquetInqueryState extends State<BanquetInquery> {
           _reviewRow(
             menuIcon,
             "Your Menu",
-            _selectedResponse?.requestMenuItems?.isNotEmpty == true
-                ? _selectedResponse!.requestMenuItems
-                : (_selectedResponse?.requestOtherServices?.isNotEmpty == true
-                      ? _selectedResponse!.requestOtherServices
-                      : '-'),
+            (_selectedResponse?.requestMenuItems.isNotEmpty == true
+                    ? _selectedResponse!.requestMenuItems
+                    : (_selectedResponse?.requestOtherServices.isNotEmpty ==
+                              true
+                          ? _selectedResponse!.requestOtherServices
+                          : '-'))
+                .split(RegExp(r'[,\n]'))
+                .map((item) => item.trim())
+                .where((item) => item.isNotEmpty)
+                .join(', '),
+            maxLines: 20,
           ),
           SizedBox(height: metrics.overlayRowGap),
           _reviewRow(
@@ -2285,7 +2326,25 @@ class BanquetInqueryState extends State<BanquetInquery> {
   // ---------------------------------------------------------
   // SHARED HELPERS
   // ---------------------------------------------------------
-  Widget _reviewRow(String imageIcon, String label, String value) {
+  String _formatReviewDateTime(String raw) {
+    if (raw.trim().isEmpty) return '';
+    final parts = raw.trim().split(' ');
+    try {
+      final date = DateFormat('yyyy-MM-dd').parseStrict(parts.first);
+      final rest = parts.skip(1).join(' ');
+      final formatted = DateFormat('d MMM yyyy').format(date);
+      return rest.isEmpty ? formatted : '$formatted $rest';
+    } catch (_) {
+      return raw;
+    }
+  }
+
+  Widget _reviewRow(
+    String imageIcon,
+    String label,
+    String value, {
+    int? maxLines,
+  }) {
     final metrics = _BanquetInqueryMetrics.fromContext(context);
 
     return Row(
@@ -2315,6 +2374,7 @@ class BanquetInqueryState extends State<BanquetInquery> {
                 fontWeight: FontWeight.w500,
                 color: appTextColor2,
                 lineSpacing: 1.5,
+                maxLines: maxLines,
               ),
             ],
           ),
@@ -2464,12 +2524,15 @@ class BanquetInqueryState extends State<BanquetInquery> {
                       ),
                     ],
             ),
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: metrics.tabTextSize,
-                fontWeight: FontWeight.w500,
-                color: isSelected ? Colors.white : appTextColor3,
+            child: TranslatedBuilder(
+              text: text,
+              builder: (context, label) => Text(
+                label,
+                style: TextStyle(
+                  fontSize: metrics.tabTextSize,
+                  fontWeight: FontWeight.w500,
+                  color: isSelected ? Colors.white : appTextColor3,
+                ),
               ),
             ),
           ),
@@ -2648,6 +2711,10 @@ class _BanquetInqueryMetrics {
       final contentWidth = (size.width * 0.82).clamp(700.0, 980.0).toDouble();
       final scale = (contentWidth / 760).clamp(1.0, 1.14).toDouble();
       double s(double value) => value * scale;
+      // A tablet-width device in landscape can still be short on vertical
+      // space, so vertical rhythm (padding/gaps, not text) shrinks with it.
+      final bool isShortHeight = size.height < 500;
+      double v(double value) => isShortHeight ? s(value) * 0.6 : s(value);
 
       return _BanquetInqueryMetrics(
         contentWidth: contentWidth,
@@ -2659,9 +2726,9 @@ class _BanquetInqueryMetrics {
         tabShadowBlur: s(8),
         tabShadowOffset: Offset(s(2), s(2)),
         subviewHorizontalPadding: s(38),
-        subviewTopPadding: s(34),
-        subviewGap: s(24),
-        listBottomPadding: s(32),
+        subviewTopPadding: v(34),
+        subviewGap: v(24),
+        listBottomPadding: v(32),
         backIconSize: s(32),
         filterHeight: s(38),
         filterIconSize: s(18),
@@ -2697,7 +2764,7 @@ class _BanquetInqueryMetrics {
         overlayHorizontalPadding: s(40),
         overlayMaxWidth: s(560),
         overlayPaddingHorizontal: s(34),
-        overlayPaddingVertical: s(30),
+        overlayPaddingVertical: v(30),
         overlayRadius: s(22),
         overlayTitleSize: s(22),
         overlayBodySize: s(16),
@@ -2705,9 +2772,9 @@ class _BanquetInqueryMetrics {
         overlayCloseIconSize: s(28),
         overlayIconSize: s(52),
         overlaySuccessIconSize: s(82),
-        overlayRowGap: s(20),
-        overlayLargeGap: s(30),
-        overlaySmallGap: s(12),
+        overlayRowGap: v(20),
+        overlayLargeGap: v(30),
+        overlaySmallGap: v(12),
         overlayButtonWidth: s(150),
         overlayButtonHeight: s(44),
         overlayButtonTextSize: s(16),
@@ -3423,6 +3490,10 @@ class _CalendarMetrics {
   factory _CalendarMetrics.fromContext(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final isTablet = Breakpoints.isTablet(size.width);
+    // Phones rotated to landscape with very little vertical room —
+    // needs its own, tighter sizing rather than reusing isWideShortPhone.
+    final isShortLandscape =
+        !isTablet && size.width > size.height && size.height < 450;
     final isWideShortPhone =
         !isTablet && size.width >= 500 && size.height <= 760;
     final isCompactPhone = size.width < 390 || size.height < 700;
@@ -3458,6 +3529,37 @@ class _CalendarMetrics {
         dayTextSize: s(13),
         todayDotSize: s(5),
         todayDotGap: s(2),
+      );
+    }
+
+    if (isShortLandscape) {
+      return const _CalendarMetrics(
+        calendarWidth: 230,
+        headerIconButtonSize: 28,
+        headerIconSize: 18,
+        headerTextSize: 13,
+        headerTextGap: 3,
+        dropdownIconSize: 16,
+        sectionGap: 3,
+        yearIconSize: 16,
+        yearTextSize: 12,
+        monthGridMainSpacing: 5,
+        monthGridCrossSpacing: 5,
+        monthGridAspectRatio: 2.5,
+        monthCellHeight: 28,
+        monthCellRadius: 6,
+        monthTextSize: 10,
+        yearSheetHeight: 170,
+        yearSheetRadius: 12,
+        yearItemTextSize: 12,
+        weekdayCellWidth: 24,
+        weekdayTextSize: 9.5,
+        dayMainSpacing: 2,
+        dayCellSize: 21,
+        dayRadius: 6,
+        dayTextSize: 10.5,
+        todayDotSize: 3,
+        todayDotGap: 1,
       );
     }
 

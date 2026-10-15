@@ -25,8 +25,8 @@ class RatingCard extends StatelessWidget {
   String _formatRelativeDate(String rawDate) {
     if (rawDate.toLowerCase().contains('ago')) return rawDate;
 
-    DateTime? postedAt = DateTime.tryParse(rawDate);
-    postedAt ??= DateTime.tryParse(rawDate.replaceFirst(' ', 'T'));
+    DateTime? postedAt = DateTime.tryParse(rawDate)?.toLocal();
+    postedAt ??= DateTime.tryParse(rawDate.replaceFirst(' ', 'T'))?.toLocal();
     postedAt ??= _parseDayFirstDate(rawDate);
 
     final timestamp = int.tryParse(rawDate);

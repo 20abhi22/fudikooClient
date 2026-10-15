@@ -4,9 +4,13 @@ class RestaurantDetailsResponseModel {
   final bool status;
   final Restaurant? restaurant;
 
+  /// Why the request failed, ready to show to the user. Empty on success.
+  final String message;
+
   RestaurantDetailsResponseModel({
     required this.status,
     required this.restaurant,
+    this.message = '',
   });
 
   factory RestaurantDetailsResponseModel.fromJson(Map<String, dynamic> json) {
@@ -35,9 +39,9 @@ class Restaurant {
   final String restaurantType;
   final String status;
   final double? averageReview;
-  final String? image;           // banner image
-  final List<String> images;     // gallery images
-  final List<OfferModel> offers;  // offers for the restaurant
+  final String? image; // banner image
+  final List<String> images; // gallery images
+  final List<OfferModel> offers; // offers for the restaurant
   final bool isFavourite;
 
   Restaurant({
@@ -82,7 +86,7 @@ class Restaurant {
           ? double.tryParse(json['average_review'].toString())
           : null,
       image: json['image']?.toString(),
-        offers: (json['offers'] as List? ?? [])
+      offers: (json['offers'] as List? ?? [])
           .map((item) => OfferModel.fromJson(item))
           .toList(),
       isFavourite: json['is_favourite'] == true || json['is_favourite'] == 1,

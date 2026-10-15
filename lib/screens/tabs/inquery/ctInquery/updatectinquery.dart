@@ -11,6 +11,7 @@ import 'package:fudikoclient/service/auth/map-service.dart';
 import 'package:fudikoclient/service/inquery/inquery-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:intl/intl.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class UpdateCtInquery extends StatefulWidget {
   final CateringInqueryModel enquiry;
@@ -51,11 +52,13 @@ class _UpdateCtInqueryState extends State<UpdateCtInquery> {
     peopleController.text = widget.enquiry.people.toString();
     amountController.text =
         double.tryParse(widget.enquiry.estimatedAmount)?.toInt().toString() ??
-            widget.enquiry.estimatedAmount;
-    datetimeController.text = "${widget.enquiry.date} &  ${widget.enquiry.time}";
+        widget.enquiry.estimatedAmount;
+    datetimeController.text =
+        "${widget.enquiry.date} &  ${widget.enquiry.time}";
     validDatetimeController.text =
         "${widget.enquiry.expirationDate} &  ${widget.enquiry.expirationTime}";
-    radius = double.tryParse(widget.enquiry.searchRadius)?.toInt().toString() ??
+    radius =
+        double.tryParse(widget.enquiry.searchRadius)?.toInt().toString() ??
         widget.enquiry.searchRadius;
     latitude = widget.enquiry.lat;
     longitude = widget.enquiry.lng;
@@ -95,29 +98,11 @@ class _UpdateCtInqueryState extends State<UpdateCtInquery> {
       if (!mounted) return;
 
       if (response.status) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Catering enquiry updated successfully",
-              style: TextStyle(color: Colors.white),
-            ),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showSuccessSnack(context, "Catering enquiry updated successfully");
         widget.onEdit();
         Navigator.pop(context);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Error updating enquiry",
-              style: TextStyle(color: Colors.white),
-            ),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showErrorSnack(context, "Error updating enquiry");
         Navigator.pop(context);
       }
     } catch (e) {
@@ -202,10 +187,15 @@ class _UpdateCtInqueryState extends State<UpdateCtInquery> {
           SizedBox(height: 10.h),
           // Location selector — same as UpdateInquery
           GestureDetector(
-            onTap: () => Navigator.push(
-              context,
+            // Root navigator, not the tab's nested one — see ctInquery.dart:
+            // the tab shell's Scaffold shrinks its body for the keyboard,
+            // which would drag the picker's bottom-pinned radius panel up.
+            onTap: () => Navigator.of(context, rootNavigator: true).push(
               MaterialPageRoute(
                 builder: (context) => LocationSelect(
+                  initialLat: double.tryParse(latitude ?? ''),
+                  initialLng: double.tryParse(longitude ?? ''),
+                  initialDistance: double.tryParse(radius ?? ''),
                   returndata: (lat, lng, distance) async {
                     setState(() {
                       latitude = lat;
@@ -256,18 +246,16 @@ class _UpdateCtInqueryState extends State<UpdateCtInquery> {
             children: [
               Padding(
                 padding: EdgeInsets.only(left: 4.0, bottom: 4.h),
-                child: Text(
-                  'Enquiry valid for',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: AppText(
+                  text: 'Enquiry valid for',
+                  size: 12.sp,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.red,
+                  maxLines: 1,
                 ),
               ),
               GestureDetector(
-                onTap: () =>
-                    _selectDateTime(context, validDatetimeController),
+                onTap: () => _selectDateTime(context, validDatetimeController),
                 child: Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: 16.w,
@@ -313,15 +301,9 @@ class _UpdateCtInqueryState extends State<UpdateCtInquery> {
                     radius == null ||
                     latitude == null ||
                     longitude == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        "Please fill all the fields before proceeding!",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      backgroundColor: Colors.red,
-                      behavior: SnackBarBehavior.floating,
-                    ),
+                  showErrorSnack(
+                    context,
+                    "Please fill all the fields before proceeding!",
                   );
                   return;
                 } else {

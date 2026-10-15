@@ -1,3 +1,4 @@
+import 'package:fudikoclient/utils/error_messages.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fudikoclient/api/dio_client.dart';
@@ -9,7 +10,8 @@ import 'package:fudikoclient/model/restaurant/restaurant_liked.dart';
 import 'package:fudikoclient/utils/tokens.dart';
 
 class ReservationService {
-  final RestaurantDetailsService _restaurantDetailsService = RestaurantDetailsService();
+  final RestaurantDetailsService _restaurantDetailsService =
+      RestaurantDetailsService();
 
   Future<List<BookingModel>> _mapReservations(dynamic data) async {
     final List<dynamic> reservations = data is Map<String, dynamic>
@@ -18,8 +20,12 @@ class ReservationService {
 
     final Map<String, String> restaurantNameCache = {};
 
-    Future<String> resolveRestaurantName(Map<String, dynamic> reservation) async {
-      final String directName = (reservation['restaurant_name'] ?? '').toString().trim();
+    Future<String> resolveRestaurantName(
+      Map<String, dynamic> reservation,
+    ) async {
+      final String directName = (reservation['restaurant_name'] ?? '')
+          .toString()
+          .trim();
       if (directName.isNotEmpty) {
         return directName;
       }
@@ -32,7 +38,9 @@ class ReservationService {
         }
       }
 
-      final String restaurantId = (reservation['restaurant_id'] ?? '').toString().trim();
+      final String restaurantId = (reservation['restaurant_id'] ?? '')
+          .toString()
+          .trim();
       if (restaurantId.isEmpty) {
         return restaurantId;
       }
@@ -41,9 +49,13 @@ class ReservationService {
         return restaurantNameCache[restaurantId] ?? restaurantId;
       }
 
-      final restaurantResponse = await _restaurantDetailsService.getRestaurantDetails(restaurantId);
-      final String resolvedName = restaurantResponse.restaurant?.name.trim() ?? '';
-      restaurantNameCache[restaurantId] = resolvedName.isNotEmpty ? resolvedName : restaurantId;
+      final restaurantResponse = await _restaurantDetailsService
+          .getRestaurantDetails(restaurantId);
+      final String resolvedName =
+          restaurantResponse.restaurant?.name.trim() ?? '';
+      restaurantNameCache[restaurantId] = resolvedName.isNotEmpty
+          ? resolvedName
+          : restaurantId;
       return restaurantNameCache[restaurantId]!;
     }
 
@@ -128,7 +140,9 @@ class ReservationService {
     }
   }
 
-  Future<NewReservationModelResponse> createReservation(NewReservationModel reservationData) async {
+  Future<NewReservationModelResponse> createReservation(
+    NewReservationModel reservationData,
+  ) async {
     final token = await getToken();
     final data = reservationData.toFormData();
     try {
@@ -142,13 +156,17 @@ class ReservationService {
         return NewReservationModelResponse.fromJson(response.data);
       } else {
         print(response.data);
-        return NewReservationModelResponse(status: false,message: 'Reservation failed: ${response.statusCode}');
+        return NewReservationModelResponse(
+          status: false,
+          message: statusCodeMessage(response.statusCode),
+        );
       }
     } catch (e) {
       print(e);
-      return NewReservationModelResponse(status: false, message: 'Something went wrong: $e');
+      return NewReservationModelResponse(
+        status: false,
+        message: friendlyErrorMessage(e),
+      );
     }
   }
-
-
 }

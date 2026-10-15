@@ -27,6 +27,7 @@ import 'package:fudikoclient/service/inquery/inquery-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:intl/intl.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class BookingSuccessTick extends StatefulWidget {
   const BookingSuccessTick({
@@ -333,6 +334,9 @@ class CateringInqueryState extends State<CateringInquery> {
         viewEnquiryOnClick = false;
       }
     });
+
+    // Nothing covering the list any more — safe to apply a held-back reload.
+    _flushPendingRefresh();
   }
 
   void resetToBookACatering() {
@@ -406,7 +410,8 @@ class CateringInqueryState extends State<CateringInquery> {
 
   // ── Ct Enquiry filter ───────────────────────────────────
   String _ctEnquiryFilter = "All";
-  DateTime? _ctEnquiryCustomDate;
+  DateTime? _ctEnquiryCustomStart;
+  DateTime? _ctEnquiryCustomEnd;
 
   List<ResponseModel> _allCtResponses = [];
 
@@ -477,17 +482,46 @@ class CateringInqueryState extends State<CateringInquery> {
 
   // For ct enquiry list — filters on the date field of CateringInqueryModel
   List<CateringInqueryModel> get _filteredCtEnquiries {
-    List<CateringInqueryModel> result = _ctEnquiries;
-    if (_ctEnquiryFilter == "Today") {
-      final String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-      result = result.where((e) => e.date == today).toList();
-    } else if (_ctEnquiryFilter == "Custom" && _ctEnquiryCustomDate != null) {
-      final String target = DateFormat(
-        'yyyy-MM-dd',
-      ).format(_ctEnquiryCustomDate!);
-      result = result.where((e) => e.date == target).toList();
-    }
-    return result;
+    if (_ctEnquiryFilter == "All") return _ctEnquiries;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return _ctEnquiries.where((item) {
+      DateTime? itemDate;
+      try {
+        itemDate = DateFormat('yyyy-MM-dd').parse(item.date);
+      } catch (_) {
+        return false;
+      }
+      final itemDay = DateTime(itemDate.year, itemDate.month, itemDate.day);
+
+      switch (_ctEnquiryFilter) {
+        case "Today":
+          return itemDay == today;
+        case "Last 7 Days":
+          return !itemDay.isBefore(today.subtract(const Duration(days: 6)));
+        case "Last 30 Days":
+          return !itemDay.isBefore(today.subtract(const Duration(days: 29)));
+        case "Custom Range":
+          if (_ctEnquiryCustomStart == null || _ctEnquiryCustomEnd == null) {
+            return true;
+          }
+          final start = DateTime(
+            _ctEnquiryCustomStart!.year,
+            _ctEnquiryCustomStart!.month,
+            _ctEnquiryCustomStart!.day,
+          );
+          final end = DateTime(
+            _ctEnquiryCustomEnd!.year,
+            _ctEnquiryCustomEnd!.month,
+            _ctEnquiryCustomEnd!.day,
+          );
+          return !itemDay.isBefore(start) && !itemDay.isAfter(end);
+        default:
+          return true;
+      }
+    }).toList();
   }
 
   // ── Label getters ─────────────────────────────────────────
@@ -510,17 +544,12 @@ class CateringInqueryState extends State<CateringInquery> {
   }
 
   String get _ctEnquiryFilterLabel {
-    if (_ctEnquiryFilter == "All") return "All";
-    if (_ctEnquiryFilter == "Today") return "Today";
-    return DateFormat('MMM d, yyyy').format(_ctEnquiryCustomDate!);
-  }
-
-  double _filterDropdownWidth(String label) {
-    final metrics = _CateringInqueryMetrics.fromContext(context);
-    final textWidth = label.length * metrics.filterTextUnitWidth;
-    return (textWidth + metrics.filterDropdownExtraWidth)
-        .clamp(metrics.filterDropdownMinWidth, metrics.filterDropdownMaxWidth)
-        .toDouble();
+    if (_ctEnquiryFilter == "Custom Range" &&
+        _ctEnquiryCustomStart != null &&
+        _ctEnquiryCustomEnd != null) {
+      return "${DateFormat('MMM d').format(_ctEnquiryCustomStart!)} – ${DateFormat('MMM d, yyyy').format(_ctEnquiryCustomEnd!)}";
+    }
+    return _ctEnquiryFilter;
   }
 
   // ── Date pickers ──────────────────────────────────────────
@@ -633,15 +662,290 @@ class CateringInqueryState extends State<CateringInquery> {
       });
   }
 
-  Future<void> _pickCtEnquiryCustomDate() async {
-    final DateTime? picked = await _pickCustomCalendarDatePopup(
-      _ctEnquiryCustomDate,
-    );
-    if (picked != null)
+  Future<void> _pickCtEnquiryCustomRange() async {
+    final DateTimeRange? picked =
+        await _pickCtEnquiryCustomCalendarRangePopup();
+    if (picked != null) {
       setState(() {
-        _ctEnquiryCustomDate = picked;
-        _ctEnquiryFilter = "Custom";
+        _ctEnquiryCustomStart = picked.start;
+        _ctEnquiryCustomEnd = picked.end;
+        _ctEnquiryFilter = "Custom Range";
       });
+    }
+  }
+
+  Future<DateTimeRange?> _pickCtEnquiryCustomCalendarRangePopup() {
+    DateTime tempStart = _ctEnquiryCustomStart ?? DateTime.now();
+    DateTime tempEnd = _ctEnquiryCustomEnd ?? tempStart;
+    bool selectingStart = true;
+
+    final calendarMetrics = _CalendarMetrics.fromContext(context);
+    final size = MediaQuery.sizeOf(context);
+    final isTablet = Breakpoints.isTablet(size.width);
+    final isWideShortPhone =
+        !isTablet && size.width >= 500 && size.height <= 760;
+    final isCompactPhone = size.width < 390 || size.height < 700;
+    final dialogHorizontalPadding = isTablet
+        ? 16.0
+        : isWideShortPhone
+        ? 14.0
+        : isCompactPhone
+        ? 12.0
+        : 16.w;
+    final dialogVerticalPadding = isTablet
+        ? 16.0
+        : isWideShortPhone
+        ? 14.0
+        : isCompactPhone
+        ? 12.0
+        : 16.h;
+    final actionHorizontalPadding = isTablet
+        ? 10.0
+        : isWideShortPhone
+        ? 8.0
+        : isCompactPhone
+        ? 6.0
+        : 10.w;
+    final actionTextSize = isTablet
+        ? 14.0
+        : isWideShortPhone
+        ? 13.0
+        : isCompactPhone
+        ? 12.5
+        : 14.sp;
+    final dialogTitleSize = isTablet
+        ? 16.0
+        : isWideShortPhone
+        ? 15.0
+        : isCompactPhone
+        ? 15.0
+        : 16.0;
+    final rangeButtonGap = isTablet
+        ? 10.0
+        : isWideShortPhone
+        ? 8.0
+        : isCompactPhone
+        ? 8.0
+        : 10.w;
+
+    return showDialog<DateTimeRange>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final activeDate = selectingStart ? tempStart : tempEnd;
+            final dialogWidth =
+                calendarMetrics.calendarWidth + (dialogHorizontalPadding * 2);
+
+            return PopScope(
+              canPop: true,
+              child: Dialog(
+                insetPadding: EdgeInsets.symmetric(
+                  horizontal: dialogHorizontalPadding,
+                  vertical: dialogVerticalPadding,
+                ),
+                constraints: BoxConstraints(
+                  minWidth: dialogWidth,
+                  maxWidth: dialogWidth,
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+                ),
+                backgroundColor: const Color(0xFFF5F5F5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(isTablet ? 10 : 10.r),
+                ),
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: dialogHorizontalPadding,
+                    vertical: dialogVerticalPadding,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AppText(
+                        text: "Select Date Range",
+                        size: dialogTitleSize,
+                        fontWeight: FontWeight.w600,
+                        color: appTextColor3,
+                      ),
+                      SizedBox(height: dialogVerticalPadding),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _ctRangeDateButton(
+                              label: "Start",
+                              date: tempStart,
+                              isSelected: selectingStart,
+                              onTap: () =>
+                                  setDialogState(() => selectingStart = true),
+                            ),
+                          ),
+                          SizedBox(width: rangeButtonGap),
+                          Expanded(
+                            child: _ctRangeDateButton(
+                              label: "End",
+                              date: tempEnd,
+                              isSelected: !selectingStart,
+                              onTap: () =>
+                                  setDialogState(() => selectingStart = false),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: dialogVerticalPadding),
+                      _buildCustomCalendar(
+                        key: ValueKey(
+                          '${selectingStart ? 'start' : 'end'}-${activeDate.year}-${activeDate.month}',
+                        ),
+                        tempDate: activeDate,
+                        onDateChanged: (date) {
+                          setDialogState(() {
+                            if (selectingStart) {
+                              tempStart = date;
+                              if (tempEnd.isBefore(tempStart)) {
+                                tempEnd = tempStart;
+                              }
+                            } else {
+                              tempEnd = date;
+                              if (tempStart.isAfter(tempEnd)) {
+                                tempStart = tempEnd;
+                              }
+                            }
+                          });
+                        },
+                      ),
+                      SizedBox(height: dialogVerticalPadding),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: actionHorizontalPadding,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            TextButton(
+                              onPressed: () => Navigator.of(
+                                dialogContext,
+                                rootNavigator: true,
+                              ).pop(),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  color: Colors.black54,
+                                  fontSize: actionTextSize,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.of(
+                                    dialogContext,
+                                    rootNavigator: true,
+                                  ).pop(
+                                    DateTimeRange(
+                                      start: tempStart,
+                                      end: tempEnd,
+                                    ),
+                                  ),
+                              child: Text(
+                                'Apply',
+                                style: TextStyle(
+                                  color: const Color(0xFF3954DB),
+                                  fontSize: actionTextSize,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _ctRangeDateButton({
+    required String label,
+    required DateTime date,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final size = MediaQuery.sizeOf(context);
+    final isTablet = Breakpoints.isTablet(size.width);
+    final isWideShortPhone =
+        !isTablet && size.width >= 500 && size.height <= 760;
+    final isCompactPhone = size.width < 390 || size.height < 700;
+    final horizontalPadding = isTablet
+        ? 10.0
+        : isWideShortPhone
+        ? 8.0
+        : isCompactPhone
+        ? 8.0
+        : 10.w;
+    final verticalPadding = isTablet
+        ? 9.0
+        : isWideShortPhone
+        ? 8.0
+        : isCompactPhone
+        ? 7.0
+        : 9.h;
+    final radius = isTablet ? 10.0 : 10.r;
+    final labelSize = isTablet
+        ? 11.0
+        : isWideShortPhone
+        ? 10.5
+        : isCompactPhone
+        ? 10.0
+        : 11.0;
+    final dateSize = isTablet
+        ? 12.0
+        : isWideShortPhone
+        ? 11.0
+        : isCompactPhone
+        ? 10.5
+        : 12.0;
+    final textGap = isTablet ? 3.0 : 3.h;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: verticalPadding,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFf87b0d) : Colors.white,
+          borderRadius: BorderRadius.circular(radius),
+          border: Border.all(
+            color: isSelected ? const Color(0xFFf87b0d) : Colors.black12,
+          ),
+        ),
+        child: Column(
+          children: [
+            AppText(
+              text: label,
+              size: labelSize,
+              fontWeight: FontWeight.w500,
+              color: isSelected ? Colors.white : appTextColor2,
+              isCentered: true,
+            ),
+            SizedBox(height: textGap),
+            AppText(
+              text: DateFormat('MMM d, yyyy').format(date),
+              size: dateSize,
+              fontWeight: FontWeight.w600,
+              color: isSelected ? Colors.white : appTextColor3,
+              isCentered: true,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<DateTime?> _pickCustomCalendarDatePopup(DateTime? selectedDate) {
@@ -689,6 +993,9 @@ class CateringInqueryState extends State<CateringInquery> {
           builder: (context, setDialogState) {
             // Keep the calendar dialog as the active pop target so Android's
             // back gesture dismisses it before the page below can handle back.
+            final dialogWidth =
+                calendarMetrics.calendarWidth + (dialogHorizontalPadding * 2);
+
             return PopScope(
               canPop: true,
               child: Dialog(
@@ -696,16 +1003,16 @@ class CateringInqueryState extends State<CateringInquery> {
                   horizontal: dialogHorizontalPadding,
                   vertical: dialogVerticalPadding,
                 ),
-                constraints: BoxConstraints.tightFor(
-                  width:
-                      calendarMetrics.calendarWidth +
-                      (dialogHorizontalPadding * 2),
+                constraints: BoxConstraints(
+                  minWidth: dialogWidth,
+                  maxWidth: dialogWidth,
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.9,
                 ),
                 backgroundColor: const Color(0xFFF5F5F5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(isTablet ? 10 : 10.r),
                 ),
-                child: Padding(
+                child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(
                     horizontal: dialogHorizontalPadding,
                     vertical: dialogVerticalPadding,
@@ -903,6 +1210,122 @@ class CateringInqueryState extends State<CateringInquery> {
     );
   }
 
+  // ── Enquiry filter option — All/Today/Last 7/Last 30/Custom Range ────
+  Widget _buildCtEnquiryFilterOption(String label, {bool isCustom = false}) {
+    final metrics = _CateringInqueryMetrics.fromContext(context);
+    final bool isSelected = _ctEnquiryFilter == label;
+
+    return GestureDetector(
+      onTap: () async {
+        if (isCustom) {
+          Navigator.pop(context);
+          await _pickCtEnquiryCustomRange();
+        } else {
+          setState(() {
+            _ctEnquiryFilter = label;
+            _ctEnquiryCustomStart = null;
+            _ctEnquiryCustomEnd = null;
+          });
+          Navigator.pop(context);
+        }
+      },
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(
+          vertical: metrics.searchVerticalPadding,
+          horizontal: metrics.searchFieldHorizontalPadding,
+        ),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [Color(0xFFEC7B2D), Color(0xFFF7A440)],
+                )
+              : null,
+          color: isSelected ? null : Colors.transparent,
+          borderRadius: BorderRadius.circular(metrics.tabRadius),
+        ),
+        child: AppText(
+          text: isCustom
+              ? (_ctEnquiryFilter == "Custom Range" &&
+                        _ctEnquiryCustomStart != null &&
+                        _ctEnquiryCustomEnd != null
+                    ? "${DateFormat('MMM d').format(_ctEnquiryCustomStart!)} – ${DateFormat('MMM d, yyyy').format(_ctEnquiryCustomEnd!)}"
+                    : "Custom Range")
+              : label,
+          size: metrics.overlayBodySize,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+          color: isSelected ? Colors.white : Colors.black,
+          isCentered: true,
+        ),
+      ),
+    );
+  }
+
+  void _showCtEnquiryFilterSheet() {
+    final metrics = _CateringInqueryMetrics.fromContext(context);
+
+    showModalBottomSheet(
+      backgroundColor: Colors.white,
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+        maxWidth: metrics.sheetMaxWidth,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(metrics.sheetTopRadius),
+        ),
+      ),
+      builder: (context) {
+        return SingleChildScrollView(
+          padding: EdgeInsets.all(metrics.sheetPadding),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: metrics.sheetHandleWidth,
+                height: metrics.sheetHandleHeight,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(
+                    metrics.sheetHandleRadius,
+                  ),
+                ),
+              ),
+              SizedBox(height: metrics.sheetGap),
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(
+                    metrics.sheetContainerRadius,
+                  ),
+                ),
+                padding: EdgeInsets.all(metrics.sheetContainerPadding),
+                child: Column(
+                  children: [
+                    _buildCtEnquiryFilterOption("All"),
+                    Divider(color: Colors.grey[200]),
+                    _buildCtEnquiryFilterOption("Today"),
+                    Divider(color: Colors.grey[200]),
+                    _buildCtEnquiryFilterOption("Last 7 Days"),
+                    Divider(color: Colors.grey[200]),
+                    _buildCtEnquiryFilterOption("Last 30 Days"),
+                    Divider(color: Colors.grey[200]),
+                    _buildCtEnquiryFilterOption("Custom Range", isCustom: true),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   //----------------------------------Catering Timer--------------------------//
   String get _ctTimerText {
     final m = (_ctSeconds ~/ 60).toString().padLeft(2, '0');
@@ -917,11 +1340,7 @@ class CateringInqueryState extends State<CateringInquery> {
       if (_ctSeconds <= 0) {
         timer.cancel();
         setState(() => isCtReviewOnClick = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Review time expired. Please try again.'),
-          ),
-        );
+        showErrorSnack(context, 'Review time expired. Please try again.');
       } else {
         setState(() => _ctSeconds--);
       }
@@ -965,6 +1384,39 @@ class CateringInqueryState extends State<CateringInquery> {
   // }
 
   //----------------------------------Party Timer--------------------------//
+
+  /// Set when a refresh arrives while an overlay is open, so the reload can
+  /// run once the customer closes it.
+  bool _refreshPending = false;
+
+  /// Re-pulls the responses behind this tab. Called by the shell when the
+  /// Inquiries badge changes while this tab is open.
+  ///
+  /// Only the Response tab is reloaded. The other tab is the enquiry form, and
+  /// rebuilding it under a half-filled form would throw away what the customer
+  /// has typed — nothing there reflects the badge anyway, and switching to
+  /// Response fetches on its own.
+  ///
+  /// A reload underneath an open review/request/search overlay would swap the
+  /// data out from under whatever the customer is reading, so it waits for the
+  /// overlay to close instead.
+  Future<void> refresh() {
+    if (selectedStatus != 'Response') return Future<void>.value();
+    if (_isAnyOverlayOpen) {
+      _refreshPending = true;
+      return Future<void>.value();
+    }
+    return _fetchCtResponses();
+  }
+
+  /// Runs a refresh that was held back while an overlay was open.
+  void _flushPendingRefresh() {
+    if (!_refreshPending || _isAnyOverlayOpen) return;
+    _refreshPending = false;
+    // The customer may have moved to the form tab while the overlay was up.
+    if (selectedStatus != 'Response') return;
+    _fetchCtResponses();
+  }
 
   //----------------------------------Catering Enquires-------------------------------------//
   Future<void> _fetchCtEnquiries() async {
@@ -1016,9 +1468,13 @@ class CateringInqueryState extends State<CateringInquery> {
     });
   }
 
-  String _fallbackText(String value) {
-    final text = value.trim();
-    return text.isEmpty ? '-' : text;
+  String _multilineText(String value) {
+    final items = value
+        .split(RegExp(r'[,\n]'))
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
+    return items.isEmpty ? '-' : items.join(', ');
   }
 
   CateringInqueryModel? _ctEnquiryForResponse(ResponseModel? response) {
@@ -1224,51 +1680,11 @@ class CateringInqueryState extends State<CateringInquery> {
         _ctSeconds = 180;
         _ctResetCounter++; // ← triggers CtInquery to clear its fields
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enquiry submitted successfully!')),
-      );
+      showSuccessSnack(context, 'Enquiry submitted successfully!');
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(response.message)));
+      showErrorSnack(context, response.message);
     }
   }
-
-  //----------------------------------Catering Enquires-------------------------------------//
-  //----------------------------------Party Enquires-------------------------------------//
-
-  // Future<void> _submitPartyEnquiry() async {
-  //   final InqueryService service = InqueryService();
-  //   final model = CreateInqueryModel(
-  //     lat: partyEnquiryData['lat'] ?? '',
-  //     lng: partyEnquiryData['lng'] ?? '',
-  //     menuItems: partyEnquiryData['menu'] ?? '',
-  //     people: partyEnquiryData['people'] ?? '',
-  //     date: partyEnquiryData['dateTime']?.split(' ').first ?? '',
-  //     time: () {
-  //       final parts = partyEnquiryData['dateTime']?.split(' ') ?? [];
-  //       return parts.length >= 3 ? '${parts[1]} ${parts[2]}' : '';
-  //     }(),
-  //     estimatedAmount: partyEnquiryData['amount'] ?? '',
-  //     searchRadius: partyEnquiryData['searchRadius'] ?? '20',
-  //     expirationDate: partyEnquiryData['expirationDate'] ?? '',
-  //     expirationTime: partyEnquiryData['expirationTime'] ?? '',
-  //   );
-
-  //   final response = await service.createInquery(model);
-  //   if (response.status) {
-  //     setState(() => isReviewOnClick = false);
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('Party enquiry submitted successfully!')),
-  //     );
-  //   } else {
-  //     ScaffoldMessenger.of(
-  //       context,
-  //     ).showSnackBar(SnackBar(content: Text(response.message)));
-  //   }
-  // }
-
-  //----------------------------------Party Enquires-------------------------------------//
 
   @override
   void dispose() {
@@ -1443,21 +1859,26 @@ class CateringInqueryState extends State<CateringInquery> {
 
         SizedBox(height: metrics.actionGap),
 
-        SizedBox(
-          width: _filterDropdownWidth(_ctSearchFilterLabel),
-          child: AppFilterDropDown(
-            height: metrics.filterHeight,
-            hint: _ctSearchFilterLabel,
-            imageIconPath: filterIcon,
-            imageIconSize: metrics.filterIconSize,
-            toggleDropdown: () => _showCtFilterSheet(
-              currentFilter: _ctSearchFilter,
-              currentCustomDate: _ctSearchCustomDate,
-              onPickDate: _pickCtSearchCustomDate,
-              onSelect: (label) => setState(() {
-                _ctSearchFilter = label;
-                if (label != "Custom") _ctSearchCustomDate = null;
-              }),
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: metrics.filterDropdownMinWidth,
+            maxWidth: metrics.filterDropdownMaxWidth,
+          ),
+          child: IntrinsicWidth(
+            child: AppFilterDropDown(
+              height: metrics.filterHeight,
+              hint: _ctSearchFilterLabel,
+              imageIconPath: filterIcon,
+              imageIconSize: metrics.filterIconSize,
+              toggleDropdown: () => _showCtFilterSheet(
+                currentFilter: _ctSearchFilter,
+                currentCustomDate: _ctSearchCustomDate,
+                onPickDate: _pickCtSearchCustomDate,
+                onSelect: (label) => setState(() {
+                  _ctSearchFilter = label;
+                  if (label != "Custom") _ctSearchCustomDate = null;
+                }),
+              ),
             ),
           ),
         ),
@@ -1674,22 +2095,27 @@ class CateringInqueryState extends State<CateringInquery> {
                   ),
                   Expanded(
                     child: Center(
-                      child: SizedBox(
-                        width: _filterDropdownWidth(_ctDeclineFilterLabel),
-                        child: AppFilterDropDown(
-                          height: metrics.filterHeight,
-                          hint: _ctDeclineFilterLabel,
-                          imageIconPath: filterIcon,
-                          imageIconSize: metrics.filterIconSize,
-                          toggleDropdown: () => _showCtFilterSheet(
-                            currentFilter: _ctDeclineFilter,
-                            currentCustomDate: _ctDeclineCustomDate,
-                            onPickDate: _pickCtDeclineCustomDate,
-                            onSelect: (label) => setState(() {
-                              _ctDeclineFilter = label;
-                              if (label != "Custom")
-                                _ctDeclineCustomDate = null;
-                            }),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minWidth: metrics.filterDropdownMinWidth,
+                          maxWidth: metrics.filterDropdownMaxWidth,
+                        ),
+                        child: IntrinsicWidth(
+                          child: AppFilterDropDown(
+                            height: metrics.filterHeight,
+                            hint: _ctDeclineFilterLabel,
+                            imageIconPath: filterIcon,
+                            imageIconSize: metrics.filterIconSize,
+                            toggleDropdown: () => _showCtFilterSheet(
+                              currentFilter: _ctDeclineFilter,
+                              currentCustomDate: _ctDeclineCustomDate,
+                              onPickDate: _pickCtDeclineCustomDate,
+                              onSelect: (label) => setState(() {
+                                _ctDeclineFilter = label;
+                                if (label != "Custom")
+                                  _ctDeclineCustomDate = null;
+                              }),
+                            ),
                           ),
                         ),
                       ),
@@ -1770,11 +2196,7 @@ class CateringInqueryState extends State<CateringInquery> {
                                       declined[index].uuid,
                                     );
                                 if (!mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(resp['message'] ?? ''),
-                                  ),
-                                );
+                                showErrorSnack(context, resp['message'] ?? '');
                                 await _fetchCtDeclinedResponses();
                               },
                               onRestoreTap: () async {
@@ -1783,11 +2205,7 @@ class CateringInqueryState extends State<CateringInquery> {
                                       declined[index].uuid,
                                     );
                                 if (!mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(resp['message'] ?? ''),
-                                  ),
-                                );
+                                showErrorSnack(context, resp['message'] ?? '');
                                 await _fetchCtDeclinedResponses();
                               },
                             ),
@@ -1867,12 +2285,18 @@ class CateringInqueryState extends State<CateringInquery> {
             ),
           ),
           SizedBox(height: metrics.overlayRowGap),
-          _reviewRow(menuIcon, "Your Menu", _fallbackText(menuItems)),
+          _reviewRow(
+            menuIcon,
+            "Your Menu",
+            _multilineText(menuItems),
+            maxLines: 20,
+          ),
           SizedBox(height: metrics.overlayRowGap),
           _reviewRow(
             handshakeIcon,
             "Other Services",
-            _fallbackText(otherServices),
+            _multilineText(otherServices),
+            maxLines: 20,
           ),
           SizedBox(height: metrics.overlayRowGap),
           _reviewRow(peopleIcon, "Number of Persons", peopleLabel),
@@ -1975,21 +2399,26 @@ class CateringInqueryState extends State<CateringInquery> {
                 fit: FlexFit.loose,
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: SizedBox(
-                    width: _filterDropdownWidth(_ctResponseFilterLabel),
-                    child: AppFilterDropDown(
-                      height: metrics.filterHeight,
-                      hint: _ctResponseFilterLabel,
-                      imageIconPath: filterIcon,
-                      imageIconSize: metrics.filterIconSize,
-                      toggleDropdown: () => _showCtFilterSheet(
-                        currentFilter: _ctResponseFilter,
-                        currentCustomDate: _ctResponseCustomDate,
-                        onPickDate: _pickCtResponseCustomDate,
-                        onSelect: (label) => setState(() {
-                          _ctResponseFilter = label;
-                          if (label != "Custom") _ctResponseCustomDate = null;
-                        }),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minWidth: metrics.filterDropdownMinWidth,
+                      maxWidth: metrics.filterDropdownMaxWidth,
+                    ),
+                    child: IntrinsicWidth(
+                      child: AppFilterDropDown(
+                        height: metrics.filterHeight,
+                        hint: _ctResponseFilterLabel,
+                        imageIconPath: filterIcon,
+                        imageIconSize: metrics.filterIconSize,
+                        toggleDropdown: () => _showCtFilterSheet(
+                          currentFilter: _ctResponseFilter,
+                          currentCustomDate: _ctResponseCustomDate,
+                          onPickDate: _pickCtResponseCustomDate,
+                          onSelect: (label) => setState(() {
+                            _ctResponseFilter = label;
+                            if (label != "Custom") _ctResponseCustomDate = null;
+                          }),
+                        ),
                       ),
                     ),
                   ),
@@ -2141,21 +2570,18 @@ class CateringInqueryState extends State<CateringInquery> {
               ),
               Expanded(
                 child: Center(
-                  child: SizedBox(
-                    width: _filterDropdownWidth(_ctEnquiryFilterLabel),
-                    child: AppFilterDropDown(
-                      height: metrics.filterHeight,
-                      hint: _ctEnquiryFilterLabel,
-                      imageIconPath: filterIcon,
-                      imageIconSize: metrics.filterIconSize,
-                      toggleDropdown: () => _showCtFilterSheet(
-                        currentFilter: _ctEnquiryFilter,
-                        currentCustomDate: _ctEnquiryCustomDate,
-                        onPickDate: _pickCtEnquiryCustomDate,
-                        onSelect: (label) => setState(() {
-                          _ctEnquiryFilter = label;
-                          if (label != "Custom") _ctEnquiryCustomDate = null;
-                        }),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minWidth: metrics.filterDropdownMinWidth,
+                      maxWidth: metrics.filterDropdownMaxWidth,
+                    ),
+                    child: IntrinsicWidth(
+                      child: AppFilterDropDown(
+                        height: metrics.filterHeight,
+                        hint: _ctEnquiryFilterLabel,
+                        imageIconPath: filterIcon,
+                        imageIconSize: metrics.filterIconSize,
+                        toggleDropdown: _showCtEnquiryFilterSheet,
                       ),
                     ),
                   ),
@@ -2264,12 +2690,26 @@ class CateringInqueryState extends State<CateringInquery> {
             ],
           ),
           SizedBox(height: metrics.overlayRowGap),
-          _reviewRow(menuIcon, "Your Menu", ctEnquiryData['menu'] ?? ''),
+          _reviewRow(
+            menuIcon,
+            "Your Menu",
+            (ctEnquiryData['menu'] ?? '')
+                .split(RegExp(r'[,\n]'))
+                .map((item) => item.trim())
+                .where((item) => item.isNotEmpty)
+                .join(', '),
+            maxLines: 20,
+          ),
           SizedBox(height: metrics.overlayRowGap),
           _reviewRow(
             handshakeIcon,
             "Other Services",
-            ctEnquiryData['otherServices'] ?? '',
+            (ctEnquiryData['otherServices'] ?? '')
+                .split(RegExp(r'[,\n]'))
+                .map((item) => item.trim())
+                .where((item) => item.isNotEmpty)
+                .join(', '),
+            maxLines: 20,
           ),
           SizedBox(height: metrics.overlayRowGap),
           _reviewRow(
@@ -2281,7 +2721,7 @@ class CateringInqueryState extends State<CateringInquery> {
           _reviewRow(
             calenderIcon,
             "Date and Time",
-            ctEnquiryData['dateTime'] ?? '',
+            _formatReviewDateTime(ctEnquiryData['dateTime'] ?? ''),
           ),
           SizedBox(height: metrics.overlayRowGap),
           _reviewRow(
@@ -2344,7 +2784,20 @@ class CateringInqueryState extends State<CateringInquery> {
   }
 
   // helper widget for each row
-  Widget _reviewRow(String icon, String label, String value) {
+  String _formatReviewDateTime(String raw) {
+    if (raw.trim().isEmpty) return '';
+    final parts = raw.trim().split(' ');
+    try {
+      final date = DateFormat('yyyy-MM-dd').parseStrict(parts.first);
+      final rest = parts.skip(1).join(' ');
+      final formatted = DateFormat('d MMM yyyy').format(date);
+      return rest.isEmpty ? formatted : '$formatted $rest';
+    } catch (_) {
+      return raw;
+    }
+  }
+
+  Widget _reviewRow(String icon, String label, String value, {int? maxLines}) {
     final metrics = _CateringInqueryMetrics.fromContext(context);
 
     return Row(
@@ -2374,6 +2827,7 @@ class CateringInqueryState extends State<CateringInquery> {
                 fontWeight: FontWeight.w500,
                 color: appTextColor2,
                 lineSpacing: 1.5,
+                maxLines: maxLines,
               ),
             ],
           ),
@@ -2454,12 +2908,9 @@ class CateringInqueryState extends State<CateringInquery> {
                     await _fetchCtDeclinedResponses();
                     _autoCloseCtConfirmBox();
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          result['message'] ?? 'Confirmation failed',
-                        ),
-                      ),
+                    showErrorSnack(
+                      context,
+                      result['message'] ?? 'Confirmation failed',
                     );
                   }
                 },
@@ -2554,6 +3005,10 @@ class CateringInqueryState extends State<CateringInquery> {
       _previousStatus = selectedStatus;
       selectedStatus = text;
     });
+
+    // Opening the tab pulls current data, which is also what makes it safe for
+    // refresh() to skip while the form tab is showing.
+    if (text == "Response") _fetchCtResponses();
   }
 
   Widget _buildAnimatedStatusTabs({required double width}) {
@@ -2622,12 +3077,15 @@ class CateringInqueryState extends State<CateringInquery> {
                       ),
                     ],
             ),
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: metrics.tabTextSize,
-                fontWeight: FontWeight.w500,
-                color: isSelected ? Colors.white : appTextColor3,
+            child: TranslatedBuilder(
+              text: text,
+              builder: (context, label) => Text(
+                label,
+                style: TextStyle(
+                  fontSize: metrics.tabTextSize,
+                  fontWeight: FontWeight.w500,
+                  color: isSelected ? Colors.white : appTextColor3,
+                ),
               ),
             ),
           ),
@@ -2670,11 +3128,10 @@ class _CateringInqueryMetrics {
     required this.backIconSize,
     required this.filterHeight,
     required this.filterIconSize,
-    required this.filterTextUnitWidth,
-    required this.filterDropdownExtraWidth,
     required this.filterDropdownMinWidth,
     required this.filterDropdownMaxWidth,
     required this.sheetPadding,
+    required this.sheetMaxWidth,
     required this.sheetTopRadius,
     required this.sheetHandleWidth,
     required this.sheetHandleHeight,
@@ -2742,11 +3199,10 @@ class _CateringInqueryMetrics {
   final double backIconSize;
   final double filterHeight;
   final double filterIconSize;
-  final double filterTextUnitWidth;
-  final double filterDropdownExtraWidth;
   final double filterDropdownMinWidth;
   final double filterDropdownMaxWidth;
   final double sheetPadding;
+  final double sheetMaxWidth;
   final double sheetTopRadius;
   final double sheetHandleWidth;
   final double sheetHandleHeight;
@@ -2826,11 +3282,10 @@ class _CateringInqueryMetrics {
         backIconSize: s(32),
         filterHeight: s(38),
         filterIconSize: s(18),
-        filterTextUnitWidth: s(8),
-        filterDropdownExtraWidth: s(84),
         filterDropdownMinWidth: s(132),
         filterDropdownMaxWidth: s(220),
         sheetPadding: s(36),
+        sheetMaxWidth: 480,
         sheetTopRadius: s(28),
         sheetHandleWidth: s(48),
         sheetHandleHeight: s(5),
@@ -2901,11 +3356,10 @@ class _CateringInqueryMetrics {
         backIconSize: 27,
         filterHeight: 32,
         filterIconSize: 15,
-        filterTextUnitWidth: 7.5,
-        filterDropdownExtraWidth: 74,
         filterDropdownMinWidth: 120,
         filterDropdownMaxWidth: 190,
         sheetPadding: 26,
+        sheetMaxWidth: 420,
         sheetTopRadius: 24,
         sheetHandleWidth: 40,
         sheetHandleHeight: 5,
@@ -2979,11 +3433,10 @@ class _CateringInqueryMetrics {
         backIconSize: s(24),
         filterHeight: s(30),
         filterIconSize: s(14),
-        filterTextUnitWidth: s(7),
-        filterDropdownExtraWidth: s(68),
         filterDropdownMinWidth: s(108),
         filterDropdownMaxWidth: s(172),
         sheetPadding: s(22),
+        sheetMaxWidth: 420,
         sheetTopRadius: s(22),
         sheetHandleWidth: s(38),
         sheetHandleHeight: s(4),
@@ -3053,11 +3506,10 @@ class _CateringInqueryMetrics {
       backIconSize: 28.w,
       filterHeight: 32.h,
       filterIconSize: 15.sp,
-      filterTextUnitWidth: 7.5.w,
-      filterDropdownExtraWidth: 76.w,
       filterDropdownMinWidth: 120.w,
       filterDropdownMaxWidth: 190.w,
       sheetPadding: 30.w,
+      sheetMaxWidth: 440.w,
       sheetTopRadius: 25.r,
       sheetHandleWidth: 40.w,
       sheetHandleHeight: 5.h,
@@ -3171,6 +3623,10 @@ class _CalendarMetrics {
   factory _CalendarMetrics.fromContext(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final isTablet = Breakpoints.isTablet(size.width);
+    // Phones rotated to landscape with very little vertical room —
+    // needs its own, tighter sizing rather than reusing isWideShortPhone.
+    final isShortLandscape =
+        !isTablet && size.width > size.height && size.height < 450;
     final isWideShortPhone =
         !isTablet && size.width >= 500 && size.height <= 760;
     final isCompactPhone = size.width < 390 || size.height < 700;
@@ -3206,6 +3662,37 @@ class _CalendarMetrics {
         dayTextSize: s(13),
         todayDotSize: s(5),
         todayDotGap: s(2),
+      );
+    }
+
+    if (isShortLandscape) {
+      return const _CalendarMetrics(
+        calendarWidth: 230,
+        headerIconButtonSize: 28,
+        headerIconSize: 18,
+        headerTextSize: 13,
+        headerTextGap: 3,
+        dropdownIconSize: 16,
+        sectionGap: 3,
+        yearIconSize: 16,
+        yearTextSize: 12,
+        monthGridMainSpacing: 5,
+        monthGridCrossSpacing: 5,
+        monthGridAspectRatio: 2.5,
+        monthCellHeight: 28,
+        monthCellRadius: 6,
+        monthTextSize: 10,
+        yearSheetHeight: 170,
+        yearSheetRadius: 12,
+        yearItemTextSize: 12,
+        weekdayCellWidth: 24,
+        weekdayTextSize: 9.5,
+        dayMainSpacing: 2,
+        dayCellSize: 21,
+        dayRadius: 6,
+        dayTextSize: 10.5,
+        todayDotSize: 3,
+        todayDotGap: 1,
       );
     }
 
@@ -3306,10 +3793,15 @@ class _CalendarMetrics {
 }
 
 Widget _buildCustomCalendar({
+  Key? key,
   required DateTime tempDate,
   required void Function(DateTime) onDateChanged,
 }) {
-  return _CustomCalendar(selectedDate: tempDate, onDateChanged: onDateChanged);
+  return _CustomCalendar(
+    key: key,
+    selectedDate: tempDate,
+    onDateChanged: onDateChanged,
+  );
 }
 
 class _CustomCalendar extends StatefulWidget {
@@ -3317,6 +3809,7 @@ class _CustomCalendar extends StatefulWidget {
   final void Function(DateTime) onDateChanged;
 
   const _CustomCalendar({
+    super.key,
     required this.selectedDate,
     required this.onDateChanged,
   });

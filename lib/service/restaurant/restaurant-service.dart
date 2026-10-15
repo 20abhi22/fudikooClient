@@ -3,6 +3,7 @@ import 'package:fudikoclient/api/dio_client.dart';
 import 'package:fudikoclient/model/restaurant/restaurant_filter_model.dart';
 import 'package:fudikoclient/model/restaurant/restaurant-model.dart';
 import 'package:fudikoclient/model/restaurant/restaurant_liked.dart';
+import 'package:fudikoclient/utils/error_messages.dart';
 import 'package:fudikoclient/utils/tokens.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,6 +17,7 @@ class RestaurantService {
     double? searchRadiusKm,
     String? type,
     int? offerPercentage,
+    int? startPercentage,
     DateTime? dateTime,
   }) async {
     final token = await getToken();
@@ -31,6 +33,7 @@ class RestaurantService {
             searchRadiusKm: searchRadiusKm,
             type: type,
             offerPercentage: offerPercentage,
+            startPercentage: startPercentage,
             dateTime: dateTime,
           ),
         );
@@ -45,11 +48,24 @@ class RestaurantService {
         return RestaurantListResponse.fromJson(response.data);
       } else {
         print(response.data);
-        return RestaurantListResponse(status: false, restaurant: []);
+        return RestaurantListResponse(
+          status: false,
+          restaurant: const [],
+          message: statusCodeMessage(
+            response.statusCode,
+            fallback: 'We could not load restaurants. Please try again.',
+          ),
+        );
       }
     } catch (e) {
-      print(e);
-      return RestaurantListResponse(status: false, restaurant: []);
+      return RestaurantListResponse(
+        status: false,
+        restaurant: const [],
+        message: friendlyErrorMessage(
+          e,
+          fallback: 'We could not load restaurants. Please try again.',
+        ),
+      );
     }
   }
   //   Future<RestaurantListResponse> getRestaurantList() async {
@@ -95,15 +111,19 @@ class RestaurantService {
 
         return RestaurantLikedDislikedResponseModel(
           status: false,
-          message: response.data.toString(),
+          message: statusCodeMessage(
+            response.statusCode,
+            fallback: 'We could not update your favourites. Please try again.',
+          ),
         );
       }
     } catch (e) {
-      print(e);
-
       return RestaurantLikedDislikedResponseModel(
         status: false,
-        message: e.toString(),
+        message: friendlyErrorMessage(
+          e,
+          fallback: 'We could not update your favourites. Please try again.',
+        ),
       );
     }
   }
@@ -124,11 +144,24 @@ class RestaurantService {
         return RestaurantListResponse.fromJson(response.data);
       } else {
         print('Filter error: ${response.data}');
-        return RestaurantListResponse(status: false, restaurant: []);
+        return RestaurantListResponse(
+          status: false,
+          restaurant: const [],
+          message: statusCodeMessage(
+            response.statusCode,
+            fallback: 'We could not load restaurants. Please try again.',
+          ),
+        );
       }
     } catch (e) {
-      print('Filter exception: $e');
-      return RestaurantListResponse(status: false, restaurant: []);
+      return RestaurantListResponse(
+        status: false,
+        restaurant: const [],
+        message: friendlyErrorMessage(
+          e,
+          fallback: 'We could not load restaurants. Please try again.',
+        ),
+      );
     }
   }
 
@@ -160,10 +193,24 @@ class RestaurantService {
       if (response.statusCode == 200) {
         return RestaurantListResponse.fromJson(response.data);
       } else {
-        return RestaurantListResponse(status: false, restaurant: []);
+        return RestaurantListResponse(
+          status: false,
+          restaurant: const [],
+          message: statusCodeMessage(
+            response.statusCode,
+            fallback: 'We could not search restaurants. Please try again.',
+          ),
+        );
       }
     } catch (e) {
-      return RestaurantListResponse(status: false, restaurant: []);
+      return RestaurantListResponse(
+        status: false,
+        restaurant: const [],
+        message: friendlyErrorMessage(
+          e,
+          fallback: 'We could not search restaurants. Please try again.',
+        ),
+      );
     }
   }
 

@@ -3,7 +3,9 @@ import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/utils/constants.dart';
 
 class VerifiedModal extends StatelessWidget {
-  const VerifiedModal({super.key});
+  final String? points;
+
+  const VerifiedModal({super.key, this.points});
 
   @override
   Widget build(BuildContext context) {
@@ -34,16 +36,36 @@ class VerifiedModal extends StatelessWidget {
                   fit: BoxFit.contain,
                 ),
                 SizedBox(height: 20),
-                AppText(text: "Coupon Verified!", size: 25, fontWeight: FontWeight.w600,color: appToggleColor,),
+                AppText(
+                  text: "Coupon Verified!",
+                  size: 25,
+                  fontWeight: FontWeight.w600,
+                  color: appToggleColor,
+                ),
                 SizedBox(height: 15),
-                AppText(text: "You earned 55 points Reward ", size: 15, fontWeight: FontWeight.w500,color: appTextColor2,),
+                AppText(
+                  text: "You earned ${points ?? 55} points Reward ",
+                  size: 15,
+                  fontWeight: FontWeight.w500,
+                  color: appTextColor2,
+                ),
                 SizedBox(height: 40),
-                AppText(text: "Give Feedback", size: 13, fontWeight: FontWeight.w500,color: appToggleColor,),
+                AppText(
+                  text: "Give Feedback",
+                  size: 13,
+                  fontWeight: FontWeight.w500,
+                  color: appToggleColor,
+                ),
                 SizedBox(height: 10),
-                AppText(text: "View your badge", size: 13, fontWeight: FontWeight.w500,color: appLinkColor,),
+                AppText(
+                  text: "View your badge",
+                  size: 13,
+                  fontWeight: FontWeight.w500,
+                  color: appLinkColor,
+                ),
                 SizedBox(height: 40),
               ],
-            )
+            ),
           ],
         ),
       ),

@@ -6,6 +6,7 @@ import 'package:fudikoclient/core/responsive/app_dimensions.dart';
 import 'package:fudikoclient/core/responsive/breakpoints.dart';
 import 'package:fudikoclient/service/complaint/complaint_service.dart';
 import 'package:fudikoclient/utils/constants.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class ComplaintPage extends StatefulWidget {
   const ComplaintPage({super.key});
@@ -41,14 +42,11 @@ class _ComplaintPageState extends State<ComplaintPage> {
 
     setState(() => _isSubmitting = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          success
-              ? 'Complaint submitted successfully.'
-              : 'Unable to submit complaint. Please try again.',
-        ),
-      ),
+    showSuccessSnack(
+      context,
+      success
+          ? 'Complaint submitted successfully.'
+          : 'Unable to submit complaint. Please try again.',
     );
 
     if (success) {
@@ -167,7 +165,10 @@ class _ComplaintPageState extends State<ComplaintPage> {
   // Landscape: two columns side by side so height is never the bottleneck.
   // Left = back button + intro copy. Right = text area + submit, filling
   // the available height instead of stacking below a tall paragraph.
-  Widget _buildLandscape(BuildContext context, _ComplaintLayoutMetrics metrics) {
+  Widget _buildLandscape(
+    BuildContext context,
+    _ComplaintLayoutMetrics metrics,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -288,10 +289,10 @@ class _ComplaintLayoutMetrics {
     final pageHorizontalPadding = isTablet
         ? (isLandscape ? width * 0.05 : width * 0.08)
         : isLandscape
-            ? width * 0.05
-            : isCompactPhone
-                ? width * 0.06
-                : width * 0.075;
+        ? width * 0.05
+        : isCompactPhone
+        ? width * 0.06
+        : width * 0.075;
 
     final pageVerticalPadding = isLandscape
         ? (isCompactLandscape ? 8.0 : 14.0)
@@ -300,83 +301,89 @@ class _ComplaintLayoutMetrics {
     return _ComplaintLayoutMetrics(
       pageHorizontalPadding: pageHorizontalPadding,
       pageVerticalPadding: pageVerticalPadding,
-      contentWidthFactor: isTablet
-          ? (isTabletLandscape ? 0.56 : 0.7)
-          : 1.0,
+      contentWidthFactor: isTablet ? (isTabletLandscape ? 0.56 : 0.7) : 1.0,
       bottomPadding: isTablet
-          ? (isLandscape ? AppDimensions.gap(context) : AppDimensions.margin(context))
+          ? (isLandscape
+                ? AppDimensions.gap(context)
+                : AppDimensions.margin(context))
           : isCompactPhone
-              ? 20.0
-              : 24.0,
+          ? 20.0
+          : 24.0,
       backTop: isTablet
           ? (isLandscape ? 0.0 : 36.0)
           : isLandscape
-              ? 0.0
-              : isCompactPhone
-                  ? 22.0
-                  : 40.0,
+          ? 0.0
+          : isCompactPhone
+          ? 22.0
+          : 40.0,
       backSize: isTablet
           ? (isLandscape ? 28.0 : 34.0)
           : isCompactLandscape
-              ? 24.0
-              : isLandscape
-                  ? 26.0
-                  : isCompactPhone
-                      ? 26.0
-                      : 30.0,
-      headerGap: isTablet
-          ? (isLandscape ? AppDimensions.gap(context) * 0.75 : AppDimensions.gap(context) * 1.25)
+          ? 24.0
           : isLandscape
-              ? (isCompactLandscape ? 10.0 : 14.0)
-              : 20.0,
+          ? 26.0
+          : isCompactPhone
+          ? 26.0
+          : 30.0,
+      headerGap: isTablet
+          ? (isLandscape
+                ? AppDimensions.gap(context) * 0.75
+                : AppDimensions.gap(context) * 1.25)
+          : isLandscape
+          ? (isCompactLandscape ? 10.0 : 14.0)
+          : 20.0,
       formTopGap: isTablet
           ? (isLandscape ? 40.0 : 58.0)
           : isCompactPhone
-              ? 36.0
-              : 50.0,
+          ? 36.0
+          : 50.0,
       buttonTopGap: isTablet
           ? (isLandscape ? 20.0 : 44.0)
           : isLandscape
-              ? (isCompactLandscape ? 10.0 : 14.0)
-              : 30.0,
+          ? (isCompactLandscape ? 10.0 : 14.0)
+          : 30.0,
       bodySize: isTablet
-          ? (isLandscape ? AppDimensions.body(context) * 0.95 + 2 : AppDimensions.body(context) + 3)
+          ? (isLandscape
+                ? AppDimensions.body(context) * 0.95 + 2
+                : AppDimensions.body(context) + 3)
           : isCompactLandscape
-              ? 12.5
-              : isLandscape
-                  ? 13.5
-                  : isCompactPhone
-                      ? 14.0
-                      : 15.0,
+          ? 12.5
+          : isLandscape
+          ? 13.5
+          : isCompactPhone
+          ? 14.0
+          : 15.0,
       // Only used in portrait — landscape passes an explicit `height` to
       // DescriptionTextArea instead (see _buildLandscape), so it fills the
       // available space rather than being sized by a guessed line count.
       textAreaLines: isTablet
           ? 18
           : isCompactPhone
-              ? 13
-              : 15,
+          ? 13
+          : 15,
       buttonWidth: isTablet
           ? (isLandscape ? 260.0 : 320.0)
           : isLandscape
-              ? 170.0
-              : isCompactPhone
-                  ? 180.0
-                  : 200.0,
+          ? 170.0
+          : isCompactPhone
+          ? 180.0
+          : 200.0,
       buttonHeight: isTablet
           ? (isLandscape ? 46.0 : 52.0)
           : isLandscape
-              ? (isCompactLandscape ? 36.0 : 40.0)
-              : 40.0,
+          ? (isCompactLandscape ? 36.0 : 40.0)
+          : 40.0,
       buttonTextSize: isTablet
-          ? (isLandscape ? AppDimensions.body(context) * 0.95 + 1 : AppDimensions.body(context) + 2)
+          ? (isLandscape
+                ? AppDimensions.body(context) * 0.95 + 1
+                : AppDimensions.body(context) + 2)
           : isCompactLandscape
-              ? 13.0
-              : isLandscape
-                  ? 14.0
-                  : isCompactPhone
-                      ? 14.0
-                      : 15.0,
+          ? 13.0
+          : isLandscape
+          ? 14.0
+          : isCompactPhone
+          ? 14.0
+          : 15.0,
       buttonRadius: isTablet ? (isLandscape ? 14.0 : 16.0) : 10.0,
       isTablet: isTablet,
       isLandscape: isLandscape,

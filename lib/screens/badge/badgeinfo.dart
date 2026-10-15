@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fudikoclient/components/error_state.dart';
 import 'package:fudikoclient/components/apptext.dart';
 import 'package:fudikoclient/core/responsive/app_dimensions.dart';
 import 'package:fudikoclient/core/responsive/breakpoints.dart';
@@ -19,6 +20,7 @@ class _BadgeInfoState extends State<BadgeInfo> {
   final BadgesService _badgesService = BadgesService();
   BadgesResponseModel? _data;
   bool _isLoading = true;
+  String _loadError = '';
 
   @override
   void initState() {
@@ -27,11 +29,19 @@ class _BadgeInfoState extends State<BadgeInfo> {
   }
 
   Future<void> _fetchBadges() async {
-    final result = await _badgesService.getBadges();
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _loadError = '';
+      });
+    }
+
+    final result = await _badgesService.fetchBadges();
     if (!mounted) return;
     setState(() {
-      _data = result;
+      _data = result.data;
       _isLoading = false;
+      _loadError = result.hasError ? result.message : '';
     });
   }
 
@@ -68,7 +78,8 @@ class _BadgeInfoState extends State<BadgeInfo> {
               builder: (context, constraints) {
                 final badges = _data?.badges ?? [];
                 final currentPoints = _data?.currentPoints ?? 0;
-                final hasCurrentBadge = _data?.currentBadge != null &&
+                final hasCurrentBadge =
+                    _data?.currentBadge != null &&
                     _data!.currentBadge!.isNotEmpty;
 
                 final metrics = _BadgeInfoLayoutMetrics.fromConstraints(
@@ -82,6 +93,8 @@ class _BadgeInfoState extends State<BadgeInfo> {
 
                 final content = _isLoading
                     ? const Center(child: CircularProgressIndicator())
+                    : _loadError.isNotEmpty
+                    ? ErrorStateView(message: _loadError, onRetry: _fetchBadges)
                     : Column(
                         mainAxisAlignment: metrics.isTablet
                             ? MainAxisAlignment.center
@@ -89,7 +102,9 @@ class _BadgeInfoState extends State<BadgeInfo> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           AppText(
-                            text: hasCurrentBadge ? "Your Badge" : "No Badge Yet",
+                            text: hasCurrentBadge
+                                ? "Your Badge"
+                                : "No Badge Yet",
                             size: metrics.titleSize,
                             fontWeight: FontWeight.w600,
                             isCentered: true,
@@ -104,9 +119,13 @@ class _BadgeInfoState extends State<BadgeInfo> {
                                     height: metrics.mainBadgeSize,
                                     fit: BoxFit.contain,
                                     errorBuilder: (_, __, ___) =>
-                                        _greyscaleBadgePlaceholder(metrics.mainBadgeSize),
+                                        _greyscaleBadgePlaceholder(
+                                          metrics.mainBadgeSize,
+                                        ),
                                   )
-                                : _greyscaleBadgePlaceholder(metrics.mainBadgeSize),
+                                : _greyscaleBadgePlaceholder(
+                                    metrics.mainBadgeSize,
+                                  ),
                           ),
                           SizedBox(height: metrics.mainBadgeBottomGap),
                           AppText(
@@ -172,12 +191,29 @@ class _BadgeInfoState extends State<BadgeInfo> {
                                     if (isEarned) return badgeImage;
 
                                     return ColorFiltered(
-                                      colorFilter: const ColorFilter.matrix(<double>[
-                                        0.2126, 0.7152, 0.0722, 0, 0,
-                                        0.2126, 0.7152, 0.0722, 0, 0,
-                                        0.2126, 0.7152, 0.0722, 0, 0,
-                                        0, 0, 0, 1, 0,
-                                      ]),
+                                      colorFilter:
+                                          const ColorFilter.matrix(<double>[
+                                            0.2126,
+                                            0.7152,
+                                            0.0722,
+                                            0,
+                                            0,
+                                            0.2126,
+                                            0.7152,
+                                            0.0722,
+                                            0,
+                                            0,
+                                            0.2126,
+                                            0.7152,
+                                            0.0722,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            1,
+                                            0,
+                                          ]),
                                       child: badgeImage,
                                     );
                                   }).toList(),
@@ -200,10 +236,11 @@ class _BadgeInfoState extends State<BadgeInfo> {
                         ),
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
-                            minHeight: (constraints.maxHeight -
-                                    metrics.contentTopInset -
-                                    metrics.bottomPadding)
-                                .clamp(0.0, double.infinity),
+                            minHeight:
+                                (constraints.maxHeight -
+                                        metrics.contentTopInset -
+                                        metrics.bottomPadding)
+                                    .clamp(0.0, double.infinity),
                           ),
                           child: Center(
                             child: SizedBox(
@@ -239,10 +276,26 @@ class _BadgeInfoState extends State<BadgeInfo> {
   Widget _greyscaleBadgePlaceholder(double size) {
     return ColorFiltered(
       colorFilter: const ColorFilter.matrix(<double>[
-        0.2126, 0.7152, 0.0722, 0, 0,
-        0.2126, 0.7152, 0.0722, 0, 0,
-        0.2126, 0.7152, 0.0722, 0, 0,
-        0, 0, 0, 1, 0,
+        0.2126,
+        0.7152,
+        0.0722,
+        0,
+        0,
+        0.2126,
+        0.7152,
+        0.0722,
+        0,
+        0,
+        0.2126,
+        0.7152,
+        0.0722,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
       ]),
       child: Image.asset(
         'assets/images/badge1.png',
@@ -255,10 +308,7 @@ class _BadgeInfoState extends State<BadgeInfo> {
 }
 
 class _GradientProgressBar extends StatelessWidget {
-  const _GradientProgressBar({
-    required this.percentage,
-    required this.height,
-  });
+  const _GradientProgressBar({required this.percentage, required this.height});
 
   final double percentage;
   final double height;
@@ -287,7 +337,12 @@ class _GradientProgressBar extends StatelessWidget {
                 width: constraints.maxWidth * (clampedPercentage / 100),
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFFFF5722), Color(0xFFFC9E4D), Color(0xFFFFE044),Color(0xFF8FFF8F)],
+                    colors: [
+                      Color(0xFFFF5722),
+                      Color(0xFFFC9E4D),
+                      Color(0xFFFFE044),
+                      Color(0xFF8FFF8F),
+                    ],
                   ),
                 ),
               ),
@@ -371,77 +426,86 @@ class _BadgeInfoLayoutMetrics {
     final rows = (badgeCount / columns).ceil().clamp(1, 1000);
 
     final gridGap = isTablet
-      ? (isLandscape ? AppDimensions.gap(context) * 0.6 : AppDimensions.gap(context) * 0.8)
-      : isCompactLandscape
-      ? 6.0
-      : isCompactPhone
-      ? 8.0
-      : 10.0;
+        ? (isLandscape
+              ? AppDimensions.gap(context) * 0.6
+              : AppDimensions.gap(context) * 0.8)
+        : isCompactLandscape
+        ? 6.0
+        : isCompactPhone
+        ? 8.0
+        : 10.0;
 
     // Base badge size for a "normal" catalog (roughly up to 5 rows / 25
     // badges), matching the original fixed sizing.
     final baseGridBadgeSize = isTablet
-      ? ((width * (isTabletLandscape ? 0.44 : 0.56) - (gridGap * 4)) / 5)
-          .clamp(52.0, 76.0)
-      : isCompactLandscape
-      ? 38.0
-      : isCompactPhone
-      ? 44.0
-      : 50.0;
+        ? ((width * (isTabletLandscape ? 0.44 : 0.56) - (gridGap * 4)) / 5)
+              .clamp(52.0, 76.0)
+        : isCompactLandscape
+        ? 38.0
+        : isCompactPhone
+        ? 44.0
+        : 50.0;
 
     // Shrink badge size as the catalog grows beyond 5 rows, so more rows
     // still fit on screen with the same 5-column layout. Clamp to a sane
     // minimum so badges never become illegible.
     final shrinkFactor = rows <= 5 ? 1.0 : (5 / rows).clamp(0.45, 1.0);
-    final gridBadgeSize = (baseGridBadgeSize * shrinkFactor).clamp(28.0, baseGridBadgeSize);
-    final effectiveGridGap = rows <= 5 ? gridGap : gridGap * shrinkFactor.clamp(0.6, 1.0);
+    final gridBadgeSize = (baseGridBadgeSize * shrinkFactor).clamp(
+      28.0,
+      baseGridBadgeSize,
+    );
+    final effectiveGridGap = rows <= 5
+        ? gridGap
+        : gridGap * shrinkFactor.clamp(0.6, 1.0);
 
     final gridWidth =
         (gridBadgeSize * columns) + (effectiveGridGap * (columns - 1));
 
     final pageHorizontalPadding = isTablet
-      ? (isLandscape ? width * 0.06 : width * 0.08)
-      : isCompactLandscape
-      ? width * 0.045
-      : isCompactPhone
-      ? width * 0.06
-      : width * 0.075;
+        ? (isLandscape ? width * 0.06 : width * 0.08)
+        : isCompactLandscape
+        ? width * 0.045
+        : isCompactPhone
+        ? width * 0.06
+        : width * 0.075;
     final contentWidth = isTablet
-      ? (gridWidth + width * 0.08).clamp(360.0, width * 0.78)
-      : width - (pageHorizontalPadding * 2);
+        ? (gridWidth + width * 0.08).clamp(360.0, width * 0.78)
+        : width - (pageHorizontalPadding * 2);
     final titleTopGap = isTablet
-      ? (isLandscape ? AppDimensions.gap(context) * 0.9 : AppDimensions.margin(context))
-      : isCompactLandscape
-      ? 12.0
-      : isCompactPhone
-      ? 22.0
-      : 30.0;
+        ? (isLandscape
+              ? AppDimensions.gap(context) * 0.9
+              : AppDimensions.margin(context))
+        : isCompactLandscape
+        ? 12.0
+        : isCompactPhone
+        ? 22.0
+        : 30.0;
     final progressWidth = isTablet
-      ? (contentWidth * (isLandscape ? 0.7 : 0.78)).clamp(240.0, 420.0)
-      : isCompactLandscape
-      ? width * 0.75
-      : isCompactPhone
-      ? width * 0.8
-      : width * 0.75;
+        ? (contentWidth * (isLandscape ? 0.7 : 0.78)).clamp(240.0, 420.0)
+        : isCompactLandscape
+        ? width * 0.75
+        : isCompactPhone
+        ? width * 0.8
+        : width * 0.75;
     final backTop = isTablet
-      ? (isLandscape ? 18.0 : 36.0)
-      : isCompactLandscape
-      ? 10.0
-      : isCompactPhone
-      ? 22.0
-      : 40.0;
+        ? (isLandscape ? 18.0 : 36.0)
+        : isCompactLandscape
+        ? 10.0
+        : isCompactPhone
+        ? 22.0
+        : 40.0;
     final backSize = isTablet
-      ? (isLandscape ? 30.0 : 34.0)
-      : isCompactLandscape
-      ? 24.0
-      : isCompactPhone
-      ? 28.0
-      : 30.0;
+        ? (isLandscape ? 30.0 : 34.0)
+        : isCompactLandscape
+        ? 24.0
+        : isCompactPhone
+        ? 28.0
+        : 30.0;
 
     return _BadgeInfoLayoutMetrics(
-        pageHorizontalPadding: pageHorizontalPadding,
-        contentWidth: contentWidth,
-        horizontalPadding: isTablet
+      pageHorizontalPadding: pageHorizontalPadding,
+      contentWidth: contentWidth,
+      horizontalPadding: isTablet
           ? (isLandscape ? width * 0.045 : width * 0.055)
           : isCompactLandscape
           ? width * 0.04
@@ -454,28 +518,34 @@ class _BadgeInfoLayoutMetrics {
       backSize: backSize,
       contentTopInset: backTop + backSize + titleTopGap,
       titleTopGap: titleTopGap,
-        smallGap: isTablet
-          ? (isLandscape ? AppDimensions.gap(context) * 0.6 : AppDimensions.gap(context) * 0.8)
+      smallGap: isTablet
+          ? (isLandscape
+                ? AppDimensions.gap(context) * 0.6
+                : AppDimensions.gap(context) * 0.8)
           : isCompactLandscape
           ? 6.0
           : isCompactPhone
           ? 8.0
           : 10.0,
-        bodyGap: isTablet
-          ? (isLandscape ? AppDimensions.gap(context) * 0.9 : AppDimensions.gap(context) * 1.1)
+      bodyGap: isTablet
+          ? (isLandscape
+                ? AppDimensions.gap(context) * 0.9
+                : AppDimensions.gap(context) * 1.1)
           : isCompactLandscape
           ? 8.0
           : isCompactPhone
           ? 16.0
           : 20.0,
-        mainBadgeBottomGap: isTablet
-          ? (isLandscape ? AppDimensions.margin(context) * 0.5 : AppDimensions.margin(context) * 0.85)
+      mainBadgeBottomGap: isTablet
+          ? (isLandscape
+                ? AppDimensions.margin(context) * 0.5
+                : AppDimensions.margin(context) * 0.85)
           : isCompactLandscape
           ? 12.0
           : isCompactPhone
           ? 22.0
           : 30.0,
-        gridTopGap: isTabletLandscape
+      gridTopGap: isTabletLandscape
           ? AppDimensions.margin(context)
           : isTablet
           ? AppDimensions.margin(context) * 1.35
@@ -484,39 +554,49 @@ class _BadgeInfoLayoutMetrics {
           : isCompactPhone
           ? 44.0
           : 60.0,
-        bottomPadding: isTablet
-          ? (isLandscape ? AppDimensions.gap(context) : AppDimensions.margin(context))
+      bottomPadding: isTablet
+          ? (isLandscape
+                ? AppDimensions.gap(context)
+                : AppDimensions.margin(context))
           : isCompactLandscape
           ? 14.0
           : isCompactPhone
           ? 22.0
           : 30.0,
-        mainBadgeSize: isTablet
+      mainBadgeSize: isTablet
           ? (isLandscape ? 140.0 : 170.0)
           : isCompactLandscape
           ? 110.0
           : isCompactPhone
           ? 132.0
           : 150.0,
-        gridBadgeSize: gridBadgeSize,
-        gridGap: effectiveGridGap,
-        progressHeight: isTablet
+      gridBadgeSize: gridBadgeSize,
+      gridGap: effectiveGridGap,
+      progressHeight: isTablet
           ? (isLandscape ? 8.0 : 10.0)
           : isCompactLandscape
           ? 7.0
           : isCompactPhone
           ? 8.0
           : 10.0,
-        titleSize: isTablet ? (isLandscape ? AppDimensions.title(context) * 0.95 : AppDimensions.title(context)) : 20.0,
-        bodySize: isTablet
-          ? (isLandscape ? AppDimensions.body(context) * 0.95 : AppDimensions.body(context))
+      titleSize: isTablet
+          ? (isLandscape
+                ? AppDimensions.title(context) * 0.95
+                : AppDimensions.title(context))
+          : 20.0,
+      bodySize: isTablet
+          ? (isLandscape
+                ? AppDimensions.body(context) * 0.95
+                : AppDimensions.body(context))
           : isCompactLandscape
           ? 13.0
           : isCompactPhone
           ? 14.0
           : 15.0,
-        captionSize: isTablet
-          ? (isLandscape ? AppDimensions.caption(context) * 0.95 : AppDimensions.caption(context))
+      captionSize: isTablet
+          ? (isLandscape
+                ? AppDimensions.caption(context) * 0.95
+                : AppDimensions.caption(context))
           : isCompactLandscape
           ? 9.0
           : isCompactPhone
@@ -526,8 +606,6 @@ class _BadgeInfoLayoutMetrics {
     );
   }
 }
-
-
 
 // import 'package:flutter/material.dart';
 // import 'package:fudikoclient/components/apptext.dart';
@@ -633,7 +711,7 @@ class _BadgeInfoLayoutMetrics {
 //                   ),
 //                   child: Stack(
 //                     children: [
-                      
+
 //                       SingleChildScrollView(
 //                         padding: EdgeInsets.only(
 //                           top: metrics.contentTopInset,

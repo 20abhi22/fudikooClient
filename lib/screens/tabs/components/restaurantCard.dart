@@ -6,11 +6,15 @@ import 'package:fudikoclient/model/restaurant/restaurant_liked.dart';
 import 'package:fudikoclient/service/restaurant/restaurant-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:fudikoclient/model/restaurant/restaurant-model.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class RestaurantCard extends StatefulWidget {
   final VoidCallback? onRatingOnClick;
   // Change callback type to carry an optional offerId
   final void Function(String? offerId, OfferModel? offer)? onBoxClicked;
+  /// Fired after the favourite state was successfully toggled on the server.
+  /// Carries the new state so hosts can refresh their list.
+  final void Function(bool isFavourite)? onFavouriteChanged;
   final String uuid;
   final String name;
   final String type;
@@ -31,11 +35,15 @@ class RestaurantCard extends StatefulWidget {
   final double? distance;
   final List<OfferModel> offers;
   final String? image;
+  /// Date picked in the host's filter; slot labels and bookings use it.
+  final DateTime? selectedDate;
 
   const RestaurantCard({
     super.key,
+    this.selectedDate,
     this.onRatingOnClick,
     this.onBoxClicked,
+    this.onFavouriteChanged,
     required this.uuid,
     required this.name,
     required this.type,
@@ -71,10 +79,41 @@ class _RestaurantCardState extends State<RestaurantCard> {
     isLiked = widget.isFavourite ?? false;
   }
 
-  String _todayShortName() {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    // DateTime.weekday: 1=Mon … 7=Sun
-    return days[DateTime.now().weekday - 1];
+  static const _dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  DateTime _slotDate(String slotTime, List<String> activeDays) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final picked = widget.selectedDate;
+    if (picked != null) return DateTime(picked.year, picked.month, picked.day);
+    final m = RegExp(r'^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AaPp][Mm])?$')
+        .firstMatch(slotTime.trim());
+    if (m == null) return today;
+    var hour = int.parse(m.group(1)!);
+    final ap = m.group(3)?.toUpperCase();
+    if (ap == 'PM' && hour < 12) hour += 12;
+    if (ap == 'AM' && hour == 12) hour = 0;
+    final minute = int.parse(m.group(2)!);
+    for (var i = 0; i < 8; i++) {
+      final day = today.add(Duration(days: i));
+      if (activeDays.isNotEmpty &&
+          !activeDays.contains(_dayNames[day.weekday - 1])) {
+        continue;
+      }
+      if (DateTime(day.year, day.month, day.day, hour, minute).isAfter(now)) {
+        return day;
+      }
+    }
+    return today;
+  }
+
+  String _slotDateLabel(String slotTime, List<String> activeDays) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final date = _slotDate(slotTime, activeDays);
+    if (date == today) return 'TODAY';
+    if (date.difference(today).inDays == 1) return 'TOMORROW';
+    return _dayNames[date.weekday - 1].toUpperCase();
   }
 
   Future<void> onLikeOnTap() async {
@@ -88,30 +127,15 @@ class _RestaurantCardState extends State<RestaurantCard> {
         isLiked = !isLiked;
       });
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: isLiked ? Colors.green : Colors.red,
-          content: AppText(
-            text: isLiked ? 'Add to favourites' : 'Removed from favourites',
-            size: 13,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
+      showStatusSnack(
+        context,
+        isLiked,
+        isLiked ? 'Add to favourites' : 'Removed from favourites',
       );
+      widget.onFavouriteChanged?.call(isLiked);
     } else {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.red,
-          content: AppText(
-            text: 'Something went wrong',
-            size: 13,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-      );
+      showErrorSnack(context, 'Something went wrong');
     }
   }
 
@@ -390,14 +414,12 @@ class _RestaurantCardState extends State<RestaurantCard> {
                                   '-${offer.discountPercentage.toStringAsFixed(0)}%';
                               final forText = 'for ${offer.applicableFor}';
                               final timeStr = ticket.startTime;
-                              final today = _todayShortName();
                               final days = offer.activeDays
                                   .split(',')
                                   .map((d) => d.trim())
+                                  .where((d) => d.isNotEmpty)
                                   .toList();
-                              final dateLabel = days.contains(today)
-                                  ? 'TODAY'
-                                  : days.first.toUpperCase();
+                              final dateLabel = _slotDateLabel(timeStr, days);
 
                               return GestureDetector(
                                 onTap: () => widget.onBoxClicked?.call(

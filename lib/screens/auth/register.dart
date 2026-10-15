@@ -12,6 +12,7 @@ import 'package:fudikoclient/screens/auth/otp.dart';
 import 'package:fudikoclient/service/auth/registration-service.dart';
 import 'package:fudikoclient/utils/constants.dart';
 import 'package:fudikoclient/utils/tokens.dart';
+import 'package:fudikoclient/utils/snackbar.dart';
 
 class Register extends StatefulWidget {
   const Register({super.key});
@@ -54,38 +55,35 @@ class _RegisterState extends State<Register> {
         confirmPassword.isEmpty) {
       if (!mounted) return;
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill out all fields')),
-      );
+      showErrorSnack(context, 'Please fill out all fields');
+      return;
+    }
+
+    if (name.contains(' ')) {
+      if (!mounted) return;
+      setState(() => isLoading = false);
+      showErrorSnack(context, 'Username must not contain spaces');
       return;
     }
 
     if (!EmailValidator.validate(email)) {
       if (!mounted) return;
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email')),
-      );
+      showErrorSnack(context, 'Please enter a valid email');
       return;
     }
 
     if (password.length < 8) {
       if (!mounted) return;
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password must be at least 8 characters long'),
-        ),
-      );
+      showErrorSnack(context, 'Password must be at least 8 characters long');
       return;
     }
 
     if (password != confirmPassword) {
       if (!mounted) return;
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
+      showErrorSnack(context, 'Passwords do not match');
       return;
     }
 
@@ -104,23 +102,13 @@ class _RegisterState extends State<Register> {
     if (response.status) {
       final token = response.token;
       if (token == null || token.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Registration failed: missing access token'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showErrorSnack(context, 'Registration failed: missing access token');
         return;
       }
 
       await removeToken();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response.message),
-          backgroundColor: Colors.green,
-        ),
-      );
+      showSuccessSnack(context, response.message);
       slideRightWidget(
         newPage: Otp(authToken: token),
         context: context,
@@ -131,28 +119,16 @@ class _RegisterState extends State<Register> {
     final errors = response.fieldErrors;
     if (errors != null) {
       if (errors.containsKey('email')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errors['email']!),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showErrorSnack(context, errors['email']!);
       }
 
       if (errors.containsKey('username')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errors['username']!),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showErrorSnack(context, errors['username']!);
       }
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(response.message), backgroundColor: Colors.red),
-    );
+    showErrorSnack(context, response.message);
   }
 
   @override
